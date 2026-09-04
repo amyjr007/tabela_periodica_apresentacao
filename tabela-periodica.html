@@ -204,9 +204,8 @@ body{
 .capa .autor{font-size:23px;font-weight:300;color:var(--tinta-dim);letter-spacing:.01em}
 .capa .autor b{font-weight:500;color:var(--tinta)}
 
-/* o retrato do autor: enquadrado como as células da tabela — fundo
-   branco, borda fina da cor da estrutura e o mesmo canto arredondado
-   da ficha do elemento.
+/* o retrato do autor: enquadrado como uma célula da tabela — fundo
+   branco, borda fina da cor da estrutura, canto levemente arredondado.
    A posição é a que o professor deixou na montagem: x,y são o centro
    dele no palco e a escala é a que ele pinçou. A caixa continua sendo
    164x242 — 188x278 é ela já com o 1,15 por cima. */
@@ -217,23 +216,6 @@ body{
   box-shadow:0 12px 28px rgba(32,28,66,.2);
 }
 .capa .foto img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px}
-
-/* ---------- ficha do elemento = número do slide ----------
-   O slide 3 é o Li, o 4 é o Be, e por aí vai: o contador da aula
-   escrito na língua do tema, e pintado pela família do elemento. */
-.ficha{
-  position:absolute;top:40px;right:60px;width:92px;height:92px;
-  border:1.5px solid var(--cor,var(--indigo));border-radius:5px;
-  background:#fff;box-shadow:0 4px 14px rgba(32,28,66,.1);
-  display:flex;flex-direction:column;justify-content:center;align-items:center;
-  font-family:var(--mono);overflow:hidden;
-}
-.ficha::before{content:'';position:absolute;inset:0;background:var(--cor,var(--indigo));opacity:.1}
-.ficha > *{position:relative}
-.ficha b{font-size:32px;font-weight:500;color:var(--cor,var(--indigo));line-height:1;letter-spacing:.5px}
-.ficha .z{position:absolute;top:7px;left:9px;font-size:12px;color:var(--tinta-dim)}
-.ficha i{font-style:normal;font-size:8.5px;letter-spacing:.1em;color:var(--tinta-dim);
-  margin-top:7px;text-transform:uppercase;max-width:86px;text-align:center}
 
 /* ---------- cabeçalho: título + régua + subtítulo ---------- */
 .title{
@@ -331,19 +313,27 @@ body{
 .fantasma i{position:absolute;display:block;width:46px;height:38px;border-radius:4px;
   border:1px dashed rgba(32,28,66,.16);transform:translate(-50%,-50%)}
 
-/* a regra escrita: vem de longe, pela esquerda, e freia ao chegar */
+/* A regra escrita: vem de longe, pela esquerda, e freia ao chegar.
+   Quem viaja é o MIOLO, não a peça — a mesma divisão das cartas. A
+   peça fica parada no lugar de repouso desde que nasce, e por isso a
+   montagem sempre a mede onde ela de fato mora; se o professor abrisse
+   o G no meio da chegada, uma peça viajante seria congelada no meio do
+   caminho e passaria a morar lá. */
 .regra{
-  position:absolute;left:190px;top:236px;z-index:6;
-  max-width:940px;padding-left:18px;border-left:4px solid var(--ouro-luz);
-  font-size:25px;font-weight:400;line-height:1.28;color:var(--tinta);opacity:0;
+  position:absolute;left:190px;top:236px;z-index:6;transform:translateY(-50%);
+  max-width:940px;font-size:25px;font-weight:400;line-height:1.28;color:var(--tinta);
 }
+.regra-in{
+  display:block;padding-left:18px;border-left:4px solid var(--ouro-luz);
+  opacity:0;transform:translateX(-820px);filter:blur(4px);
+  transition:opacity .5s ease, filter .5s ease,
+             transform .9s cubic-bezier(.2,.86,.26,1);
+}
+.regra.posta .regra-in{opacity:1;transform:none;filter:blur(0)}
 .regra b{color:var(--ouro);font-weight:600}
-.regra.entra{animation:regraEntra .9s cubic-bezier(.2,.86,.26,1) both}
-@keyframes regraEntra{
-  0%  {opacity:0;transform:translate(-820px,-50%);filter:blur(4px)}
-  60% {opacity:1;filter:blur(0)}
-  100%{opacity:1;transform:translate(0,-50%);filter:blur(0)}
-}
+/* a cena inteira não pega o dedo, mas a regra é peça de montagem:
+   sem isto, o toque atravessaria por cima dela e nada se moveria */
+body.montagem .cena .regra{pointer-events:auto}
 
 /* o clarão que abre a cena */
 .clarao{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;
@@ -397,11 +387,16 @@ body.montagem #guias{display:block}
   background:var(--tinta);color:#fff}
 body.montagem #coord.on{display:block}
 
-/* Antes de medir, o texto encolhe até o próprio conteúdo. Sem isto o
-   título "seria" uma faixa de 1120px de largura — que é o tamanho da
-   coluna do slide, não o da letra escrita —, e o centro dele cairia no
-   meio da tela em vez de no meio da frase. */
-.medindo{width:max-content!important}
+/* Medir é fotografar a peça em repouso.
+   Cortar transição e animação faz a peça saltar para onde ela ia parar:
+   sem isso, quem apertasse o G no meio de uma entrada congelaria a peça
+   no meio do voo, e ela ficaria morando lá.
+   E o texto ainda encolhe até o próprio conteúdo — sem isso o título
+   "seria" uma faixa de 1120px, que é a largura da coluna do slide e não
+   a da letra escrita, e o centro dele cairia no meio da tela em vez de
+   no meio da frase. */
+.medindo{transition:none!important;animation:none!important}
+.medindo.encolhe{width:max-content!important}
 
 /* solto = tirado do fluxo e passando a viver por x, y e escala.
    O elemento não se mexe ao ser solto: ele é congelado exatamente
@@ -409,6 +404,8 @@ body.montagem #coord.on{display:block}
 .slide .solto{
   position:absolute;margin:0!important;max-width:none;
   transform:translate(-50%,-50%) scale(var(--esc,1));
+  /* peça na mão não tem inércia: ela vai para onde o dedo está, agora */
+  transition:none;
 }
 body.montagem .slide.is-active .solto{
   cursor:move;touch-action:none;
@@ -426,17 +423,6 @@ body.montagem .slide.is-active .solto:hover{
 body.montagem .slide.is-active .solto.pego{
   outline:1.5px solid var(--ouro);background:rgba(226,162,43,.12);
 }
-/* o selo: enquanto ele estiver na tela, a aula está em montagem */
-#selo{
-  position:fixed;left:50%;top:14px;z-index:71;transform:translateX(-50%);
-  display:none;align-items:center;gap:12px;padding:8px 16px;border-radius:20px;
-  background:var(--tinta);color:#fff;pointer-events:none;
-  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  box-shadow:0 10px 26px rgba(32,28,66,.34);
-}
-body.montagem #selo{display:flex}
-#selo b{color:var(--ouro-luz);font-weight:500}
-
 /* ---------- a folha das posições (Ctrl+C) ---------- */
 #coords{
   position:fixed;z-index:91;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -698,11 +684,6 @@ body.montagem #selo{display:flex}
   </div>
 </div>
 
-<!-- o selo diz, o tempo todo, que a tela está em montagem e não em aula -->
-<div id="selo" aria-hidden="true">
-  <span>Montagem</span><b>1 dedo move · 2 dedos pinça o tamanho · Ctrl+C copia · G sai</b>
-</div>
-
 <!-- as posições e os tamanhos de tudo o que está na tela -->
 <div id="coords" hidden>
   <div class="cab">
@@ -800,22 +781,6 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-/* o contador da aula na língua do tema: o slide 2 é o He, o 3 é o Li.
-   'cat' é a família — é dela que sai a cor da ficha no canto. */
-const ELEMENTOS = [
-  {z:1, s:'H',  n:'Hidrogênio', cat:'ametais'},
-  {z:2, s:'He', n:'Hélio',      cat:'nobres'},
-  {z:3, s:'Li', n:'Lítio',      cat:'alcalinos'},
-  {z:4, s:'Be', n:'Berílio',    cat:'alcterrosos'},
-  {z:5, s:'B',  n:'Boro',       cat:'semimetais'},
-  {z:6, s:'C',  n:'Carbono',    cat:'ametais'},
-  {z:7, s:'N',  n:'Nitrogênio', cat:'ametais'},
-  {z:8, s:'O',  n:'Oxigênio',   cat:'ametais'},
-  {z:9, s:'F',  n:'Flúor',      cat:'halogenios'},
-  {z:10,s:'Ne', n:'Neônio',     cat:'nobres'},
-  {z:11,s:'Na', n:'Sódio',      cat:'alcalinos'}
-];
-
 const VERSAO    = 'v0.1 · esqueleto';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
@@ -896,12 +861,9 @@ SLIDES.forEach((sl,i) => {
       '<div class="autor">Professor: <b>Amauri Junior</b></div>' +
       '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior" draggable="false"></figure>';
   } else {
-    const e = ELEMENTOS[i] || {z:i+1, s:'—', n:'', cat:'transicao'};
     /* título curto cabe numa linha só; longo pode quebrar em duas */
     const uma = sl.title.length <= 26 ? ' uma' : '';
     el.innerHTML =
-      '<div class="ficha" style="--cor:var(--cat-'+e.cat+')">' +
-        '<span class="z">'+e.z+'</span><b>'+e.s+'</b><i>'+e.n+'</i></div>' +
       '<h2 class="title'+uma+'">'+esc(sl.title)+'</h2>' +
       '<div class="regua" aria-label="Ir para um slide"></div>' +
       '<div class="subtitle">'+esc(sl.subtitle || '')+'</div>' +
@@ -1222,9 +1184,12 @@ function reiniciaCena2(){
   r.passos.push(() => {
     const t = document.createElement('div');
     t.className = 'regra';
-    t.innerHTML = '<b>1 -</b> Os elementos serão organizados em ordem crescente de número atômico';
+    t.innerHTML = '<span class="regra-in"><b>1 -</b> Os elementos serão organizados' +
+                  ' em ordem crescente de número atômico</span>';
     cena.appendChild(t);
-    requestAnimationFrame(() => t.classList.add('entra'));
+    /* um quadro no lugar de partida e a viagem começa; a classe fica,
+       porque é ela que guarda o repouso */
+    requestAnimationFrame(() => t.classList.add('posta'));
     setTimeout(() => cena.querySelector('.fantasma').classList.add('on'), 720);
     setTimeout(() => acende(1), 1020);
   });
@@ -1629,15 +1594,15 @@ document.addEventListener('pointerup', () => {
    tela. É esse texto que vem para mim: com ele eu fixo no arquivo,
    como valores, o que foi arrumado à mão aqui.
    ============================================================ */
-const MOVEIS = '.ficha, .title, .regua, .subtitle, .body-area, .q-board,' +
+const MOVEIS = '.title, .regua, .subtitle, .body-area, .q-board, .regra,' +
                ' .capa .marca, .capa h1, .capa .risco, .capa .autor, .capa .foto, [data-mont]';
 /* quem tem caixa própria leva também a altura; texto fica com altura livre */
-const COM_ALTURA = '.body-area, .q-board, .ficha, .risco, .regua, .capa .foto';
+const COM_ALTURA = '.body-area, .q-board, .risco, .regua, .capa .foto';
 /* quem encolhe até o conteúdo antes de ser medido — o texto e a régua.
-   A área, a ficha, o risco e o quadro já têm a caixa que têm. */
-const ENCOLHE = '.title, .subtitle, .regua, .capa .marca, .capa .autor, .capa h1';
+   A área, o risco e o quadro já têm a caixa que têm. */
+const ENCOLHE = '.title, .subtitle, .regua, .regra, .capa .marca, .capa .autor, .capa h1';
 /* quem tem letra que interessa medir */
-const COM_LETRA = '.title, .subtitle, .capa .marca, .capa .autor, .capa h1';
+const COM_LETRA = '.title, .subtitle, .regra, .capa .marca, .capa .autor, .capa h1';
 
 const MEDIDAS = new WeakMap();          /* elemento -> {cx, cy, w, h, esc} */
 const coord = document.getElementById('coord');
@@ -1648,7 +1613,10 @@ function soltaSlide(sl){
   if (!alvos.length || andando) return;
   const rs = sl.getBoundingClientRect();
   /* mede todas primeiro; só depois solta */
-  alvos.forEach(el => { if (el.matches(ENCOLHE)) el.classList.add('medindo'); });
+  alvos.forEach(el => {
+    el.classList.add('medindo');
+    if (el.matches(ENCOLHE)) el.classList.add('encolhe');
+  });
   const medidas = alvos.map(el => {
     const r = el.getBoundingClientRect();
     return { el,
@@ -1657,7 +1625,7 @@ function soltaSlide(sl){
       w: r.width /fitScale,
       h: r.height/fitScale, esc:1 };
   });
-  alvos.forEach(el => el.classList.remove('medindo'));
+  alvos.forEach(el => el.classList.remove('medindo', 'encolhe'));
   medidas.forEach(m => {
     MEDIDAS.set(m.el, m);
     m.el.classList.add('solto');
@@ -1798,8 +1766,8 @@ const coordsMsg = document.getElementById('coords-msg');
 
 function nomeDe(el){
   const c = el.classList;
-  if (c.contains('ficha'))     return 'ficha';
   if (c.contains('title'))     return 'titulo';
+  if (c.contains('regra'))     return 'regra';
   if (c.contains('regua'))     return 'regua';
   if (c.contains('subtitle'))  return 'subtitulo';
   if (c.contains('body-area')) return 'area';
