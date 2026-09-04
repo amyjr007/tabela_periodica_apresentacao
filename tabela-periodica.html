@@ -410,7 +410,12 @@ body.montagem #coord.on{display:block}
 body.montagem .slide.is-active .solto{
   cursor:move;touch-action:none;
   outline:1px dashed rgba(76,63,191,.5);outline-offset:4px;border-radius:2px;
+  /* Sem isto, arrastar um texto no tablet vira seleção de texto e o
+     dedo escolhe palavras em vez de mover a peça; e a foto do autor,
+     que é uma imagem, sairia arrastada pelo próprio navegador. */
+  user-select:none;-webkit-user-select:none;
 }
+body.montagem .slide.is-active .solto img{-webkit-user-drag:none;pointer-events:none}
 body.montagem .slide.is-active .solto:hover{
   outline:1px solid var(--ouro);background:rgba(226,162,43,.07);
 }
@@ -599,7 +604,8 @@ body.montagem #selo{display:flex}
 #ajuda dl{display:grid;grid-template-columns:auto 1fr;gap:9px 18px;font-size:14px;align-items:baseline}
 #ajuda dt{font-family:var(--mono);font-size:12px;color:var(--indigo);white-space:nowrap}
 #ajuda dd{color:var(--tinta-dim)}
-#ajuda .fecha{margin-top:22px;font-size:12px;color:var(--tinta-faint);font-family:var(--mono);line-height:1.7}
+#ajuda .fecha{margin-top:18px;font-size:12.5px;color:var(--tinta-dim);line-height:1.6}
+#ajuda .fecha b{color:var(--ouro);font-weight:600}
 
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition-duration:.01ms!important}
@@ -738,8 +744,13 @@ body.montagem #selo{display:flex}
       <dt>H</dt><dd>esta ajuda</dd>
       <dt>Esc</dt><dd>fechar / esconder os controles</dd>
     </dl>
-    <p class="fecha">Na aula: o clique na tela adianta a cena do slide. Quem troca de<br>slide são as setas — as da barra, as do teclado — ou as células da<br>régua sob o título. Arrastar nunca vira a página.<br><br>
-    Na montagem: um dedo arrasta a peça, dois dedos em pinça mudam<br>o tamanho, e a roda do mouse faz o mesmo que a pinça.</p>
+    <p class="fecha">Na aula: o clique na tela adianta a cena do slide. Quem troca de slide
+    são as setas — as da barra, as do teclado — ou as células da régua sob o
+    título. Arrastar nunca vira a página.</p>
+    <p class="fecha">Para arrastar ou mudar o tamanho de qualquer coisa,
+    <b>aperte G primeiro</b> (ou o ícone de setas na barra). Aí um dedo arrasta
+    a peça, dois dedos em pinça mudam o tamanho, e a roda do mouse faz o mesmo
+    que a pinça.</p>
   </div>
 </div>
 
@@ -880,7 +891,7 @@ SLIDES.forEach((sl,i) => {
       '<h1>Tabela Periódica<br><em>Interativa e Moderna</em></h1>' +
       '<div class="risco"></div>' +
       '<div class="autor">Professor: <b>Amauri Junior</b></div>' +
-      '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior"></figure>';
+      '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior" draggable="false"></figure>';
   } else {
     const e = ELEMENTOS[i] || {z:i+1, s:'—', n:'', cat:'transicao'};
     /* título curto cabe numa linha só; longo pode quebrar em duas */
@@ -1696,21 +1707,38 @@ const pecaDe = (ev) => {
   return (el && slides[atual].contains(el)) ? el : null;
 };
 
+/* pegar a peça: o mesmo começo, venha ele do toque na montagem já
+   aberta ou do pressionar-e-segurar que a abre */
+function pegaPeca(el, id, x, y){
+  soltaSlide(slides[atual]);
+  let g = gestos.get(el);
+  if (!g){ g = {ptr:new Map()}; gestos.set(el, g); }
+  g.ptr.set(id, {x, y});
+  try { el.setPointerCapture(id); } catch(_){}
+  reancora(el, g);
+  el.classList.add('pego');
+  moveu = false;
+}
+
 stage.addEventListener('pointerdown', (ev) => {
   if (!naMontagem()) return;
   const el = pecaDe(ev);
   if (!el) return;
-  soltaSlide(slides[atual]);
-  let g = gestos.get(el);
-  if (!g){ g = {ptr:new Map()}; gestos.set(el, g); }
-  g.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  try { el.setPointerCapture(ev.pointerId); } catch(_){}
-  reancora(el, g);
-  el.classList.add('pego');
-  moveu = false;
+  pegaPeca(el, ev.pointerId, ev.clientX, ev.clientY);
   ev.preventDefault();
   ev.stopPropagation();               /* na montagem, o gesto é da peça */
 }, true);
+
+/* Quem abre a montagem é a tecla G — ou o ícone ✥ da barra, para
+   quando o tablet estiver sem teclado. É de propósito que ela não
+   se abra sozinha com um gesto: durante a aula, um toque demorado
+   em cima do título não pode virar um arrasto. */
+
+/* no tablet, o dedo parado chama o menu do navegador, e o menu
+   engoliria o arrasto justamente quando ele está começando */
+stage.addEventListener('contextmenu', (ev) => {
+  if (naMontagem()) ev.preventDefault();
+});
 
 document.addEventListener('pointermove', (ev) => {
   gestos.forEach((g, el) => {
