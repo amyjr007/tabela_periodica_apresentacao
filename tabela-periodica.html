@@ -206,10 +206,13 @@ body{
 
 /* o retrato do autor: enquadrado como as células da tabela — fundo
    branco, borda fina da cor da estrutura e o mesmo canto arredondado
-   da ficha do elemento. Fica no alto da direita, acima da tabela, que
-   é onde a capa tinha espaço e onde ele equilibra o título à esquerda. */
+   da ficha do elemento.
+   A posição é a que o professor deixou na montagem: x,y são o centro
+   dele no palco e a escala é a que ele pinçou. A caixa continua sendo
+   164x242 — 188x278 é ela já com o 1,15 por cima. */
 .capa .foto{
-  position:absolute;right:96px;top:40px;width:164px;height:242px;margin:0;
+  position:absolute;left:531px;top:415px;width:164px;height:242px;margin:0;
+  transform:translate(-50%,-50%) scale(1.15);
   padding:7px;background:#fff;border:1.5px solid var(--indigo);border-radius:6px;
   box-shadow:0 12px 28px rgba(32,28,66,.2);
 }
@@ -1804,6 +1807,7 @@ function nomeDe(el){
   if (c.contains('marca'))     return 'marca';
   if (c.contains('risco'))     return 'risco';
   if (c.contains('autor'))     return 'autor';
+  if (c.contains('foto'))      return 'foto';
   if (el.tagName === 'H1')     return 'titulo';
   return el.dataset.mont || el.tagName.toLowerCase();
 }
