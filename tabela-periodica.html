@@ -263,6 +263,18 @@ body{
    ============================================================ */
 .cena{position:absolute;inset:0;z-index:4;pointer-events:none}
 
+/* A MESA
+   Tudo o que pertence à tabela mora aqui dentro — as sombras das casas
+   e as 118 cartas. Enquanto a aula monta, ela é só um invólucro; quando
+   a tabela fica pronta, a mesa TRAVA e passa a ser uma coisa só, que se
+   amplia com dois dedos. A regra escrita fica de fora, na cena: ela
+   comenta a tabela, não faz parte dela. */
+.mesa{
+  position:absolute;inset:0;
+  transform:translate(var(--px,0px),var(--py,0px)) scale(var(--zoom,1));
+}
+.mesa.macia{transition:transform .32s cubic-bezier(.3,.82,.3,1)}
+
 /* a carta: x,y são o centro dela; quem gira e cresce é o miolo, para
    o voo (left/top) e o salto (transform) não disputarem a mesma
    propriedade e se cancelarem no meio do caminho */
@@ -1165,8 +1177,16 @@ function reiniciaCena2(){
 
   const cena = document.createElement('div');
   cena.className = 'cena';
-  cena.innerHTML = '<div class="fantasma"></div><div class="clarao"></div>';
+  cena.innerHTML = '<div class="mesa"><div class="fantasma"></div></div>' +
+                   '<div class="clarao"></div>';
   sl.appendChild(cena);
+
+  /* a mesa cresce a partir do meio da própria tabela, e não do meio do
+     palco: assim ela abre para os dois lados por igual */
+  const mesa = cena.querySelector('.mesa');
+  mesa.style.transformOrigin =
+    (TAB_ESQ  + (17*PASSO_X + CARTA_W)/2).toFixed(0) + 'px ' +
+    (TAB_TOPO + ( 6*PASSO_Y + CARTA_H)/2).toFixed(0) + 'px';
 
   /* A sombra de cada posição: o lugar vazio que espera o elemento. Uma
      casa por posição — as duas séries f dividem a sua, e desenhá-la
@@ -1204,7 +1224,7 @@ function reiniciaCena2(){
       const c = criaCarta(z), v = vagas[i];
       poe(c, v.x, v.y, Math.random()*34 - 17);
       c.style.opacity = '0';
-      cena.appendChild(c); cartas.set(z, c);
+      mesa.appendChild(c); cartas.set(z, c);
       setTimeout(() => {
         c.style.opacity = '1';
         c.classList.add('surge');
@@ -1214,7 +1234,7 @@ function reiniciaCena2(){
     ordem.slice(50).forEach(z => {
       const c = criaCarta(z), p = foraDaTela();
       poe(c, p.x, p.y, Math.random()*60 - 30);
-      cena.appendChild(c); cartas.set(z, c);
+      mesa.appendChild(c); cartas.set(z, c);
     });
 
     const cl = cena.querySelector('.clarao');
@@ -1322,6 +1342,9 @@ function reiniciaCena2(){
     });
     confetes();
     setTimeout(() => cena.querySelectorAll('.pc').forEach(c => c.classList.remove('verde')), 2400);
+    /* pronta a tabela, a mesa trava: daqui em diante ela é uma peça só,
+       e a pinça de dois dedos a amplia inteira */
+    mesa.classList.add('travada');
   }
 }
 
@@ -1772,13 +1795,15 @@ function refazLayout(){
    Com um dedo só a distância não existe, e sobra o arrasto puro. */
 const gestos = new Map();
 
-function estadoDedos(g){
-  const pts = [...g.ptr.values()];
+/* onde estão os dedos: o ponto médio deles e a distância entre os dois */
+function centroDe(mapa){
+  const pts = [...mapa.values()];
   const cx = pts.reduce((s,p) => s + p.x, 0)/pts.length;
   const cy = pts.reduce((s,p) => s + p.y, 0)/pts.length;
   const d  = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
   return {cx, cy, d};
 }
+const estadoDedos = g => centroDe(g.ptr);
 function reancora(el, g){
   const m = MEDIDAS.get(el);
   g.base = Object.assign(estadoDedos(g), {mcx:m.cx, mcy:m.cy, esc:m.esc});
@@ -1810,6 +1835,89 @@ stage.addEventListener('pointerdown', (ev) => {
   ev.preventDefault();
   ev.stopPropagation();               /* na montagem, o gesto é da peça */
 }, true);
+
+/* ------------------------------------------------------------
+   A MESA TRAVADA
+   Montada a tabela, ela deixa de ser 118 cartas e passa a ser uma
+   coisa só. Dois dedos em pinça a ampliam inteira — é assim que se
+   acha o tamanho bom das cartas para a turma do fundo enxergar. Com
+   ela ampliada, um dedo a passeia; no tamanho natural o arrasto não
+   faz nada, para um toque perdido não sair tirando a tabela do lugar.
+   Voltando ao tamanho de origem, ela volta sozinha para o centro.
+   ------------------------------------------------------------ */
+const dedosMesa = new Map();
+let baseMesa = null;
+
+function mesaTravada(){
+  if (naMontagem() || stage.classList.contains('escrevendo')) return null;
+  const sl = slides[atual];
+  return sl ? sl.querySelector('.mesa.travada') : null;
+}
+function leMesa(m){
+  return {
+    zoom: parseFloat(m.style.getPropertyValue('--zoom')) || 1,
+    px:   parseFloat(m.style.getPropertyValue('--px'))   || 0,
+    py:   parseFloat(m.style.getPropertyValue('--py'))   || 0
+  };
+}
+function poeMesa(m, zoom, px, py){
+  m.style.setProperty('--zoom', zoom.toFixed(3));
+  m.style.setProperty('--px', px.toFixed(1) + 'px');
+  m.style.setProperty('--py', py.toFixed(1) + 'px');
+}
+function ancoraMesa(m){
+  baseMesa = Object.assign(centroDe(dedosMesa), leMesa(m));
+}
+
+stage.addEventListener('pointerdown', (ev) => {
+  const m = mesaTravada();
+  if (!m || ev.target.closest('button, a, input')) return;
+  m.classList.remove('macia');            /* na mão, sem inércia */
+  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraMesa(m);
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+});
+document.addEventListener('pointermove', (ev) => {
+  if (!dedosMesa.has(ev.pointerId)) return;
+  const m = mesaTravada();
+  if (!m) return;
+  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  const agora = centroDe(dedosMesa), b = baseMesa;
+  let zoom = b.zoom;
+  if (dedosMesa.size > 1 && b.d > 12)
+    zoom = Math.max(.5, Math.min(3.5, b.zoom * (agora.d / b.d)));
+  /* passear só faz sentido quando há mais tabela do que tela */
+  const passeia = dedosMesa.size > 1 || zoom > 1.02;
+  poeMesa(m, zoom,
+    passeia ? b.px + (agora.cx - b.cx)/fitScale : b.px,
+    passeia ? b.py + (agora.cy - b.cy)/fitScale : b.py);
+});
+function largaMesa(ev){
+  if (!dedosMesa.has(ev.pointerId)) return;
+  dedosMesa.delete(ev.pointerId);
+  const m = mesaTravada();
+  if (!m) return;
+  if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
+  /* de volta ao tamanho de origem, ela mesma se recentra */
+  const e = leMesa(m);
+  if (e.zoom <= 1.02){
+    m.classList.add('macia');
+    poeMesa(m, 1, 0, 0);
+  }
+}
+document.addEventListener('pointerup', largaMesa);
+document.addEventListener('pointercancel', largaMesa);
+
+/* a roda do mouse amplia a mesa como a pinça */
+stage.addEventListener('wheel', (ev) => {
+  const m = mesaTravada();
+  if (!m) return;
+  const e = leMesa(m);
+  const zoom = Math.max(.5, Math.min(3.5, e.zoom * (1 - ev.deltaY * 0.0015)));
+  m.classList.toggle('macia', zoom <= 1.02);
+  poeMesa(m, zoom, zoom <= 1.02 ? 0 : e.px, zoom <= 1.02 ? 0 : e.py);
+  ev.preventDefault();
+}, {passive:false});
 
 /* Quem abre a montagem é a tecla G — ou o ícone ✥ da barra, para
    quando o tablet estiver sem teclado. É de propósito que ela não
@@ -1929,6 +2037,16 @@ function textoDoSlide(i){
            (o.fonte === null ? ' '.repeat(13) : ', fonte:' + pad(o.fonte,5)) +
            ', esc:' + o.esc.toFixed(2) + ' },\n';
   });
+  /* a mesa da tabela entra com o tamanho a que ela foi pinçada — é
+     esse número que fixa o tamanho das cartas no arquivo */
+  const mesa = slides[i].querySelector('.mesa');
+  if (mesa){
+    const e = leMesa(mesa);
+    out += '  { ' + "el:'mesa',".padEnd(16, ' ') +
+           ' zoom:' + e.zoom.toFixed(2) +
+           ', px:' + pad(Math.round(e.px),4) +
+           ', py:' + pad(Math.round(e.py),4) + ' },\n';
+  }
   return out;
 }
 function copiaPosicoes(todos){
