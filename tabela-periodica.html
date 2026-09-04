@@ -321,7 +321,10 @@ body{
    caminho e passaria a morar lá. */
 .regra{
   position:absolute;left:190px;top:236px;z-index:6;transform:translateY(-50%);
-  max-width:940px;font-size:25px;font-weight:400;line-height:1.28;color:var(--tinta);
+  /* numa linha só: a regra é uma frase, e uma frase quebrada em duas
+     linhas no meio da tela lê-se como duas coisas */
+  max-width:none;white-space:nowrap;
+  font-size:25px;font-weight:400;line-height:1.28;color:var(--tinta);
 }
 .regra-in{
   display:block;padding-left:18px;border-left:4px solid var(--ouro-luz);
@@ -1187,6 +1190,7 @@ function reiniciaCena2(){
     t.innerHTML = '<span class="regra-in"><b>1 -</b> Os elementos serão organizados' +
                   ' em ordem crescente de número atômico</span>';
     cena.appendChild(t);
+    aplicaLayout(1);                 /* a regra também tem lugar marcado */
     /* um quadro no lugar de partida e a viagem começa; a classe fica,
        porque é ela que guarda o repouso */
     requestAnimationFrame(() => t.classList.add('posta'));
@@ -1642,6 +1646,37 @@ function aplicaEl(el){
   if (el.matches(COM_ALTURA)) el.style.height = m.h.toFixed(1) + 'px';
   el.style.setProperty('--esc', m.esc.toFixed(3));
 }
+/* ------------------------------------------------------------
+   O QUE FOI ARRUMADO À MÃO, FIXADO NO ARQUIVO
+   Estas são as posições que o professor deixou na montagem e me
+   mandou pelo Ctrl+C. x,y são o centro da peça no palco; esc é a
+   escala que ele pinçou. O que não estiver aqui fica onde o layout
+   normal o põe.
+   ------------------------------------------------------------ */
+const LAYOUTS = {
+  /* slide 2 · Os critérios de Organização */
+  1: {
+    titulo:    {x:300, y: 23, esc:0.76},
+    regua:     {x:191, y: 62, esc:1.00},
+    subtitulo: {x:411, y: 64, esc:1.08},
+    area:      {x:642, y:423, esc:1.11},
+    regra:     {x:597, y:122, esc:1.11}
+  }
+};
+
+function aplicaLayout(i){
+  const mapa = LAYOUTS[i];
+  if (!mapa) return;
+  const sl = slides[i];
+  soltaSlide(sl);                    /* mede cada peça onde o layout a pôs */
+  sl.querySelectorAll(MOVEIS).forEach(el => {
+    const p = mapa[nomeDe(el)], m = MEDIDAS.get(el);
+    if (!p || !m) return;
+    m.cx = p.x; m.cy = p.y; m.esc = p.esc;
+    aplicaEl(el);
+  });
+}
+
 /* devolve o slide ao lugar de origem */
 function refazLayout(){
   slides[atual].querySelectorAll('.solto').forEach(el => {
@@ -1978,6 +2013,12 @@ ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
 pinta();
 seguraTela();
+
+/* As posições fixadas só valem depois que as fontes chegam: medir uma
+   frase escrita na fonte de emergência é medir outra frase, e a peça
+   ficaria com a largura errada pelo resto da aula. */
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+  .then(() => Object.keys(LAYOUTS).forEach(i => aplicaLayout(+i)));
 </script>
 </body>
 </html>
