@@ -266,22 +266,41 @@ body{
 /* a carta: x,y são o centro dela; quem gira e cresce é o miolo, para
    o voo (left/top) e o salto (transform) não disputarem a mesma
    propriedade e se cancelarem no meio do caminho */
-.pc{
-  position:absolute;width:46px;height:38px;transform:translate(-50%,-50%);
-  transition:left .6s var(--e-salto), top .6s var(--e-salto);
-}
+/* A carta não anda por transição de left/top: isso a levaria em linha
+   reta. Ela é posta no destino de uma vez e o VOO é uma animação do
+   deslocamento — um arco, calculado em voa(). */
+.pc{position:absolute;width:46px;height:38px;transform:translate(-50%,-50%)}
+/* Solto, o elemento é anônimo: papel branco e tinta cinzenta. A cor da
+   família é o que ele ganha ao achar o lugar dele — antes disso, um
+   monte colorido já contaria a história que a aula ainda vai contar. */
 .pc-in{
   position:relative;width:100%;height:100%;border-radius:4px;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  background:#fff;border:1.2px solid var(--cor,var(--indigo));
+  background:#fff;border:1.2px solid rgba(32,28,66,.3);
   box-shadow:0 2px 6px rgba(32,28,66,.16);
   font-family:var(--mono);
   transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
-  transition:transform .34s ease-out;
+  transition:transform .34s ease-out, border-color .5s ease,
+             color .5s ease, box-shadow .5s ease;
 }
-.pc-in::before{content:'';position:absolute;inset:0;background:var(--cor,var(--indigo));opacity:.13}
+.pc-in::before{content:'';position:absolute;inset:0;
+  background:var(--cor,var(--indigo));opacity:0;transition:opacity .5s ease}
 .pc i{position:absolute;top:1px;left:4px;font-style:normal;font-size:8px;color:var(--tinta-dim)}
-.pc b{position:relative;font-size:15px;font-weight:500;line-height:1;color:var(--cor,var(--indigo))}
+.pc b{position:relative;font-size:15px;font-weight:500;line-height:1;color:var(--tinta)}
+
+/* encaixado: a cor da família chega junto com o lugar */
+.pc.encaixada .pc-in{border-color:var(--cor)}
+.pc.encaixada .pc-in::before{opacity:.13}
+.pc.encaixada b{color:var(--cor)}
+
+/* a carta da frente de uma pilha — lantanídeos e actinídeos moram
+   quinze numa casa só, e quem aparece diz o intervalo que guarda */
+.pc-in.pilha{
+  box-shadow:0 2px 6px rgba(32,28,66,.16),
+             2px 2px 0 -1px #fff, 2px 2px 0 0 rgba(32,28,66,.24),
+             4px 4px 0 -2px #fff, 4px 4px 0 -1px rgba(32,28,66,.17);
+}
+.pc b.faixa{font-size:11px;letter-spacing:-.02em}
 
 /* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
 @keyframes surge{
@@ -1051,9 +1070,17 @@ const SIMBOLOS = (
 const CARTA_W = 46, CARTA_H = 38, PASSO_X = 50, PASSO_Y = 42;
 const TAB_ESQ = 640 - (18*PASSO_X)/2;    /* a tabela nasce centrada no palco */
 const TAB_TOPO = 272;
-const VAO_F = 14;                        /* o afastamento das duas linhas f */
 
-/* onde cada número atômico mora na tabela */
+/* Onde cada número atômico mora na tabela.
+   Lantanídeos e actinídeos ficam DENTRO dela, na casa do grupo 3 que é
+   deles: os quinze de cada série moram na mesma casa, empilhados, e a
+   carta que fica na frente diz o intervalo que a pilha guarda. */
+const PILHAS = {
+  71:  {de:57,  ate:71},                   /* a carta da frente dos lantanídeos */
+  103: {de:89,  ate:103}                   /* a dos actinídeos */
+};
+const naPilha = z => (z >= 57 && z <= 71) || (z >= 89 && z <= 103);
+
 function posDe(z){
   if (z === 1)  return {col:1,     row:1};
   if (z === 2)  return {col:18,    row:1};
@@ -1064,17 +1091,25 @@ function posDe(z){
   if (z <= 36)  return {col:z-18,  row:4};
   if (z <= 54)  return {col:z-36,  row:5};
   if (z <= 56)  return {col:z-54,  row:6};   /* 55,56 */
-  if (z <= 71)  return {col:z-54,  row:8};   /* lantanídeos -> 3..17 */
+  if (z <= 71)  return {col:3,     row:6};   /* os lantanídeos, todos na mesma casa */
   if (z <= 86)  return {col:z-68,  row:6};   /* 72..86 -> 4..18 */
   if (z <= 88)  return {col:z-86,  row:7};   /* 87,88 */
-  if (z <= 103) return {col:z-86,  row:9};   /* actinídeos -> 3..17 */
+  if (z <= 103) return {col:3,     row:7};   /* os actinídeos */
   return          {col:z-100, row:7};        /* 104..118 -> 4..18 */
+}
+/* a família é do elemento, não da casa: as duas séries dividem a casa
+   do grupo 3, que sozinha diria "metal de transição" */
+function familiaDoZ(z){
+  if (z >= 57 && z <= 71)  return 'lantanideos';
+  if (z >= 89 && z <= 103) return 'actinideos';
+  const p = posDe(z);
+  return familiaDe(p.col, p.row);
 }
 function alvoDe(z){
   const p = posDe(z);
   return {
     x: TAB_ESQ  + (p.col-1)*PASSO_X + CARTA_W/2,
-    y: TAB_TOPO + (p.row-1)*PASSO_Y + (p.row > 7 ? VAO_F : 0) + CARTA_H/2
+    y: TAB_TOPO + (p.row-1)*PASSO_Y + CARTA_H/2
   };
 }
 
@@ -1107,11 +1142,11 @@ function foraDaTela(){
 }
 
 function criaCarta(z){
-  const p = posDe(z);
   const c = document.createElement('div');
   c.className = 'pc';
   c.dataset.z = z;
-  c.style.setProperty('--cor', 'var(--cat-' + familiaDe(p.col, p.row) + ')');
+  /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
+  c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
   c.innerHTML = '<div class="pc-in"><i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b></div>';
   return c;
 }
@@ -1133,9 +1168,14 @@ function reiniciaCena2(){
   cena.innerHTML = '<div class="fantasma"></div><div class="clarao"></div>';
   sl.appendChild(cena);
 
-  /* a sombra de cada posição: o lugar vazio que espera o elemento */
-  let sombras = '';
+  /* A sombra de cada posição: o lugar vazio que espera o elemento. Uma
+     casa por posição — as duas séries f dividem a sua, e desenhá-la
+     quinze vezes só engrossaria o tracejado. */
+  let sombras = '', vistas = new Set();
   for (let z = 1; z <= 118; z++){
+    const p = posDe(z), chave = p.col + ':' + p.row;
+    if (vistas.has(chave)) continue;
+    vistas.add(chave);
     const a = alvoDe(z);
     sombras += '<i style="left:'+a.x+'px;top:'+a.y+'px"></i>';
   }
@@ -1224,17 +1264,53 @@ function reiniciaCena2(){
     resto.forEach((c,i) => setTimeout(() => voa(c, alvoDe(+c.dataset.z), 520), i*20));
     setTimeout(festa, resto.length*20 + 740);
   }
+  /* O VOO
+     A carta é posta no destino de uma vez e depois trazida de volta ao
+     ponto de partida por um deslocamento que se desfaz — e o caminho
+     desse desfazer é um ARCO, não uma reta: uma Bézier quadrática cujo
+     ponto de controle fica acima da linha entre os dois lugares, como
+     a de qualquer coisa que se atira. O parâmetro da curva é que vem
+     freando; o tempo entre os quadros é reto. */
   function voa(c, p, dur){
     c.classList.add('na-tabela');
-    c.style.zIndex = 30;                       /* quem voa passa por cima */
-    c.style.transitionDuration = dur + 'ms';
+    const dx = parseFloat(c.style.left) - p.x;
+    const dy = parseFloat(c.style.top)  - p.y;
     c.style.left = p.x.toFixed(1) + 'px';
     c.style.top  = p.y.toFixed(1) + 'px';
+    c.style.zIndex = 30;                       /* quem voa passa por cima */
+
+    const alto = Math.min(200, Math.hypot(dx, dy) * 0.3) + 28;  /* a altura do arco */
+    const cx = dx/2, cy = dy/2 - alto*2;       /* o controle: o dobro da subida */
+    const N = 16, quadros = [];
+    for (let i = 0; i <= N; i++){
+      const t = 1 - Math.pow(1 - i/N, 2.6), u = 1 - t;
+      const x = u*u*dx + 2*u*t*cx;
+      const y = u*u*dy + 2*u*t*cy;
+      quadros.push({ translate: x.toFixed(1)+'px '+y.toFixed(1)+'px', offset: i/N });
+    }
+    c.animate(quadros, { duration: dur, easing: 'linear' });
+
     const miolo = c.firstElementChild;
     miolo.style.setProperty('--rot', '0deg');
     miolo.style.setProperty('--sc', '1.3');    /* cresce no meio do caminho */
     setTimeout(() => miolo.style.setProperty('--sc', '1'), dur*0.45);
-    setTimeout(() => { c.style.zIndex = ''; }, dur + 60);
+    /* a cor da família chega no instante em que a carta assenta */
+    setTimeout(() => encaixa(c, +c.dataset.z), dur*0.82);
+    /* a carta de pilha guarda a altura que encaixa() lhe deu; as outras
+       voltam ao empilhamento natural */
+    setTimeout(() => { if (!naPilha(+c.dataset.z)) c.style.zIndex = ''; }, dur + 60);
+  }
+
+  /* o pouso: a cor, a altura na pilha e, se for a carta da frente de
+     uma série, o intervalo que ela passa a representar */
+  function encaixa(c, z){
+    c.classList.add('encaixada');
+    const faixa = PILHAS[z];
+    if (naPilha(z)) c.style.zIndex = faixa ? '12' : '1';
+    if (!faixa) return;
+    const miolo = c.firstElementChild;
+    miolo.classList.add('pilha');
+    miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
   }
   /* a tabela montada: uma onda verde que a atravessa na diagonal,
      e os confetes por cima */
