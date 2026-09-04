@@ -1,0 +1,6 @@
+# rascunhos e cópias de segurança
+*.bak
+*.bak?
+~$*
+Thumbs.db
+desktop.ini

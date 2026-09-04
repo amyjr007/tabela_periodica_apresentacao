@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabela Periódica Interativa e Moderna — Prof. Amauri Junior</title>
+<meta name="theme-color" content="#EDEAF2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PALETA — as 3 cores do tema
+   papel-lavanda (fundo) · índigo (estrutura) · âmbar (destaque)
+
+   O fundo é claro, mas nunca branco: um lavanda de papel, que numa
+   sala acesa não estoura no projetor e num tablet não cansa a vista.
+   O índigo é a cor da estrutura — títulos, linhas, células, símbolos.
+   O âmbar é a cor do que importa: subtítulos e o que estiver em foco.
+   ============================================================ */
+:root{
+  --fundo:      #EDEAF2;
+  --fundo-alto: #F4F2F8;
+  --fundo-2:    #E2DDEE;
+  --tinta:      #201C42;
+  --tinta-dim:  rgba(32,28,66,.62);
+  --tinta-faint:rgba(32,28,66,.28);
+  --indigo:     #4C3FBF;
+  --indigo-dim: rgba(76,63,191,.22);
+  --ouro:       #A96B10;
+  --ouro-luz:   #E2A22B;
+  --ouro-dim:   rgba(226,162,43,.26);
+
+  /* ---- as cores das famílias da tabela ----
+     A tabela é colorida, e esta é a paleta oficial dela. São tons de
+     luminosidade parecida, para nenhuma família gritar mais alto que
+     as outras sobre o papel — e duas delas são as próprias cores do
+     tema (âmbar nos alcalinoterrosos, índigo nos gases nobres), que é
+     o que costura a tabela ao resto da apresentação. */
+  --cat-alcalinos:   #D2591F;
+  --cat-alcterrosos: #C58A0E;
+  --cat-transicao:   #2E7BAE;
+  --cat-metais:      #1E8F7D;
+  --cat-semimetais:  #6F8C1E;
+  --cat-ametais:     #2E9450;
+  --cat-halogenios:  #C13757;
+  --cat-nobres:      #5B4BD6;
+  --cat-lantanideos: #8B3FBE;
+  --cat-actinideos:  #B1408C;
+
+  /* tempos e curvas das transições */
+  --t-capa: .82s;
+  --e-capa: cubic-bezier(.42,.02,.24,1);
+  --t-desl: .58s;
+  --e-desl: cubic-bezier(.32,.72,.24,1);
+  --e-salto: cubic-bezier(.3,1.05,.35,1);
+
+  --display: 'Space Grotesk', system-ui, sans-serif;
+  --body:    'IBM Plex Sans', system-ui, sans-serif;
+  --mono:    'IBM Plex Mono', ui-monospace, monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#DAD5E6}
+body{
+  font-family:var(--body);
+  color:var(--tinta);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+  touch-action:pan-y;
+}
+:focus-visible{outline:2px solid var(--ouro);outline-offset:3px;border-radius:4px}
+
+/* ---------- palco 16:9 que escala pra qualquer tela ----------
+   Tudo é desenhado num retângulo fixo de 1280x720 e a tela apenas dá
+   zoom nele. Assim a aula fica idêntica no Chromebook, no PC e no
+   projetor: nada reflui, nada muda de lugar. */
+#viewport{position:fixed;inset:0;overflow:hidden}
+#stage{
+  position:absolute;top:50%;left:50%;
+  width:1280px;height:720px;
+  transform-origin:center center;
+  transform:translate(-50%,-50%) scale(var(--fit,1));
+  background:linear-gradient(160deg,var(--fundo-alto),var(--fundo) 52%,var(--fundo-2));
+  box-shadow:0 26px 70px rgba(32,28,66,.28);
+  overflow:hidden;
+  touch-action:none;
+  /* a profundidade em que o cubo da capa gira */
+  perspective:1500px;perspective-origin:50% 50%;
+}
+
+/* a grade da tabela como papel de fundo: células, não milimetrado */
+#stage::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(76,63,191,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(76,63,191,.07) 1px,transparent 1px);
+  background-size:52px 58px;
+}
+/* duas luzes, uma fria e uma quente, para o papel não ficar chapado */
+#stage::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(115% 85% at 82% 6%,rgba(76,63,191,.09),transparent 58%),
+             radial-gradient(85% 75% at 4% 100%,rgba(226,162,43,.14),transparent 62%);
+}
+
+/* barra de progresso da apresentação */
+#progress{position:absolute;top:0;left:0;height:3px;background:var(--ouro-luz);z-index:6;
+  width:0;transition:width .45s cubic-bezier(.4,0,.2,1)}
+
+/* ---------- a tabela colorida, assinatura visual do tema ----------
+   Desenhada em JS: 18 grupos x 7 períodos + as duas linhas f, cada
+   célula pintada pela sua família. Nos slides de conteúdo ela fica
+   pequena e discreta no canto; na capa cresce e vira a ilustração. */
+#tabela{
+  position:absolute;z-index:0;pointer-events:none;
+  width:320px;right:-24px;bottom:-20px;opacity:.4;
+  transition:width .8s var(--e-capa),right .8s var(--e-capa),
+             bottom .8s var(--e-capa),opacity .8s var(--e-capa);
+}
+#tabela .cel{stroke:rgba(255,255,255,.72);stroke-width:.5}
+#stage.na-capa #tabela{width:600px;right:6px;bottom:40px;opacity:1}
+/* onde há uma tabela de verdade em cena, a do canto sai: duas tabelas
+   na mesma tela só disputariam o olho */
+#stage.sem-marca #tabela{opacity:0}
+
+/* ---------- slides ---------- */
+/* o deck é o volume 3D onde as faces do cubo giram */
+#deck{position:absolute;inset:0;z-index:1;transform-style:preserve-3d}
+.slide{
+  position:absolute;inset:0;
+  padding:56px 80px 58px;
+  display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;
+  backface-visibility:hidden;
+}
+.slide.is-active {opacity:1;visibility:visible;z-index:3}
+.slide.is-leaving{opacity:1;visibility:visible;z-index:2}
+
+/* ===== capa <-> slide 2: o cubo girando =====
+   As duas faces giram juntas em torno do mesmo eixo, cada uma
+   empurrada meia volta para longe do observador e trazida de volta —
+   é isso que faz o vinco do canto do cubo aparecer no meio do giro.
+   O véu escurece a face que está virando de lado: sem ele o cubo
+   pareceria feito de papel, e não de volume. */
+.slide::after{content:'';position:absolute;inset:0;z-index:9;pointer-events:none;
+  background:#0B0D20;opacity:0}
+
+.fx-cube-in-next {animation:cubeInNext  var(--t-capa) var(--e-capa) both}
+.fx-cube-out-next{animation:cubeOutNext var(--t-capa) var(--e-capa) both}
+.fx-cube-in-prev {animation:cubeInPrev  var(--t-capa) var(--e-capa) both}
+.fx-cube-out-prev{animation:cubeOutPrev var(--t-capa) var(--e-capa) both}
+.fx-cube-in-next::after,.fx-cube-in-prev::after {animation:faceClara var(--t-capa) var(--e-capa) both}
+.fx-cube-out-next::after,.fx-cube-out-prev::after{animation:faceEscura var(--t-capa) var(--e-capa) both}
+
+@keyframes cubeInNext{
+  from{transform:translateZ(-640px) rotateY(90deg)  translateZ(640px)}
+  to  {transform:translateZ(0)      rotateY(0deg)   translateZ(0)}
+}
+@keyframes cubeOutNext{
+  from{transform:translateZ(0)      rotateY(0deg)   translateZ(0)}
+  to  {transform:translateZ(-640px) rotateY(-90deg) translateZ(640px)}
+}
+@keyframes cubeInPrev{
+  from{transform:translateZ(-640px) rotateY(-90deg) translateZ(640px)}
+  to  {transform:translateZ(0)      rotateY(0deg)   translateZ(0)}
+}
+@keyframes cubeOutPrev{
+  from{transform:translateZ(0)      rotateY(0deg)   translateZ(0)}
+  to  {transform:translateZ(-640px) rotateY(90deg)  translateZ(640px)}
+}
+@keyframes faceClara {from{opacity:.5} to{opacity:0}}
+@keyframes faceEscura{from{opacity:0}  to{opacity:.5}}
+
+/* ===== do slide 2 em diante: empurrão lateral =====
+   Os dois andam o mesmo tanto e ficam colados, sem vão. Avançando, o
+   novo entra pela direita e empurra o antigo para fora pela esquerda. */
+.fx-desl-in-next {animation:deslEntraNext var(--t-desl) var(--e-desl) both}
+.fx-desl-out-next{animation:deslSaiNext   var(--t-desl) var(--e-desl) both}
+.fx-desl-in-prev {animation:deslEntraPrev var(--t-desl) var(--e-desl) both}
+.fx-desl-out-prev{animation:deslSaiPrev   var(--t-desl) var(--e-desl) both}
+@keyframes deslEntraNext{from{transform:translateX(100%)}  to{transform:translateX(0)}}
+@keyframes deslSaiNext  {from{transform:translateX(0)}     to{transform:translateX(-100%)}}
+@keyframes deslEntraPrev{from{transform:translateX(-100%)} to{transform:translateX(0)}}
+@keyframes deslSaiPrev  {from{transform:translateX(0)}     to{transform:translateX(100%)}}
+
+/* ---------- CAPA ---------- */
+.slide.capa{justify-content:center;padding-left:88px}
+.capa .marca{
+  font-family:var(--mono);font-size:12px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--indigo);margin-bottom:24px;
+}
+.capa h1{
+  font-family:var(--display);font-weight:700;font-size:66px;line-height:1.02;
+  letter-spacing:-.028em;max-width:11ch;color:var(--tinta);
+}
+.capa h1 em{font-style:normal;color:var(--ouro)}
+.capa .risco{
+  width:200px;height:4px;margin:28px 0 22px;border-radius:2px;
+  background:linear-gradient(90deg,var(--ouro-luz),var(--indigo));
+}
+.capa .autor{font-size:23px;font-weight:300;color:var(--tinta-dim);letter-spacing:.01em}
+.capa .autor b{font-weight:500;color:var(--tinta)}
+
+/* o retrato do autor: enquadrado como as células da tabela — fundo
+   branco, borda fina da cor da estrutura e o mesmo canto arredondado
+   da ficha do elemento. Fica no alto da direita, acima da tabela, que
+   é onde a capa tinha espaço e onde ele equilibra o título à esquerda. */
+.capa .foto{
+  position:absolute;right:96px;top:40px;width:164px;height:242px;margin:0;
+  padding:7px;background:#fff;border:1.5px solid var(--indigo);border-radius:6px;
+  box-shadow:0 12px 28px rgba(32,28,66,.2);
+}
+.capa .foto img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px}
+
+/* ---------- ficha do elemento = número do slide ----------
+   O slide 3 é o Li, o 4 é o Be, e por aí vai: o contador da aula
+   escrito na língua do tema, e pintado pela família do elemento. */
+.ficha{
+  position:absolute;top:40px;right:60px;width:92px;height:92px;
+  border:1.5px solid var(--cor,var(--indigo));border-radius:5px;
+  background:#fff;box-shadow:0 4px 14px rgba(32,28,66,.1);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  font-family:var(--mono);overflow:hidden;
+}
+.ficha::before{content:'';position:absolute;inset:0;background:var(--cor,var(--indigo));opacity:.1}
+.ficha > *{position:relative}
+.ficha b{font-size:32px;font-weight:500;color:var(--cor,var(--indigo));line-height:1;letter-spacing:.5px}
+.ficha .z{position:absolute;top:7px;left:9px;font-size:12px;color:var(--tinta-dim)}
+.ficha i{font-style:normal;font-size:8.5px;letter-spacing:.1em;color:var(--tinta-dim);
+  margin-top:7px;text-transform:uppercase;max-width:86px;text-align:center}
+
+/* ---------- cabeçalho: título + régua + subtítulo ---------- */
+.title{
+  font-family:var(--display);font-weight:700;font-size:46px;line-height:1.05;
+  letter-spacing:-.02em;max-width:20ch;color:var(--tinta);
+}
+.title.uma{max-width:none;white-space:nowrap}
+
+/* a assinatura do tema: a régua dos períodos.
+   Uma célula por slide; a acesa é onde a aula está. Dá pra tocar
+   nelas e pular direto — no tablet é o atalho mais rápido. */
+.regua{display:flex;gap:5px;margin:18px 0 13px;flex:none}
+.regua button{
+  width:15px;height:15px;padding:0;cursor:pointer;border-radius:2px;
+  background:transparent;border:1px solid rgba(76,63,191,.32);
+  transition:background .25s,border-color .25s,transform .25s;
+}
+.regua button:hover{border-color:var(--indigo);transform:translateY(-2px)}
+.regua button.feito{background:rgba(76,63,191,.42);border-color:transparent}
+.regua button.aqui{
+  background:var(--ouro-luz);border-color:var(--ouro);
+  box-shadow:0 0 0 3px rgba(226,162,43,.24);
+}
+
+.subtitle{font-size:26px;font-weight:300;color:var(--ouro);letter-spacing:.005em;min-height:34px}
+
+/* área de conteúdo — palco livre para o que formos montando */
+.body-area{flex:1;position:relative;margin-top:24px;min-height:0}
+
+/* enquanto o slide está vazio, a área se anuncia discretamente.
+   Sai daqui assim que o conteúdo dele chegar. */
+.vazio{
+  position:absolute;inset:0;border:1px dashed rgba(32,28,66,.16);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(32,28,66,.22);pointer-events:none;
+}
+
+/* ============================================================
+   A CENA DOS 118 ELEMENTOS  (slide 2)
+   Uma camada que cobre o slide inteiro, para as cartas poderem
+   estar fora da tela e entrarem voando. Ela não pega o dedo: só a
+   carta que estiver acesa pega, e é por isso que um toque em cima
+   dela não passa adiante o passo da aula.
+   ============================================================ */
+.cena{position:absolute;inset:0;z-index:4;pointer-events:none}
+
+/* a carta: x,y são o centro dela; quem gira e cresce é o miolo, para
+   o voo (left/top) e o salto (transform) não disputarem a mesma
+   propriedade e se cancelarem no meio do caminho */
+.pc{
+  position:absolute;width:46px;height:38px;transform:translate(-50%,-50%);
+  transition:left .6s var(--e-salto), top .6s var(--e-salto);
+}
+.pc-in{
+  position:relative;width:100%;height:100%;border-radius:4px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;border:1.2px solid var(--cor,var(--indigo));
+  box-shadow:0 2px 6px rgba(32,28,66,.16);
+  font-family:var(--mono);
+  transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
+  transition:transform .34s ease-out;
+}
+.pc-in::before{content:'';position:absolute;inset:0;background:var(--cor,var(--indigo));opacity:.13}
+.pc i{position:absolute;top:1px;left:4px;font-style:normal;font-size:8px;color:var(--tinta-dim)}
+.pc b{position:relative;font-size:15px;font-weight:500;line-height:1;color:var(--cor,var(--indigo))}
+
+/* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
+@keyframes surge{
+  0%  {opacity:0;transform:rotate(var(--rot,0deg)) scale(.12)}
+  62% {opacity:1;transform:rotate(var(--rot,0deg)) scale(1.24)}
+  100%{opacity:1;transform:rotate(var(--rot,0deg)) scale(1)}
+}
+.pc.surge .pc-in{animation:surge .66s cubic-bezier(.2,.9,.3,1) both}
+
+/* o chamado: vermelho, devagar, discreto — é um convite, não um alarme */
+@keyframes chama{
+  0%,100%{box-shadow:0 0 0 1.5px rgba(206,40,62,.5),  0 0 10px rgba(206,40,62,.22)}
+  50%    {box-shadow:0 0 0 2.5px rgba(206,40,62,.95), 0 0 22px rgba(206,40,62,.5)}
+}
+.pc.chama{pointer-events:auto;cursor:pointer;z-index:25}
+.pc.chama .pc-in{animation:chama 1.5s ease-in-out infinite}
+
+/* a comemoração: uma onda verde que atravessa a tabela montada */
+@keyframes verde{
+  0%  {box-shadow:0 2px 6px rgba(32,28,66,.16)}
+  30% {box-shadow:0 0 0 2.5px rgba(26,150,105,.95), 0 0 20px rgba(26,150,105,.55)}
+  100%{box-shadow:0 2px 6px rgba(32,28,66,.16)}
+}
+.pc.verde .pc-in{animation:verde 1s var(--onda,0ms) ease-out}
+
+/* a sombra da tabela: onde cada elemento vai morar */
+.fantasma{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity .9s ease}
+.fantasma.on{opacity:1}
+.fantasma i{position:absolute;display:block;width:46px;height:38px;border-radius:4px;
+  border:1px dashed rgba(32,28,66,.16);transform:translate(-50%,-50%)}
+
+/* a regra escrita: vem de longe, pela esquerda, e freia ao chegar */
+.regra{
+  position:absolute;left:190px;top:236px;z-index:6;
+  max-width:940px;padding-left:18px;border-left:4px solid var(--ouro-luz);
+  font-size:25px;font-weight:400;line-height:1.28;color:var(--tinta);opacity:0;
+}
+.regra b{color:var(--ouro);font-weight:600}
+.regra.entra{animation:regraEntra .9s cubic-bezier(.2,.86,.26,1) both}
+@keyframes regraEntra{
+  0%  {opacity:0;transform:translate(-820px,-50%);filter:blur(4px)}
+  60% {opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:translate(0,-50%);filter:blur(0)}
+}
+
+/* o clarão que abre a cena */
+.clarao{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;
+  background:radial-gradient(62% 62% at 50% 52%,rgba(255,255,255,.92),rgba(226,162,43,.28) 44%,transparent 72%)}
+.clarao.on{animation:clarao .72s ease-out both}
+@keyframes clarao{0%{opacity:0}16%{opacity:.9}100%{opacity:0}}
+
+/* os confetes moram numa folha própria, acima de tudo do palco */
+#festa{position:absolute;inset:0;z-index:11;pointer-events:none;width:1280px;height:720px}
+
+/* ---------- a folha de tinta: o que a caneta escreve ---------- */
+#tinta{position:absolute;inset:0;z-index:9;pointer-events:none;width:1280px;height:720px}
+#stage.escrevendo #tinta{pointer-events:auto;cursor:var(--cur-tinta,crosshair)}
+
+/* ---------- o quadro branco de escola ----------
+   Ele é do slide em que nasceu: abrir no 4, ir ao 9 e voltar devolve
+   o quadro onde estava. Arrasta-se pelo próprio corpo, e escreve-se
+   nele com a caneta — a tinta passa por cima. */
+.q-board{
+  position:absolute;z-index:8;
+  width:calc(540px * var(--k,1));height:calc(352px * var(--k,1));
+  transform:translate(-50%,-50%) scale(.86);
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease,transform .35s cubic-bezier(.2,.85,.3,1);
+  filter:drop-shadow(0 14px 30px rgba(32,28,66,.26));
+}
+.q-board.on{opacity:1;pointer-events:auto;cursor:grab;touch-action:none;
+  transform:translate(-50%,-50%) scale(1);user-select:none;-webkit-user-select:none}
+.q-board.on.levando{cursor:grabbing}
+#stage.escrevendo .q-board{pointer-events:none}   /* com a caneta armada, escreve-se nele */
+.q-board svg{width:100%;height:100%;display:block}
+
+/* carimbo de versão, discreto no canto */
+#ver{position:fixed;left:14px;bottom:11px;z-index:60;pointer-events:none;user-select:none;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:rgba(32,28,66,.26)}
+
+/* ---------- modo montagem (tecla G) ----------
+   Ferramenta de montagem, não de aula: grade de 40px, leitura da
+   coordenada no clique e, sobretudo, tudo o que está no slide passa
+   a se pegar com a mão — um dedo arrasta, dois mudam o tamanho, a
+   roda do mouse também. O Ctrl+C copia as posições e os tamanhos de
+   tudo o que está na tela. */
+#guias{position:absolute;inset:0;z-index:7;pointer-events:none;display:none;
+  background-image:
+    linear-gradient(rgba(76,63,191,.2) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(76,63,191,.2) 1px,transparent 1px);
+  background-size:40px 40px}
+body.montagem #guias{display:block}
+#coord{position:absolute;z-index:10;display:none;transform:translate(-50%,-140%);
+  font-family:var(--mono);font-size:12px;padding:4px 8px;white-space:nowrap;border-radius:3px;
+  background:var(--tinta);color:#fff}
+body.montagem #coord.on{display:block}
+
+/* Antes de medir, o texto encolhe até o próprio conteúdo. Sem isto o
+   título "seria" uma faixa de 1120px de largura — que é o tamanho da
+   coluna do slide, não o da letra escrita —, e o centro dele cairia no
+   meio da tela em vez de no meio da frase. */
+.medindo{width:max-content!important}
+
+/* solto = tirado do fluxo e passando a viver por x, y e escala.
+   O elemento não se mexe ao ser solto: ele é congelado exatamente
+   onde o layout o tinha posto. */
+.slide .solto{
+  position:absolute;margin:0!important;max-width:none;
+  transform:translate(-50%,-50%) scale(var(--esc,1));
+}
+body.montagem .slide.is-active .solto{
+  cursor:move;touch-action:none;
+  outline:1px dashed rgba(76,63,191,.5);outline-offset:4px;border-radius:2px;
+}
+body.montagem .slide.is-active .solto:hover{
+  outline:1px solid var(--ouro);background:rgba(226,162,43,.07);
+}
+/* o que está sendo mexido agora */
+body.montagem .slide.is-active .solto.pego{
+  outline:1.5px solid var(--ouro);background:rgba(226,162,43,.12);
+}
+/* o selo: enquanto ele estiver na tela, a aula está em montagem */
+#selo{
+  position:fixed;left:50%;top:14px;z-index:71;transform:translateX(-50%);
+  display:none;align-items:center;gap:12px;padding:8px 16px;border-radius:20px;
+  background:var(--tinta);color:#fff;pointer-events:none;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  box-shadow:0 10px 26px rgba(32,28,66,.34);
+}
+body.montagem #selo{display:flex}
+#selo b{color:var(--ouro-luz);font-weight:500}
+
+/* ---------- a folha das posições (Ctrl+C) ---------- */
+#coords{
+  position:fixed;z-index:91;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(680px,92vw);height:min(560px,84vh);display:flex;flex-direction:column;
+  background:#FFFDF7;border:1px solid var(--indigo-dim);border-radius:6px;
+  box-shadow:0 30px 70px rgba(32,28,66,.32);overflow:hidden;
+}
+#coords[hidden]{display:none}
+#coords .cab{
+  flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  padding:15px 14px 13px 19px;border-bottom:1px solid var(--indigo-dim);
+  background:rgba(76,63,191,.07);
+}
+#coords h2{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--indigo);font-weight:400}
+#coords .de{margin-top:5px;font-size:13px;font-weight:300;color:var(--tinta-dim)}
+#coords .x{
+  flex:none;width:30px;height:30px;padding:0;display:grid;place-items:center;
+  border:1px solid var(--indigo-dim);border-radius:50%;
+  background:transparent;color:var(--tinta-dim);cursor:pointer;
+}
+#coords .x:hover{border-color:var(--indigo);color:var(--indigo)}
+#coords textarea{
+  flex:1;min-height:0;resize:none;width:100%;background:transparent;color:var(--tinta);
+  border:none;padding:14px 19px;font-family:var(--mono);font-size:12.5px;line-height:1.62;
+  white-space:pre;
+}
+#coords textarea:focus{outline:none}
+#coords .rod{
+  flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 19px 12px;border-top:1px solid var(--indigo-dim);
+}
+#coords .msg{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ouro)}
+#coords .hint2{font-size:11.5px;font-weight:300;color:var(--tinta-dim)}
+
+/* ---------- o laser ---------- */
+#laser{
+  position:fixed;z-index:95;width:22px;height:22px;margin:-11px 0 0 -11px;
+  border-radius:50%;pointer-events:none;opacity:0;transition:opacity .25s;
+  background:radial-gradient(circle,rgba(255,60,40,.95) 0 22%,rgba(255,60,40,.42) 45%,rgba(255,60,40,0) 72%);
+  box-shadow:0 0 18px rgba(255,60,40,.6);
+}
+#laser.on{opacity:1}
+
+/* ---------- barra de controles ----------
+   A mesma barra do app de ligações químicas: durante a aula a tela é
+   só o slide, e os controles moram embaixo da borda de baixo. */
+#bar{
+  position:fixed;left:50%;bottom:18px;z-index:70;
+  transform:translateX(-50%);
+  display:flex;align-items:center;gap:5px;padding:7px 9px;
+  background:rgba(255,255,255,.92);border:1px solid var(--indigo-dim);
+  border-radius:14px;backdrop-filter:blur(9px);
+  box-shadow:0 12px 34px rgba(32,28,66,.2);
+  transition:transform .42s var(--e-desl),opacity .3s;
+}
+#bar.hidden{transform:translateX(-50%) translateY(140%);opacity:0;pointer-events:none}
+#bar .btn{
+  position:relative;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;
+  background:transparent;border:0;border-radius:9px;color:var(--tinta-dim);
+  transition:background .2s,color .2s;
+}
+#bar .btn:hover{background:rgba(76,63,191,.12);color:var(--indigo)}
+#bar .btn.on{background:rgba(226,162,43,.26);color:var(--ouro)}
+#bar .btn[hidden]{display:none}
+#bar .sep{width:1px;height:22px;background:var(--indigo-dim);margin:0 3px}
+#counter{font-family:var(--mono);font-size:13px;color:var(--tinta-dim);
+  min-width:58px;text-align:center;user-select:none}
+#counter b{color:var(--tinta);font-weight:500}
+/* a bolinha âmbar: este slide tem anotação guardada */
+#notes-btn.tem::after{content:'';position:absolute;top:8px;right:8px;
+  width:7px;height:7px;border-radius:50%;background:var(--ouro-luz)}
+
+/* a alça que chama a barra: a única coisa da interface que fica em
+   cena durante a aula */
+#puxador{
+  position:fixed;left:50%;bottom:0;z-index:69;transform:translateX(-50%);
+  width:82px;height:18px;cursor:pointer;border:0;
+  background:transparent;display:grid;place-items:center;
+  transition:transform .35s var(--e-desl),opacity .3s;
+}
+#puxador::before{content:'';width:46px;height:4px;border-radius:3px;
+  background:rgba(76,63,191,.4);transition:background .25s,width .25s}
+#puxador:hover::before{background:var(--ouro-luz);width:60px}
+#puxador.fora{transform:translateX(-50%) translateY(120%);opacity:0;pointer-events:none}
+
+/* ---------- visão geral (tecla O) ----------
+   As miniaturas são os próprios slides em escala, com tudo o que
+   estiver montado neles à mostra. */
+#overview{
+  position:fixed;inset:0;z-index:80;background:rgba(237,234,242,.97);
+  backdrop-filter:blur(8px);padding:44px 52px;overflow-y:auto;
+}
+#overview[hidden]{display:none}
+#overview h2{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--indigo);margin-bottom:24px;font-weight:400}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:18px}
+.card{
+  position:relative;aspect-ratio:16/9;padding:0;cursor:pointer;text-align:left;display:block;
+  background:var(--fundo);border:1px solid var(--indigo-dim);border-radius:8px;
+  color:inherit;font:inherit;overflow:hidden;
+  box-shadow:0 4px 14px rgba(32,28,66,.08);
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.card:hover{border-color:var(--indigo);transform:translateY(-3px);box-shadow:0 10px 24px rgba(32,28,66,.16)}
+.card.aqui{border-color:var(--ouro);box-shadow:0 0 0 2px var(--ouro-dim),0 8px 20px rgba(32,28,66,.14)}
+.mini{position:absolute;inset:0;overflow:hidden}
+.mini-palco{
+  position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:0 0;
+  background:linear-gradient(160deg,var(--fundo-alto),var(--fundo) 52%,var(--fundo-2));
+}
+.mini-palco .slide{opacity:1;visibility:visible}
+.mini-palco *{animation:none!important;transition:none!important}
+.card .rot{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;padding:20px 12px 10px;
+  background:linear-gradient(0deg,rgba(255,255,255,.97) 46%,rgba(255,255,255,0));
+}
+.card .n{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--tinta-faint)}
+.card .t{font-family:var(--display);font-weight:600;font-size:13.5px;line-height:1.2;margin-top:2px}
+
+/* ---------- notas de aula ---------- */
+#notes{
+  position:fixed;z-index:90;left:var(--nx,50%);top:var(--ny,50%);
+  transform:translate(-50%,-50%);
+  width:min(440px,44vw);height:min(586px,84vh);
+  display:flex;flex-direction:column;
+  background:#FFFDF7;border:1px solid var(--indigo-dim);border-radius:6px;
+  box-shadow:0 30px 70px rgba(32,28,66,.3);overflow:hidden;
+}
+#notes[hidden]{display:none}
+#notes .cab{
+  flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  padding:15px 14px 13px 19px;border-bottom:1px solid var(--indigo-dim);
+  background:rgba(76,63,191,.07);cursor:move;touch-action:none;
+  user-select:none;-webkit-user-select:none;
+}
+#notes.levando .cab{cursor:grabbing;background:rgba(76,63,191,.12)}
+#notes h2{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--indigo);font-weight:400}
+#notes .de{margin-top:5px;font-size:13px;font-weight:300;line-height:1.25;
+  color:var(--tinta-dim);max-width:30ch}
+#notes .x{
+  flex:none;width:30px;height:30px;padding:0;display:grid;place-items:center;
+  border:1px solid var(--indigo-dim);border-radius:50%;
+  background:transparent;color:var(--tinta-dim);cursor:pointer;transition:border-color .2s,color .2s;
+}
+#notes .x:hover{border-color:var(--indigo);color:var(--indigo)}
+#notes textarea{
+  flex:1;min-height:0;resize:none;width:100%;background:transparent;color:var(--tinta);
+  border:none;padding:16px 19px;
+  font-family:var(--body);font-size:16px;font-weight:300;line-height:1.72;
+}
+#notes textarea:focus{outline:none}
+#notes textarea::placeholder{color:var(--tinta-faint)}
+#notes .rod{
+  flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 19px 12px;border-top:1px solid var(--indigo-dim);
+}
+#notes .hint2{font-size:11.5px;font-weight:300;color:var(--tinta-dim)}
+
+/* ---------- ajuda (tecla H) ---------- */
+#ajuda{position:fixed;inset:0;z-index:92;background:rgba(237,234,242,.95);
+  display:grid;place-items:center;padding:40px}
+#ajuda[hidden]{display:none}
+#ajuda .cx{background:#fff;border:1px solid var(--indigo-dim);border-radius:12px;
+  padding:30px 34px;max-width:540px;width:100%;box-shadow:0 24px 60px rgba(32,28,66,.24)}
+#ajuda h2{font-family:var(--display);font-size:19px;margin-bottom:18px;color:var(--indigo)}
+#ajuda dl{display:grid;grid-template-columns:auto 1fr;gap:9px 18px;font-size:14px;align-items:baseline}
+#ajuda dt{font-family:var(--mono);font-size:12px;color:var(--indigo);white-space:nowrap}
+#ajuda dd{color:var(--tinta-dim)}
+#ajuda .fecha{margin-top:22px;font-size:12px;color:var(--tinta-faint);font-family:var(--mono);line-height:1.7}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+  .slide.is-leaving{opacity:0;visibility:hidden}
+}
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="stage">
+    <div id="progress"></div>
+    <svg id="tabela" viewBox="0 0 186 116" aria-hidden="true"></svg>
+    <div id="deck"></div>
+    <div id="guias" aria-hidden="true"></div>
+    <div id="coord" aria-hidden="true"></div>
+    <canvas id="tinta" width="1280" height="720" aria-hidden="true"></canvas>
+    <canvas id="festa" width="1280" height="720" aria-hidden="true"></canvas>
+  </div>
+</div>
+
+<div id="ver" aria-hidden="true"></div>
+<i id="laser" aria-hidden="true"></i>
+
+<nav id="bar" class="hidden" aria-label="Controles da apresentação">
+  <button class="btn" id="prev" title="Slide anterior (←)" aria-label="Slide anterior">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div id="counter"><b>1</b> / 11</div>
+  <button class="btn" id="next" title="Próximo slide (→)" aria-label="Próximo slide">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="btn" id="over" title="Ver todos os slides (O)" aria-label="Ver todos os slides">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  </button>
+  <button class="btn" id="notes-btn" title="Notas de aula deste slide (A)" aria-label="Notas de aula deste slide">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 015.5 3H14l5 5v12.5a1.5 1.5 0 01-1.5 1.5h-12A1.5 1.5 0 014 20.5z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 17h4.5"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="btn" id="pen-btn" title="Escrever na tela (P)" aria-label="Escrever na tela">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4z"/><path d="M14 6l4 4"/></svg>
+  </button>
+  <button class="btn" id="pen-cor" title="Trocar a cor da caneta" aria-label="Trocar a cor da caneta" hidden>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9.5"/></svg>
+  </button>
+  <button class="btn" id="pen-limpa" title="Apagar tudo deste slide" aria-label="Apagar o que foi escrito neste slide" hidden>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 20H21"/><path d="M15.5 4.5l4 4L10 18H6v-4z"/></svg>
+  </button>
+  <button class="btn" id="laser-btn" title="Apontar com o laser (L)" aria-label="Apontar com o laser">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M5.4 5.4l2.3 2.3M16.3 16.3l2.3 2.3M18.6 5.4l-2.3 2.3M7.7 16.3l-2.3 2.3"/></svg>
+  </button>
+  <button class="btn" id="quadro-btn" title="Abrir o quadro (Q)" aria-label="Abrir o quadro">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12.5" rx="1.5"/><path d="M6.5 19.5h11"/><path d="M7 8.5h7M7 12h4.5"/></svg>
+  </button>
+  <div class="sep"></div>
+  <!-- a montagem: fora da aula, é aqui que a cena se arruma -->
+  <button class="btn" id="mont-btn" title="Modo montagem: arrastar e redimensionar (G)" aria-label="Modo montagem">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5v19M2.5 12h19"/><path d="M12 2.5l-2.6 2.8M12 2.5l2.6 2.8M12 21.5l-2.6-2.8M12 21.5l2.6-2.8"/><path d="M2.5 12l2.8-2.6M2.5 12l2.8 2.6M21.5 12l-2.8-2.6M21.5 12l-2.8 2.6"/></svg>
+  </button>
+  <button class="btn" id="copia-btn" title="Copiar posições e tamanhos (Ctrl+C)" aria-label="Copiar posições e tamanhos">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5.5A2.5 2.5 0 0012.5 3H5.5A2.5 2.5 0 003 5.5v7A2.5 2.5 0 005.5 15"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="btn" id="bar-close" title="Esconder os controles (Esc)" aria-label="Esconder os controles">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</nav>
+
+<button id="puxador" aria-label="Mostrar os controles" aria-expanded="false"></button>
+
+<!-- as notas ficam no navegador desta máquina; não vão para o arquivo -->
+<div id="notes" hidden>
+  <div class="cab" id="notes-cab">
+    <div>
+      <h2>Notas de aula</h2>
+      <div class="de" id="notes-slide"></div>
+    </div>
+    <button class="x" id="notes-close" type="button" title="Salvar e fechar (Esc)" aria-label="Salvar e fechar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <textarea id="notes-txt" spellcheck="true"
+            placeholder="O que dizer neste slide, o que perguntar à turma, o que costuma dar errado…"></textarea>
+  <div class="rod">
+    <span class="hint2">Salva ao fechar · guardado neste navegador</span>
+  </div>
+</div>
+
+<!-- o selo diz, o tempo todo, que a tela está em montagem e não em aula -->
+<div id="selo" aria-hidden="true">
+  <span>Montagem</span><b>1 dedo move · 2 dedos pinça o tamanho · Ctrl+C copia · G sai</b>
+</div>
+
+<!-- as posições e os tamanhos de tudo o que está na tela -->
+<div id="coords" hidden>
+  <div class="cab">
+    <div>
+      <h2>Posições e tamanhos</h2>
+      <div class="de" id="coords-de"></div>
+    </div>
+    <button class="x" id="coords-close" type="button" title="Fechar (Esc)" aria-label="Fechar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <textarea id="coords-txt" spellcheck="false" readonly></textarea>
+  <div class="rod">
+    <span class="hint2">Ctrl+Shift+C copia a apresentação inteira · Esc fecha</span>
+    <span class="msg" id="coords-msg"></span>
+  </div>
+</div>
+
+<div id="overview" hidden>
+  <h2>Todos os slides</h2>
+  <div id="grid"></div>
+</div>
+
+<div id="ajuda" hidden>
+  <div class="cx">
+    <h2>Atalhos</h2>
+    <dl>
+      <dt>← →</dt><dd>slide anterior / próximo</dd>
+      <dt>Espaço</dt><dd>avançar</dd>
+      <dt>Home / End</dt><dd>primeiro / último slide</dd>
+      <dt>1…9</dt><dd>ir direto ao slide</dd>
+      <dt>O</dt><dd>ver todos os slides</dd>
+      <dt>A</dt><dd>notas de aula deste slide</dd>
+      <dt>P</dt><dd>caneta (escrever na tela)</dd>
+      <dt>L</dt><dd>laser</dd>
+      <dt>Q</dt><dd>quadro branco</dd>
+      <dt>F</dt><dd>tela cheia</dd>
+      <dt>G</dt><dd>modo montagem: arrastar e redimensionar tudo</dd>
+      <dt>Ctrl+C</dt><dd>copiar posições e tamanhos deste slide</dd>
+      <dt>Ctrl+Shift+C</dt><dd>copiar os de todos os slides</dd>
+      <dt>R</dt><dd>na montagem: devolver o slide ao lugar de origem</dd>
+      <dt>H</dt><dd>esta ajuda</dd>
+      <dt>Esc</dt><dd>fechar / esconder os controles</dd>
+    </dl>
+    <p class="fecha">Na montagem: um dedo arrasta a peça, dois dedos em pinça mudam<br>o tamanho, e a roda do mouse faz o mesmo que a pinça.<br>
+    Na aula: deslize para os lados para trocar de slide, ou toque<br>nas células da régua sob o título.</p>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   OS SLIDES
+   Por enquanto só o cabeçalho de cada um. O conteúdo entra depois,
+   dentro de .body-area — e é por isso que ela é a única coisa que
+   cada slide tem sobrando.
+   ============================================================ */
+const SLIDES = [
+  { kind:'capa',
+    title:'Tabela Periódica Interativa e Moderna',
+    autor:'Professor: Amauri Junior' },
+
+  { title:'Os critérios de Organização',
+    subtitle:'A lei periódica' },
+
+  { title:'As Coordenadas Periódicas',
+    subtitle:'O grupo e a família' },
+
+  { title:'Os Tipos de Elementos',
+    subtitle:'Metais, Ametais e Gases Nobres' },
+
+  { title:'As principais famílias',
+    subtitle:'Alcalinos, Alcalinos-terrosos, Calcogênios e Halogênios' },
+
+  { title:'Os Grupos A e B',
+    subtitle:'Os elementos principais' },
+
+  { title:'Os Lantanídeos e os Actinídeos',
+    subtitle:'' },
+
+  { title:'A Natureza dos Elementos',
+    subtitle:'' },
+
+  { title:'A Tabela e os Elétrons de Valência',
+    subtitle:'' },
+
+  { title:'A Tabela e o Diagrama de Pauling',
+    subtitle:'' },
+
+  { title:'A Tabela e a Distribuição Eletrônica',
+    subtitle:'' }
+];
+
+/* o contador da aula na língua do tema: o slide 2 é o He, o 3 é o Li.
+   'cat' é a família — é dela que sai a cor da ficha no canto. */
+const ELEMENTOS = [
+  {z:1, s:'H',  n:'Hidrogênio', cat:'ametais'},
+  {z:2, s:'He', n:'Hélio',      cat:'nobres'},
+  {z:3, s:'Li', n:'Lítio',      cat:'alcalinos'},
+  {z:4, s:'Be', n:'Berílio',    cat:'alcterrosos'},
+  {z:5, s:'B',  n:'Boro',       cat:'semimetais'},
+  {z:6, s:'C',  n:'Carbono',    cat:'ametais'},
+  {z:7, s:'N',  n:'Nitrogênio', cat:'ametais'},
+  {z:8, s:'O',  n:'Oxigênio',   cat:'ametais'},
+  {z:9, s:'F',  n:'Flúor',      cat:'halogenios'},
+  {z:10,s:'Ne', n:'Neônio',     cat:'nobres'},
+  {z:11,s:'Na', n:'Sódio',      cat:'alcalinos'}
+];
+
+const VERSAO    = 'v0.1 · esqueleto';
+const NOTES_KEY = 'tabela-periodica-notas-v1';
+
+/* ------------------------------------------------------------
+   O PALCO: um zoom só, para a cena caber inteira em qualquer tela
+   ------------------------------------------------------------ */
+const stage = document.getElementById('stage');
+const deck  = document.getElementById('deck');
+let fitScale = 1;
+
+function ajustaPalco(){
+  fitScale = Math.min(innerWidth/1280, innerHeight/720);
+  stage.style.setProperty('--fit', fitScale);
+  ajustaTinta();
+}
+addEventListener('resize', ajustaPalco);
+
+/* ------------------------------------------------------------
+   A TABELA COLORIDA
+   Não é a tabela de consulta — é o desenho dela: 18 grupos por 7
+   períodos, mais as duas linhas f, cada célula pintada pela família
+   a que pertence. É o fundo do tema; na capa, é a ilustração.
+   ------------------------------------------------------------ */
+/* A que família pertence a célula do grupo (coluna) e do período (linha).
+   Vale para o desenho de fundo e para as cartas do slide 2 — é a mesma
+   tabela, e uma regra só evita que as duas discordem sobre uma cor. */
+function familiaDe(col, row){
+  if (row === 8) return 'lantanideos';
+  if (row === 9) return 'actinideos';
+  if (row === 1) return col === 1 ? 'ametais' : 'nobres';
+  if (col === 1) return 'alcalinos';
+  if (col === 2) return 'alcterrosos';
+  if (col >= 3 && col <= 12) return 'transicao';
+  if (col === 18) return 'nobres';
+  if (col === 17) return 'halogenios';
+  const k = col + '-' + row;
+  if (['14-2','15-2','16-2','15-3','16-3','16-4'].includes(k)) return 'ametais';
+  if (['13-2','14-3','14-4','15-4','15-5','16-5'].includes(k)) return 'semimetais';
+  return 'metais';
+}
+
+(function desenhaTabela(){
+  const svg = document.getElementById('tabela');
+  const L = 9, G = 1.2;                 /* lado da célula e o vão entre elas */
+  const grupos = p => p > 3 ? Array.from({length:18},(_,i)=>i+1)
+                    : (p === 1 ? [1,18] : [1,2,13,14,15,16,17,18]);
+
+  let html = '';
+  for (let p = 1; p <= 7; p++)
+    grupos(p).forEach(g => html += cel(g-1, p-1, familiaDe(g,p)));
+  /* as duas linhas f, afastadas do bloco principal */
+  for (let i = 0; i < 15; i++) html += cel(i+2, 8.4,  'lantanideos');
+  for (let i = 0; i < 15; i++) html += cel(i+2, 9.55, 'actinideos');
+  svg.innerHTML = html;
+
+  function cel(c, r, cat){
+    const x = (c*(L+G)).toFixed(2), y = (r*(L+G)).toFixed(2);
+    return '<rect class="cel" x="'+x+'" y="'+y+'" width="'+L+'" height="'+L+
+           '" rx="1.2" fill="var(--cat-'+cat+')"/>';
+  }
+})();
+
+/* ------------------------------------------------------------
+   MONTAGEM DOS SLIDES
+   ------------------------------------------------------------ */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+SLIDES.forEach((sl,i) => {
+  const el = document.createElement('section');
+  el.className = 'slide' + (sl.kind === 'capa' ? ' capa' : '');
+  el.setAttribute('aria-label', 'Slide ' + (i+1) + ': ' + sl.title);
+
+  if (sl.kind === 'capa'){
+    el.innerHTML =
+      '<div class="marca">Química · Ensino Médio</div>' +
+      '<h1>Tabela Periódica<br><em>Interativa e Moderna</em></h1>' +
+      '<div class="risco"></div>' +
+      '<div class="autor">Professor: <b>Amauri Junior</b></div>' +
+      '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior"></figure>';
+  } else {
+    const e = ELEMENTOS[i] || {z:i+1, s:'—', n:'', cat:'transicao'};
+    /* título curto cabe numa linha só; longo pode quebrar em duas */
+    const uma = sl.title.length <= 26 ? ' uma' : '';
+    el.innerHTML =
+      '<div class="ficha" style="--cor:var(--cat-'+e.cat+')">' +
+        '<span class="z">'+e.z+'</span><b>'+e.s+'</b><i>'+e.n+'</i></div>' +
+      '<h2 class="title'+uma+'">'+esc(sl.title)+'</h2>' +
+      '<div class="regua" aria-label="Ir para um slide"></div>' +
+      '<div class="subtitle">'+esc(sl.subtitle || '')+'</div>' +
+      '<div class="body-area"><div class="vazio">conteúdo do slide '+(i+1)+'</div></div>';
+
+    /* a régua: uma célula por slide, tocável */
+    const regua = el.querySelector('.regua');
+    SLIDES.forEach((s2,j) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = 'Slide ' + (j+1) + ': ' + s2.title;
+      b.setAttribute('aria-label', b.title);
+      /* na montagem a régua é peça, não botão: ali o toque a arrasta */
+      b.addEventListener('click', () => { if (!naMontagem()) go(j); });
+      regua.appendChild(b);
+    });
+  }
+  deck.appendChild(el);
+});
+
+const slides = [...deck.children];
+
+/* ------------------------------------------------------------
+   NAVEGAÇÃO
+   ------------------------------------------------------------ */
+const progress = document.getElementById('progress');
+const counter  = document.getElementById('counter');
+let atual = 0, andando = false;
+
+function go(i, dir){
+  i = Math.max(0, Math.min(SLIDES.length-1, i));
+  if (i === atual || andando) return;
+  dir = dir || (i > atual ? 'next' : 'prev');
+
+  const de    = atual;
+  const sai   = slides[atual];
+  const entra = slides[i];
+  /* entre a capa e o slide 2 a passagem é o cubo girando; do 2 em
+     diante, o empurrão lateral */
+  const fx  = (atual === 0 || i === 0) ? 'cube' : 'desl';
+  const dur = fx === 'cube' ? 880 : 640;
+
+  /* a cena dos 118 recomeça quando se entra nela pela capa — que é
+     onde a história começa. Voltando do slide 3, ela fica como estava. */
+  if (i === 1 && de === 0) reiniciaCena2();
+
+  andando = true;
+  limpaFx(sai); limpaFx(entra);
+  sai.classList.remove('is-active');
+  sai.classList.add('is-leaving', 'fx-'+fx+'-out-'+dir);
+  entra.classList.add('is-active', 'fx-'+fx+'-in-'+dir);
+
+  setTimeout(() => {
+    sai.classList.remove('is-leaving');
+    limpaFx(sai); limpaFx(entra);
+    andando = false;
+    /* na montagem, o slide que chega já entra solto e pronto para a mão.
+       Só aqui, com a animação terminada: medir um slide em movimento
+       daria posições do meio do caminho. */
+    if (naMontagem()) soltaSlide(entra);
+  }, dur);
+
+  atual = i;
+  pinta();
+}
+function limpaFx(el){
+  [...el.classList].forEach(c => { if (c.startsWith('fx-')) el.classList.remove(c); });
+}
+function pinta(){
+  progress.style.width = (atual/(SLIDES.length-1)*100) + '%';
+  counter.innerHTML = '<b>'+(atual+1)+'</b> / '+SLIDES.length;
+  stage.classList.toggle('na-capa', atual === 0);
+  atualizaMarca();
+  slides.forEach(s => {
+    s.querySelectorAll('.regua button').forEach((b,j) => {
+      b.classList.toggle('aqui', j === atual);
+      b.classList.toggle('feito', j < atual);
+    });
+  });
+  repintaTinta();                     /* cada slide tem a sua tinta */
+  marcaNota();
+  sincronizaQuadro();
+  if (!overview.hidden) montaMiniaturas();
+}
+
+/* avançar é, primeiro, adiantar a cena deste slide; só quando não há
+   mais o que contar aqui é que se passa para o próximo */
+/* a marca-d'água do canto se recolhe quando o slide em cena já tem
+   cartas na tela; volta assim que a aula sai dele */
+function atualizaMarca(){
+  const cheio = !!slides[atual].querySelector('.cena .pc');
+  stage.classList.toggle('sem-marca', cheio);
+}
+
+const avanca = () => { if (!passoAdiante()) go(atual+1, 'next'); };
+const volta  = () => go(atual-1, 'prev');
+
+slides[0].classList.add('is-active');
+
+/* ------------------------------------------------------------
+   VISÃO GERAL — as miniaturas são os próprios slides em escala
+   ------------------------------------------------------------ */
+const overview = document.getElementById('overview');
+const grid = document.getElementById('grid');
+
+function montaMiniaturas(){
+  grid.innerHTML = '';
+  SLIDES.forEach((sl,i) => {
+    /* o cartão é um div, e não um botão: dentro dele vai uma cópia do
+       slide, que já traz os botões da régua — botão dentro de botão é
+       coisa que o navegador desmonta */
+    const c = document.createElement('div');
+    c.setAttribute('role', 'button');
+    c.tabIndex = 0;
+    c.className = 'card' + (i === atual ? ' aqui' : '');
+    c.innerHTML = '<div class="mini"><div class="mini-palco"></div></div>' +
+      '<div class="rot"><div class="n">'+String(i+1).padStart(2,'0')+'</div>' +
+      '<div class="t">'+esc(sl.kind === 'capa' ? 'Capa' : sl.title)+'</div></div>';
+    const palco = c.querySelector('.mini-palco');
+    const copia = slides[i].cloneNode(true);
+    copia.classList.remove('is-leaving');
+    copia.classList.add('is-active');
+    /* na miniatura nada é clicável: ela inteira é um alvo só */
+    copia.querySelectorAll('button').forEach(b => { b.tabIndex = -1; b.disabled = true; });
+    palco.appendChild(copia);
+    const abre = () => { mostraOverview(false); go(i); };
+    c.addEventListener('click', abre);
+    c.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); abre(); }
+    });
+    grid.appendChild(c);
+  });
+  /* só depois de estarem no documento é que se sabe a largura do cartão */
+  requestAnimationFrame(() => {
+    grid.querySelectorAll('.card').forEach(c => {
+      const k = c.clientWidth / 1280;
+      c.querySelector('.mini-palco').style.transform = 'scale(' + k + ')';
+    });
+  });
+}
+function mostraOverview(v){
+  const abre = v === undefined ? overview.hidden : !!v;
+  overview.hidden = !abre;
+  document.getElementById('over').classList.toggle('on', abre);
+  if (abre) montaMiniaturas();
+}
+
+/* ============================================================
+   OS PASSOS DENTRO DE UM SLIDE
+   Um slide pode ter uma cena que se desenrola em etapas. Enquanto
+   houver etapa por fazer, o clique e a seta adiantam a CENA; só
+   quando ela acaba é que a seta passa de slide. Assim a aula
+   inteira se conduz com um gesto só, sem nunca pular a história.
+   ============================================================ */
+const ROTEIROS = {};
+
+function passoAdiante(){
+  const r = ROTEIROS[atual];
+  if (!r) return false;
+  /* a cena está à espera de um toque numa peça: a seta faz por ele —
+     é o caminho de quem conduz a aula pelo controle remoto */
+  if (r.espera){ const faz = r.espera; r.espera = null; faz(); return true; }
+  if (r.i >= r.passos.length) return false;
+  r.passos[r.i++]();
+  return true;
+}
+
+/* ============================================================
+   SLIDE 2 · OS 118 ELEMENTOS
+   A cena conta uma coisa só: antes da lei periódica, os elementos
+   eram um monte sem ordem; a ordem é o número atômico. Por isso ela
+   começa no caos — cartas espalhadas, e a maioria nem cabendo na
+   tela — e termina com a tabela inteira montada.
+   ============================================================ */
+const SIMBOLOS = (
+  'H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn ' +
+  'Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce ' +
+  'Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn ' +
+  'Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl ' +
+  'Mc Lv Ts Og').split(' ');
+
+const CARTA_W = 46, CARTA_H = 38, PASSO_X = 50, PASSO_Y = 42;
+const TAB_ESQ = 640 - (18*PASSO_X)/2;    /* a tabela nasce centrada no palco */
+const TAB_TOPO = 272;
+const VAO_F = 14;                        /* o afastamento das duas linhas f */
+
+/* onde cada número atômico mora na tabela */
+function posDe(z){
+  if (z === 1)  return {col:1,     row:1};
+  if (z === 2)  return {col:18,    row:1};
+  if (z <= 4)   return {col:z-2,   row:2};   /* 3,4 */
+  if (z <= 10)  return {col:z+8,   row:2};   /* 5..10  -> 13..18 */
+  if (z <= 12)  return {col:z-10,  row:3};   /* 11,12 */
+  if (z <= 18)  return {col:z,     row:3};   /* 13..18 */
+  if (z <= 36)  return {col:z-18,  row:4};
+  if (z <= 54)  return {col:z-36,  row:5};
+  if (z <= 56)  return {col:z-54,  row:6};   /* 55,56 */
+  if (z <= 71)  return {col:z-54,  row:8};   /* lantanídeos -> 3..17 */
+  if (z <= 86)  return {col:z-68,  row:6};   /* 72..86 -> 4..18 */
+  if (z <= 88)  return {col:z-86,  row:7};   /* 87,88 */
+  if (z <= 103) return {col:z-86,  row:9};   /* actinídeos -> 3..17 */
+  return          {col:z-100, row:7};        /* 104..118 -> 4..18 */
+}
+function alvoDe(z){
+  const p = posDe(z);
+  return {
+    x: TAB_ESQ  + (p.col-1)*PASSO_X + CARTA_W/2,
+    y: TAB_TOPO + (p.row-1)*PASSO_Y + (p.row > 7 ? VAO_F : 0) + CARTA_H/2
+  };
+}
+
+function embaralha(a){
+  for (let i = a.length-1; i > 0; i--){
+    const j = (Math.random()*(i+1))|0;
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+/* Cinquenta vagas espalhadas por igual: a tela é dividida em 10 por 5
+   e cada carta cai no meio da sua parte, com um tremor. É o que faz o
+   monte parecer desarrumado sem deixar buracos nem pilhas. */
+function gradeVagas(){
+  const x0 = 84, x1 = 1196, y0 = 262, y1 = 664, cols = 10, linhas = 5;
+  const dx = (x1-x0)/cols, dy = (y1-y0)/linhas, vagas = [];
+  for (let l = 0; l < linhas; l++)
+    for (let c = 0; c < cols; c++)
+      vagas.push({ x: x0 + c*dx + dx/2 + (Math.random()-.5)*dx*.46,
+                   y: y0 + l*dy + dy/2 + (Math.random()-.5)*dy*.42 });
+  return vagas;
+}
+/* um lugar qualquer para lá da borda: é de onde os outros 68 virão */
+function foraDaTela(){
+  const lado = (Math.random()*4)|0;
+  if (lado === 0) return {x: -90 - Math.random()*240, y: Math.random()*900 - 90};
+  if (lado === 1) return {x: 1370 + Math.random()*240, y: Math.random()*900 - 90};
+  if (lado === 2) return {x: Math.random()*1460 - 90, y: -90 - Math.random()*220};
+  return                 {x: Math.random()*1460 - 90, y: 810 + Math.random()*220};
+}
+
+function criaCarta(z){
+  const p = posDe(z);
+  const c = document.createElement('div');
+  c.className = 'pc';
+  c.dataset.z = z;
+  c.style.setProperty('--cor', 'var(--cat-' + familiaDe(p.col, p.row) + ')');
+  c.innerHTML = '<div class="pc-in"><i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b></div>';
+  return c;
+}
+function poe(c, x, y, rot){
+  c.style.left = x.toFixed(1)+'px';
+  c.style.top  = y.toFixed(1)+'px';
+  c.firstElementChild.style.setProperty('--rot', rot.toFixed(1)+'deg');
+}
+
+function reiniciaCena2(){
+  const sl = slides[1];
+  const velha = sl.querySelector('.cena');
+  if (velha) velha.remove();
+  const marca = sl.querySelector('.body-area .vazio');
+  if (marca) marca.remove();              /* este slide já tem conteúdo */
+
+  const cena = document.createElement('div');
+  cena.className = 'cena';
+  cena.innerHTML = '<div class="fantasma"></div><div class="clarao"></div>';
+  sl.appendChild(cena);
+
+  /* a sombra de cada posição: o lugar vazio que espera o elemento */
+  let sombras = '';
+  for (let z = 1; z <= 118; z++){
+    const a = alvoDe(z);
+    sombras += '<i style="left:'+a.x+'px;top:'+a.y+'px"></i>';
+  }
+  cena.querySelector('.fantasma').innerHTML = sombras;
+
+  const cartas = new Map();
+  const r = { i:0, espera:null, passos:[] };
+  ROTEIROS[1] = r;
+
+  /* ---- 1º clique: os 118 entram, e só 50 cabem na tela ---- */
+  r.passos.push(() => {
+    const ordem = embaralha(Array.from({length:118}, (_,i) => i+1));
+    /* Os sete primeiros TÊM de estar em cena: é neles que se vai tocar.
+       Se o sorteio os jogou para fora, eles trocam de lugar com alguém
+       de dentro que não seja um deles. */
+    const presos = [1,2,3,4,5,6,7];
+    presos.forEach(z => {
+      const k = ordem.indexOf(z);
+      if (k < 50) return;
+      let t; do { t = (Math.random()*50)|0; } while (presos.includes(ordem[t]));
+      [ordem[k], ordem[t]] = [ordem[t], ordem[k]];
+    });
+
+    const vagas = embaralha(gradeVagas());
+    ordem.slice(0,50).forEach((z,i) => {
+      const c = criaCarta(z), v = vagas[i];
+      poe(c, v.x, v.y, Math.random()*34 - 17);
+      c.style.opacity = '0';
+      cena.appendChild(c); cartas.set(z, c);
+      setTimeout(() => {
+        c.style.opacity = '1';
+        c.classList.add('surge');
+        setTimeout(() => c.classList.remove('surge'), 700);
+      }, 130 + i*13);
+    });
+    ordem.slice(50).forEach(z => {
+      const c = criaCarta(z), p = foraDaTela();
+      poe(c, p.x, p.y, Math.random()*60 - 30);
+      cena.appendChild(c); cartas.set(z, c);
+    });
+
+    const cl = cena.querySelector('.clarao');
+    cl.classList.add('on');
+    setTimeout(() => cl.classList.remove('on'), 800);
+    atualizaMarca();                       /* a tabela do canto sai de cena */
+  });
+
+  /* ---- 2º clique: a regra chega, e o primeiro elemento chama ---- */
+  r.passos.push(() => {
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.innerHTML = '<b>1 -</b> Os elementos serão organizados em ordem crescente de número atômico';
+    cena.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('entra'));
+    setTimeout(() => cena.querySelector('.fantasma').classList.add('on'), 720);
+    setTimeout(() => acende(1), 1020);
+  });
+
+  /* o convite: vermelho lento, e a carta passa a pegar o dedo */
+  function acende(z){
+    const c = cartas.get(z);
+    if (!c) return;
+    c.classList.add('chama');
+    r.espera = () => leva(z);
+    c.onclick = (ev) => { ev.stopPropagation(); leva(z); };
+  }
+  /* o salto até o lugar de verdade */
+  function leva(z){
+    const c = cartas.get(z);
+    if (!c || c.classList.contains('na-tabela')) return;
+    r.espera = null;
+    c.classList.remove('chama');
+    c.onclick = null;
+    voa(c, alvoDe(z), 640);
+    if (z < 7) setTimeout(() => acende(z+1), 740);
+    else       setTimeout(organizaTudo, 800);
+  }
+  /* do sétimo em diante a tabela se monta sozinha, um atrás do outro */
+  function organizaTudo(){
+    const resto = [...cena.querySelectorAll('.pc:not(.na-tabela)')]
+                  .sort((a,b) => a.dataset.z - b.dataset.z);
+    resto.forEach((c,i) => setTimeout(() => voa(c, alvoDe(+c.dataset.z), 520), i*20));
+    setTimeout(festa, resto.length*20 + 740);
+  }
+  function voa(c, p, dur){
+    c.classList.add('na-tabela');
+    c.style.zIndex = 30;                       /* quem voa passa por cima */
+    c.style.transitionDuration = dur + 'ms';
+    c.style.left = p.x.toFixed(1) + 'px';
+    c.style.top  = p.y.toFixed(1) + 'px';
+    const miolo = c.firstElementChild;
+    miolo.style.setProperty('--rot', '0deg');
+    miolo.style.setProperty('--sc', '1.3');    /* cresce no meio do caminho */
+    setTimeout(() => miolo.style.setProperty('--sc', '1'), dur*0.45);
+    setTimeout(() => { c.style.zIndex = ''; }, dur + 60);
+  }
+  /* a tabela montada: uma onda verde que a atravessa na diagonal,
+     e os confetes por cima */
+  function festa(){
+    cena.querySelectorAll('.pc').forEach(c => {
+      const p = posDe(+c.dataset.z);
+      c.style.setProperty('--onda', ((p.col + p.row)*24) + 'ms');
+      c.classList.add('verde');
+    });
+    confetes();
+    setTimeout(() => cena.querySelectorAll('.pc').forEach(c => c.classList.remove('verde')), 2400);
+  }
+}
+
+/* os confetes: papel picado com gravidade, na paleta das famílias */
+function confetes(){
+  const cv = document.getElementById('festa');
+  const s = Math.min(3, (window.devicePixelRatio || 1) * (fitScale || 1));
+  cv.width  = Math.round(1280*s);
+  cv.height = Math.round(720*s);
+  const cx = cv.getContext('2d');
+  cx.setTransform(s, 0, 0, s, 0, 0);
+  const cores = ['#D2591F','#C58A0E','#2E7BAE','#1E8F7D','#6F8C1E',
+                 '#2E9450','#C13757','#5B4BD6','#8B3FBE','#B1408C'];
+  const ps = Array.from({length:150}, () => ({
+    x: 180 + Math.random()*920, y: -20 - Math.random()*300,
+    vx: (Math.random()-.5)*2.6, vy: 1.6 + Math.random()*3,
+    g: .05 + Math.random()*.03,
+    w: 5 + Math.random()*7, h: 8 + Math.random()*9,
+    a: Math.random()*6.28, va: (Math.random()-.5)*.26,
+    c: cores[(Math.random()*cores.length)|0]
+  }));
+  (function quadro(){
+    cx.clearRect(0, 0, 1280, 720);
+    let vivos = 0;
+    ps.forEach(p => {
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a += p.va;
+      if (p.y < 780) vivos++;
+      cx.save();
+      cx.translate(p.x, p.y);
+      cx.rotate(p.a);
+      cx.globalAlpha = .92;
+      cx.fillStyle = p.c;
+      cx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      cx.restore();
+    });
+    if (vivos) requestAnimationFrame(quadro);
+    else cx.clearRect(0, 0, 1280, 720);
+  })();
+}
+
+/* ------------------------------------------------------------
+   TELA CHEIA
+   ------------------------------------------------------------ */
+function telaCheia(){
+  document.fullscreenElement ? document.exitFullscreen()
+                             : document.documentElement.requestFullscreen?.();
+}
+
+/* ------------------------------------------------------------
+   O QUADRO BRANCO
+   O pedido é um só — o ícone da barra — e vale em toda a apresentação:
+   abre o quadro do slide em que se está e, se aquele slide nunca teve
+   um, faz nascer o quadro ali na hora, no meio do palco, de onde já
+   se arrasta. Com a caneta armada, escreve-se em cima dele.
+   ------------------------------------------------------------ */
+const quadroBtn = document.getElementById('quadro-btn');
+
+function QUADRO(x, y, k){
+  return '<div class="q-board" style="left:'+x+'px;top:'+y+'px;--k:'+k+'">' +
+    '<svg viewBox="0 0 540 352" aria-hidden="true">' +
+      '<defs>' +
+        '<linearGradient id="qbMold" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0" stop-color="#EDF0F3"/><stop offset=".5" stop-color="#C6CED6"/>' +
+          '<stop offset="1" stop-color="#9AA5AF"/></linearGradient>' +
+        '<linearGradient id="qbFace" x1="0" y1="0" x2=".65" y2="1">' +
+          '<stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#F7F9FB"/>' +
+          '<stop offset="1" stop-color="#E9EEF2"/></linearGradient>' +
+      '</defs>' +
+      '<rect x="3" y="3" width="534" height="316" rx="9" fill="url(#qbMold)" stroke="#7F8B95" stroke-width="2"/>' +
+      '<rect x="20" y="20" width="500" height="282" rx="3" fill="url(#qbFace)" stroke="#BAC3CB" stroke-width="1.5"/>' +
+      '<path d="M64 301 L176 21 L236 21 L124 301 Z" fill="#FFFFFF" opacity=".5"/>' +
+      '<path d="M256 301 L326 128 L352 128 L282 301 Z" fill="#FFFFFF" opacity=".38"/>' +
+      '<path d="M8 320 L532 320 L522 342 L18 342 Z" fill="url(#qbMold)" stroke="#7F8B95" stroke-width="2" stroke-linejoin="round"/>' +
+      '<rect x="60" y="326" width="66" height="9" rx="4.5" fill="#C13757"/>' +
+      '<rect x="136" y="326" width="66" height="9" rx="4.5" fill="#2E7BAE"/>' +
+    '</svg></div>';
+}
+
+function quadroDoSlide(cria){
+  const sl = slides[atual];
+  if (!sl) return null;
+  let q = sl.querySelector(':scope > .q-board');
+  if (!q && cria){
+    sl.insertAdjacentHTML('beforeend', QUADRO(640, 380, 1));
+    q = sl.querySelector(':scope > .q-board');
+    arrastaQuadro(q);
+  }
+  return q;
+}
+function sincronizaQuadro(){
+  const q = quadroDoSlide(false);
+  quadroBtn.classList.toggle('on', !!(q && q.classList.contains('on')));
+}
+function modoQuadro(){
+  const q = quadroDoSlide(true);
+  if (!q) return;
+  q.classList.toggle('on');
+  sincronizaQuadro();
+}
+
+/* o quadro anda pelo palco: pega-se nele em qualquer ponto */
+function arrastaQuadro(q){
+  let leva = null;
+  q.addEventListener('pointerdown', (e) => {
+    /* na montagem quem arrasta o quadro é o gesto geral, que também
+       o redimensiona — dois arrastos no mesmo objeto se atrapalhariam */
+    if (!q.classList.contains('on') || naMontagem()) return;
+    const x = parseFloat(q.style.left), y = parseFloat(q.style.top);
+    leva = { id:e.pointerId, px:e.clientX, py:e.clientY, x, y };
+    try { q.setPointerCapture(e.pointerId); } catch(_){}
+    q.classList.add('levando');
+    e.preventDefault();
+  });
+  q.addEventListener('pointermove', (e) => {
+    if (!leva || e.pointerId !== leva.id) return;
+    const dx = (e.clientX - leva.px)/fitScale, dy = (e.clientY - leva.py)/fitScale;
+    q.style.left = Math.max(90, Math.min(1190, leva.x + dx)) + 'px';
+    q.style.top  = Math.max(70, Math.min(650,  leva.y + dy)) + 'px';
+  });
+  const solta = () => { leva = null; q.classList.remove('levando'); };
+  q.addEventListener('pointerup', solta);
+  q.addEventListener('pointercancel', solta);
+}
+
+/* ============================================================
+   A CANETA
+   O traço é guardado por slide, em coordenadas do palco (1280x720),
+   e redesenhado a cada troca: escrever no slide 4, ir ao 9 e voltar
+   devolve o que estava escrito. Vive na memória da sessão; fechar a
+   página limpa o quadro.
+   ============================================================ */
+const tinta    = document.getElementById('tinta');
+const penBtn   = document.getElementById('pen-btn');
+const penCor   = document.getElementById('pen-cor');
+const penLimpa = document.getElementById('pen-limpa');
+const ctx      = tinta.getContext('2d');
+
+/* cores de marcador, que se leem sobre papel claro e sobre o quadro */
+const CORES = ['#C13757', '#2E7BAE', '#1E8F7D', '#201C42'];
+let corAtual = 0;
+const TRACO  = 4.5;                        /* espessura, em px do palco */
+const riscos = {};                         /* índice do slide -> lista de traços */
+let riscando = null;
+
+/* A folha acompanha o palco: o desenho é guardado em px de palco, mas o
+   bitmap nasce no tamanho REAL em que vai aparecer — densidade da tela
+   vezes o fator do fit. Sem isto, num projetor grande o traço sairia
+   esticado e borrado. */
+function ajustaTinta(){
+  const s = Math.min(3, (window.devicePixelRatio || 1) * (fitScale || 1));
+  tinta.width  = Math.round(1280 * s);
+  tinta.height = Math.round(720  * s);
+  ctx.setTransform(s, 0, 0, s, 0, 0);
+  repintaTinta();
+}
+function repintaTinta(){
+  ctx.clearRect(0, 0, 1280, 720);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  (riscos[atual] || []).forEach(t => {
+    if (t.p.length < 2){                   /* um toque só: vira um ponto */
+      ctx.beginPath();
+      ctx.fillStyle = t.c;
+      ctx.arc(t.p[0][0], t.p[0][1], t.w/2, 0, Math.PI*2);
+      ctx.fill();
+      return;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = t.c;
+    ctx.lineWidth = t.w;
+    ctx.moveTo(t.p[0][0], t.p[0][1]);
+    /* curva por pontos médios: tira o serrilhado do traço à mão */
+    for (let i = 1; i < t.p.length-1; i++){
+      const mx = (t.p[i][0] + t.p[i+1][0])/2, my = (t.p[i][1] + t.p[i+1][1])/2;
+      ctx.quadraticCurveTo(t.p[i][0], t.p[i][1], mx, my);
+    }
+    const u = t.p[t.p.length-1];
+    ctx.lineTo(u[0], u[1]);
+    ctx.stroke();
+  });
+}
+
+/* a bolinha do ponteiro, na cor da tinta de agora */
+function cursorDaTinta(){
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">' +
+    '<circle cx="10" cy="10" r="5.5" fill="' + CORES[corAtual] + '"' +
+    ' stroke="rgba(255,255,255,.85)" stroke-width="1.5"/></svg>';
+  stage.style.setProperty('--cur-tinta',
+    'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 10 10, crosshair');
+}
+
+function modoCaneta(v){
+  const abrir = v === undefined ? !stage.classList.contains('escrevendo') : !!v;
+  stage.classList.toggle('escrevendo', abrir);
+  penBtn.classList.toggle('on', abrir);
+  penCor.hidden = penLimpa.hidden = !abrir;
+  penCor.style.color = CORES[corAtual];
+  cursorDaTinta();
+  penBtn.title = abrir ? 'Fechar a caneta (P)' : 'Escrever na tela (P)';
+}
+
+/* ponto do evento nas coordenadas do palco */
+function noPalco(e){
+  const r = stage.getBoundingClientRect();
+  return [(e.clientX - r.left)/fitScale, (e.clientY - r.top)/fitScale];
+}
+tinta.addEventListener('pointerdown', (e) => {
+  if (!stage.classList.contains('escrevendo')) return;
+  const [x,y] = noPalco(e);
+  riscando = { id:e.pointerId, t:{ c:CORES[corAtual], w:TRACO, p:[[x,y]] } };
+  (riscos[atual] = riscos[atual] || []).push(riscando.t);
+  try { tinta.setPointerCapture(e.pointerId); } catch(_){}
+  e.preventDefault();
+});
+tinta.addEventListener('pointermove', (e) => {
+  if (!riscando || e.pointerId !== riscando.id) return;
+  const [x,y] = noPalco(e);
+  const p = riscando.t.p, u = p[p.length-1];
+  if (Math.hypot(x-u[0], y-u[1]) < 1.4) return;   /* pontos colados só pesam */
+  p.push([x,y]);
+  repintaTinta();
+});
+const soltaRisco = () => { riscando = null; };
+tinta.addEventListener('pointerup', soltaRisco);
+tinta.addEventListener('pointercancel', soltaRisco);
+
+penBtn.onclick   = () => modoCaneta();
+penCor.onclick   = () => {
+  corAtual = (corAtual + 1) % CORES.length;
+  penCor.style.color = CORES[corAtual];
+  cursorDaTinta();
+};
+penLimpa.onclick = () => { riscos[atual] = []; repintaTinta(); };
+
+/* ------------------------------------------------------------
+   O LASER
+   Um ponto vermelho que segue o ponteiro. Não risca, não pega em nada
+   e não deixa rastro: serve para apontar, que numa aula é meio caminho
+   da explicação. Apaga-se sozinho depois de parado.
+   ------------------------------------------------------------ */
+const laser    = document.getElementById('laser');
+const laserBtn = document.getElementById('laser-btn');
+let laserLigado = false, laserT;
+
+function modoLaser(v){
+  laserLigado = v === undefined ? !laserLigado : !!v;
+  laserBtn.classList.toggle('on', laserLigado);
+  laserBtn.title = laserLigado ? 'Desligar o laser (L)' : 'Apontar com o laser (L)';
+  if (!laserLigado){ clearTimeout(laserT); laser.classList.remove('on'); }
+}
+laserBtn.onclick = () => modoLaser();
+
+document.addEventListener('pointermove', (e) => {
+  if (!laserLigado) return;
+  laser.style.left = e.clientX + 'px';
+  laser.style.top  = e.clientY + 'px';
+  laser.classList.add('on');
+  clearTimeout(laserT);
+  laserT = setTimeout(() => laser.classList.remove('on'), 2200);
+}, { passive:true });
+
+/* ------------------------------------------------------------
+   NOTAS DE AULA
+   Ficam no navegador desta máquina, uma por slide. Fechar é salvar.
+   ------------------------------------------------------------ */
+const notes    = document.getElementById('notes');
+const notesBtn = document.getElementById('notes-btn');
+const notesTxt = document.getElementById('notes-txt');
+const notesDe  = document.getElementById('notes-slide');
+
+let notasMem = null;
+function leNotas(){
+  if (notasMem) return notasMem;
+  try { notasMem = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}') || {}; }
+  catch (err){ notasMem = {}; }
+  return notasMem;
+}
+function gravaNotas(){
+  try { localStorage.setItem(NOTES_KEY, JSON.stringify(notasMem || {})); } catch (err){}
+}
+const chaveNota = i => 'slide-' + (i+1);
+function marcaNota(){
+  notesBtn.classList.toggle('tem', !!(leNotas()[chaveNota(atual)] || '').trim());
+}
+
+let notaAberta = -1;
+function showNotes(){
+  if (!notes.hidden) return;
+  notaAberta = atual;
+  notesDe.textContent = (atual+1) + '. ' + (SLIDES[atual].kind === 'capa' ? 'Capa' : SLIDES[atual].title);
+  notesTxt.value = leNotas()[chaveNota(atual)] || '';
+  notes.hidden = false;
+  notesBtn.classList.add('on');
+  notesTxt.focus();
+  notesTxt.setSelectionRange(notesTxt.value.length, notesTxt.value.length);
+}
+function hideNotes(){
+  if (notes.hidden) return;
+  const k = chaveNota(notaAberta), t = notesTxt.value, mapa = leNotas();
+  if (t.trim()) mapa[k] = t; else delete mapa[k];   /* caixa vazia não deixa rastro */
+  gravaNotas();
+  notes.hidden = true;
+  notesBtn.classList.remove('on');
+  notaAberta = -1;
+  marcaNota();
+}
+notesBtn.onclick = showNotes;
+document.getElementById('notes-close').onclick = hideNotes;
+
+/* a folha anda: arrasta-se pelo cabeçalho, e o lugar escolhido vale
+   para as próximas aberturas desta sessão */
+const notesCab = document.getElementById('notes-cab');
+let levaNota = null;
+notesCab.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('button')) return;
+  const r = notes.getBoundingClientRect();
+  levaNota = { id:e.pointerId, x:e.clientX, y:e.clientY,
+               nx:r.left + r.width/2, ny:r.top + r.height/2 };
+  try { notesCab.setPointerCapture(e.pointerId); } catch(_){}
+  notes.classList.add('levando');
+  e.preventDefault();
+});
+document.addEventListener('pointermove', (e) => {
+  if (!levaNota || e.pointerId !== levaNota.id) return;
+  const r = notes.getBoundingClientRect();
+  const mx = r.width/2 + 6, my = r.height/2 + 6;
+  notes.style.setProperty('--nx',
+    Math.min(innerWidth - mx,  Math.max(mx, levaNota.nx + e.clientX - levaNota.x)).toFixed(0)+'px');
+  notes.style.setProperty('--ny',
+    Math.min(innerHeight - my, Math.max(my, levaNota.ny + e.clientY - levaNota.y)).toFixed(0)+'px');
+});
+document.addEventListener('pointerup', () => {
+  if (!levaNota) return;
+  levaNota = null; notes.classList.remove('levando');
+});
+
+/* ============================================================
+   MODO MONTAGEM
+   Fora da aula, o slide vira mesa de trabalho: tudo o que está nele
+   se pega com a mão. Um dedo arrasta; dois dedos, em pinça, mudam o
+   tamanho; a roda do mouse faz o mesmo que a pinça.
+
+   Ao entrar na montagem, cada peça é SOLTA: sai do fluxo do layout e
+   passa a viver por x, y (o centro dela, em px do palco 1280x720) e
+   uma escala. O truque é medir todas ANTES de soltar qualquer uma —
+   se a primeira saísse do fluxo, as de baixo subiriam e as medidas
+   seguintes já sairiam erradas.
+
+   O Ctrl+C copia essas posições e tamanhos de tudo o que está na
+   tela. É esse texto que vem para mim: com ele eu fixo no arquivo,
+   como valores, o que foi arrumado à mão aqui.
+   ============================================================ */
+const MOVEIS = '.ficha, .title, .regua, .subtitle, .body-area, .q-board,' +
+               ' .capa .marca, .capa h1, .capa .risco, .capa .autor, .capa .foto, [data-mont]';
+/* quem tem caixa própria leva também a altura; texto fica com altura livre */
+const COM_ALTURA = '.body-area, .q-board, .ficha, .risco, .regua, .capa .foto';
+/* quem encolhe até o conteúdo antes de ser medido — o texto e a régua.
+   A área, a ficha, o risco e o quadro já têm a caixa que têm. */
+const ENCOLHE = '.title, .subtitle, .regua, .capa .marca, .capa .autor, .capa h1';
+/* quem tem letra que interessa medir */
+const COM_LETRA = '.title, .subtitle, .capa .marca, .capa .autor, .capa h1';
+
+const MEDIDAS = new WeakMap();          /* elemento -> {cx, cy, w, h, esc} */
+const coord = document.getElementById('coord');
+let moveu = false;                      /* houve arrasto desde o último toque? */
+
+function soltaSlide(sl){
+  const alvos = [...sl.querySelectorAll(MOVEIS)].filter(el => !el.classList.contains('solto'));
+  if (!alvos.length || andando) return;
+  const rs = sl.getBoundingClientRect();
+  /* mede todas primeiro; só depois solta */
+  alvos.forEach(el => { if (el.matches(ENCOLHE)) el.classList.add('medindo'); });
+  const medidas = alvos.map(el => {
+    const r = el.getBoundingClientRect();
+    return { el,
+      cx:(r.left + r.width/2  - rs.left)/fitScale,
+      cy:(r.top  + r.height/2 - rs.top )/fitScale,
+      w: r.width /fitScale,
+      h: r.height/fitScale, esc:1 };
+  });
+  alvos.forEach(el => el.classList.remove('medindo'));
+  medidas.forEach(m => {
+    MEDIDAS.set(m.el, m);
+    m.el.classList.add('solto');
+    m.el.style.right = m.el.style.bottom = 'auto';
+    aplicaEl(m.el);
+  });
+}
+function aplicaEl(el){
+  const m = MEDIDAS.get(el);
+  if (!m) return;
+  el.style.left  = m.cx.toFixed(1) + 'px';
+  el.style.top   = m.cy.toFixed(1) + 'px';
+  el.style.width = m.w.toFixed(1)  + 'px';
+  if (el.matches(COM_ALTURA)) el.style.height = m.h.toFixed(1) + 'px';
+  el.style.setProperty('--esc', m.esc.toFixed(3));
+}
+/* devolve o slide ao lugar de origem */
+function refazLayout(){
+  slides[atual].querySelectorAll('.solto').forEach(el => {
+    el.classList.remove('solto','pego');
+    MEDIDAS.delete(el);
+    ['left','top','width','height','right','bottom'].forEach(p => el.style.removeProperty(p));
+    el.style.removeProperty('--esc');
+    if (el.classList.contains('q-board')){ el.style.left = '640px'; el.style.top = '380px'; }
+  });
+}
+
+/* ---- o gesto: um dedo move, dois dedos pinçam ----
+   Os dois casos são a mesma conta. A cada toque novo eu guardo onde
+   estão os dedos (o ponto médio deles e a distância entre eles) e o
+   estado da peça. Enquanto os dedos andam, a peça segue o ponto médio
+   e a escala segue a razão entre a distância de agora e a do começo.
+   Com um dedo só a distância não existe, e sobra o arrasto puro. */
+const gestos = new Map();
+
+function estadoDedos(g){
+  const pts = [...g.ptr.values()];
+  const cx = pts.reduce((s,p) => s + p.x, 0)/pts.length;
+  const cy = pts.reduce((s,p) => s + p.y, 0)/pts.length;
+  const d  = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
+  return {cx, cy, d};
+}
+function reancora(el, g){
+  const m = MEDIDAS.get(el);
+  g.base = Object.assign(estadoDedos(g), {mcx:m.cx, mcy:m.cy, esc:m.esc});
+}
+const naMontagem = () => document.body.classList.contains('montagem');
+const pecaDe = (ev) => {
+  const el = ev.target.closest(MOVEIS);
+  return (el && slides[atual].contains(el)) ? el : null;
+};
+
+stage.addEventListener('pointerdown', (ev) => {
+  if (!naMontagem()) return;
+  const el = pecaDe(ev);
+  if (!el) return;
+  soltaSlide(slides[atual]);
+  let g = gestos.get(el);
+  if (!g){ g = {ptr:new Map()}; gestos.set(el, g); }
+  g.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  try { el.setPointerCapture(ev.pointerId); } catch(_){}
+  reancora(el, g);
+  el.classList.add('pego');
+  moveu = false;
+  ev.preventDefault();
+  ev.stopPropagation();               /* na montagem, o gesto é da peça */
+}, true);
+
+document.addEventListener('pointermove', (ev) => {
+  gestos.forEach((g, el) => {
+    if (!g.ptr.has(ev.pointerId)) return;
+    g.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+    const agora = estadoDedos(g), b = g.base, m = MEDIDAS.get(el);
+    m.cx = b.mcx + (agora.cx - b.cx)/fitScale;
+    m.cy = b.mcy + (agora.cy - b.cy)/fitScale;
+    if (g.ptr.size > 1 && b.d > 12)
+      m.esc = Math.max(.15, Math.min(8, b.esc * (agora.d / b.d)));
+    aplicaEl(el);
+    moveu = true;
+  });
+}, true);
+
+function largaDedo(ev){
+  gestos.forEach((g, el) => {
+    if (!g.ptr.has(ev.pointerId)) return;
+    g.ptr.delete(ev.pointerId);
+    /* saiu um dedo dos dois: o que ficou recomeça a contar dali, senão
+       a peça daria um salto no instante em que o outro se levanta */
+    if (g.ptr.size) reancora(el, g);
+    else { gestos.delete(el); el.classList.remove('pego'); }
+  });
+}
+document.addEventListener('pointerup', largaDedo, true);
+document.addEventListener('pointercancel', largaDedo, true);
+
+/* a roda do mouse faz o que a pinça faz */
+stage.addEventListener('wheel', (ev) => {
+  if (!naMontagem()) return;
+  const el = pecaDe(ev);
+  if (!el) return;
+  soltaSlide(slides[atual]);
+  const m = MEDIDAS.get(el);
+  m.esc = Math.max(.15, Math.min(8, m.esc * (1 - ev.deltaY * 0.0015)));
+  aplicaEl(el);
+  ev.preventDefault();
+}, {passive:false});
+
+const montBtn = document.getElementById('mont-btn');
+function modoMontagem(v){
+  const abre = v === undefined ? !naMontagem() : !!v;
+  document.body.classList.toggle('montagem', abre);
+  montBtn.classList.toggle('on', abre);
+  if (abre) soltaSlide(slides[atual]); else coord.classList.remove('on');
+}
+
+/* ---- a folha das posições ---- */
+const coords    = document.getElementById('coords');
+const coordsTxt = document.getElementById('coords-txt');
+const coordsDe  = document.getElementById('coords-de');
+const coordsMsg = document.getElementById('coords-msg');
+
+function nomeDe(el){
+  const c = el.classList;
+  if (c.contains('ficha'))     return 'ficha';
+  if (c.contains('title'))     return 'titulo';
+  if (c.contains('regua'))     return 'regua';
+  if (c.contains('subtitle'))  return 'subtitulo';
+  if (c.contains('body-area')) return 'area';
+  if (c.contains('q-board'))   return 'quadro';
+  if (c.contains('marca'))     return 'marca';
+  if (c.contains('risco'))     return 'risco';
+  if (c.contains('autor'))     return 'autor';
+  if (el.tagName === 'H1')     return 'titulo';
+  return el.dataset.mont || el.tagName.toLowerCase();
+}
+/* mede tudo o que está no slide, em px do palco, com x,y no centro */
+function medeSlide(i){
+  const sl = slides[i], rs = sl.getBoundingClientRect();
+  /* mede o que ainda estiver no fluxo pelo mesmo critério da montagem */
+  soltaSlide(sl);
+  return [...sl.querySelectorAll(MOVEIS)]
+    .filter(el => !el.classList.contains('q-board') || el.classList.contains('on'))
+    .map(el => {
+      const r = el.getBoundingClientRect();   /* já vem com a escala aplicada */
+      const m = MEDIDAS.get(el);
+      const esc = m ? m.esc : 1;
+      return {
+        nome:  nomeDe(el),
+        x:     Math.round((r.left + r.width/2  - rs.left)/fitScale),
+        y:     Math.round((r.top  + r.height/2 - rs.top )/fitScale),
+        larg:  Math.round(r.width /fitScale),
+        alt:   Math.round(r.height/fitScale),
+        /* a fonte medida não conhece a escala do transform: entra na conta */
+        fonte: el.matches(COM_LETRA)
+               ? Math.round(parseFloat(getComputedStyle(el).fontSize) * esc * 10)/10
+               : null,
+        esc:   Math.round(esc*100)/100
+      };
+    });
+}
+const pad = (v,n) => String(v).padStart(n, ' ');
+
+function textoDoSlide(i){
+  const sl = SLIDES[i];
+  let out = '/* slide ' + (i+1) + ' · ' + (sl.kind === 'capa' ? 'Capa' : sl.title) + ' */\n';
+  medeSlide(i).forEach(o => {
+    out += '  { ' + ("el:'" + o.nome + "',").padEnd(16, ' ') +
+           ' x:' + pad(o.x,4) + ', y:' + pad(o.y,3) +
+           ', larg:' + pad(o.larg,4) + ', alt:' + pad(o.alt,3) +
+           /* a peça sem letra deixa a coluna em branco, para a escala
+              ficar debaixo da escala na linha de cima */
+           (o.fonte === null ? ' '.repeat(13) : ', fonte:' + pad(o.fonte,5)) +
+           ', esc:' + o.esc.toFixed(2) + ' },\n';
+  });
+  return out;
+}
+function copiaPosicoes(todos){
+  const cab = '/* Tabela Periódica Interativa e Moderna\n' +
+              '   palco 1280 x 720 · x,y = centro da peça, em px do palco\n' +
+              '   larg/alt = tamanho já com a escala · fonte = corpo da letra */\n\n';
+  let txt = cab;
+  if (todos) SLIDES.forEach((_,i) => { txt += textoDoSlide(i) + '\n'; });
+  else txt += textoDoSlide(atual);
+
+  coordsDe.textContent = todos
+    ? 'a apresentação inteira · ' + SLIDES.length + ' slides'
+    : 'slide ' + (atual+1) + ' · ' + (SLIDES[atual].kind === 'capa' ? 'Capa' : SLIDES[atual].title);
+  coordsTxt.value = txt;
+  coords.hidden = false;
+  coordsTxt.focus();
+  coordsTxt.select();
+
+  /* tenta a área de transferência; se o navegador não deixar (é comum
+     em file://), o texto já fica selecionado esperando um Ctrl+C */
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(_){}
+  if (ok) coordsMsg.textContent = 'copiado';
+  else if (navigator.clipboard) navigator.clipboard.writeText(txt)
+    .then(() => coordsMsg.textContent = 'copiado')
+    .catch(() => coordsMsg.textContent = 'selecione e copie');
+  else coordsMsg.textContent = 'selecione e copie';
+}
+function fechaCoords(){ coords.hidden = true; coordsMsg.textContent = ''; }
+
+const ajuda = document.getElementById('ajuda');
+function mostraAjuda(v){
+  ajuda.hidden = !(v === undefined ? ajuda.hidden : !!v);
+}
+/* O clique no palco adianta a CENA do slide — nunca o slide. Trocar
+   de assunto é só pelas setas: um toque perdido na tela não pode
+   virar a página no meio da explicação. */
+stage.addEventListener('click', (ev) => {
+  if (naMontagem() || stage.classList.contains('escrevendo')) return;
+  if (ev.target.closest('button, a, input, .q-board, .pc')) return;
+  passoAdiante();
+});
+
+/* na montagem, o clique em cima do papel diz a coordenada dali —
+   mas só se foi um clique mesmo, e não o fim de um arrasto */
+stage.addEventListener('click', (ev) => {
+  if (!naMontagem() || moveu) return;
+  const [x,y] = noPalco(ev).map(Math.round);
+  coord.textContent = 'x: '+x+'   y: '+y;
+  coord.style.left = x+'px';
+  coord.style.top  = y+'px';
+  coord.classList.add('on');
+  navigator.clipboard?.writeText('x: '+x+', y: '+y).catch(()=>{});
+});
+
+/* ------------------------------------------------------------
+   TECLADO
+   ------------------------------------------------------------ */
+document.addEventListener('keydown', (e) => {
+  /* com a caixa de anotações aberta, o teclado é dela */
+  if (!notes.hidden){ if (e.key === 'Escape') hideNotes(); return; }
+
+  /* Ctrl+C: as posições e os tamanhos de tudo o que está na tela.
+     Com Shift, a apresentação inteira. Com a folha já aberta, o
+     Ctrl+C é dela — é o copiar do próprio navegador. */
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')){
+    if (!coords.hidden) return;
+    e.preventDefault();
+    copiaPosicoes(e.shiftKey);
+    return;
+  }
+  if (!coords.hidden){ if (e.key === 'Escape') fechaCoords(); return; }
+
+  if (!ajuda.hidden){
+    if (e.key === 'Escape' || e.key.toLowerCase() === 'h') mostraAjuda(false);
+    return;
+  }
+  if (e.key === 'Escape'){
+    if (!overview.hidden){ mostraOverview(false); return; }
+    if (naMontagem()){ modoMontagem(false); return; }
+    if (stage.classList.contains('escrevendo')){ modoCaneta(false); return; }
+    if (laserLigado){ modoLaser(false); return; }
+    if (!bar.classList.contains('hidden')){ mostraBarra(false); return; }
+    return;
+  }
+  if (e.key >= '1' && e.key <= '9'){ go(+e.key - 1); return; }
+  switch(e.key){
+    case 'ArrowRight': case 'PageDown': case ' ': case 'Enter':
+      e.preventDefault(); avanca(); break;
+    case 'ArrowLeft': case 'PageUp': case 'Backspace':
+      e.preventDefault(); volta(); break;
+    case 'Home': go(0); break;
+    case 'End':  go(SLIDES.length-1); break;
+    case 'f': case 'F': telaCheia(); break;
+    case 'o': case 'O': mostraOverview(); break;
+    case 'a': case 'A': showNotes(); break;
+    case 'p': case 'P': modoCaneta(); break;
+    case 'l': case 'L': modoLaser(); break;
+    case 'q': case 'Q': modoQuadro(); break;
+    case 'g': case 'G': modoMontagem(); break;
+    case 'r': case 'R': if (naMontagem()) refazLayout(); break;
+    case 'h': case 'H': mostraAjuda(true); break;
+  }
+});
+
+/* ------------------------------------------------------------
+   NÃO HÁ DESLIZE QUE TROQUE DE SLIDE
+   Todo arrasto na tela pertence ao que está debaixo do dedo — a peça
+   que se move na montagem, o objeto da cena, o quadro. Quem passa o
+   slide são as setas da barra e as do teclado, e mais ninguém: numa
+   aula, um arrasto que muda de assunto sozinho é um acidente.
+   ------------------------------------------------------------ */
+
+/* ------------------------------------------------------------
+   A BARRA E O PUXADOR
+   ------------------------------------------------------------ */
+const bar = document.getElementById('bar');
+const puxador = document.getElementById('puxador');
+
+function mostraBarra(v){
+  const abrir = v === undefined ? bar.classList.contains('hidden') : !!v;
+  bar.classList.toggle('hidden', !abrir);
+  puxador.classList.toggle('fora', abrir);
+  puxador.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+}
+puxador.addEventListener('click', () => mostraBarra(true));
+document.getElementById('bar-close').addEventListener('click', () => mostraBarra(false));
+document.getElementById('prev').addEventListener('click', volta);
+document.getElementById('next').addEventListener('click', avanca);
+document.getElementById('over').addEventListener('click', () => mostraOverview());
+quadroBtn.addEventListener('click', modoQuadro);
+montBtn.addEventListener('click', () => modoMontagem());
+document.getElementById('copia-btn').addEventListener('click', () => copiaPosicoes(false));
+document.getElementById('coords-close').addEventListener('click', fechaCoords);
+overview.addEventListener('click', (e) => { if (e.target === overview) mostraOverview(false); });
+ajuda.addEventListener('click', (e) => { if (e.target === ajuda) mostraAjuda(false); });
+
+/* ============================================================
+   A TELA NÃO APAGA
+   Numa aula o slide fica parado enquanto o professor fala, e o sistema
+   entende parado como abandonado. O Wake Lock pede para manter a tela
+   acesa — e é pedido de novo a cada volta, porque o navegador o solta
+   sempre que a aba sai de cena.
+   ============================================================ */
+let travaTela = null;
+async function seguraTela(){
+  if (!('wakeLock' in navigator) || document.hidden || travaTela) return;
+  try {
+    travaTela = await navigator.wakeLock.request('screen');
+    travaTela.addEventListener('release', () => { travaTela = null; });
+  } catch (err){ travaTela = null; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) seguraTela(); });
+document.addEventListener('pointerdown', seguraTela, { once:true });
+
+document.getElementById('ver').textContent = VERSAO;
+ajustaPalco();
+reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
+pinta();
+seguraTela();
+</script>
+</body>
+</html>
