@@ -976,15 +976,19 @@ body{
    O tamanho mora numa variável e muda a letra, e não estica a caixa:
    assim ela continua nítida. */
 .dist-val{
-  position:absolute;left:152px;top:284px;transform:translateY(-50%);
-  z-index:13;white-space:nowrap;text-align:left;
+  /* O lugar e o corpo são os que ele achou na mão: a folha do Ctrl+C
+     deu centro em 645 e largura 996, e como a peça é presa pela
+     esquerda a conta é 645 menos metade de 996. */
+  position:absolute;left:147px;top:194px;transform:translateY(-50%);
+  z-index:13;pointer-events:none;white-space:nowrap;text-align:left;
   font-family:var(--display);font-weight:500;color:var(--tinta);
-  font-size:calc(19px * var(--kd,1.453));
-  pointer-events:auto;cursor:grab;touch-action:none;
+  /* dois fatores, e não um: o --kd é o tamanho que ele escolheu, o
+     --kfit é o encolhimento automático de quem não cabe na tela. Assim
+     um não apaga o outro. */
+  font-size:calc(19px * var(--kd,1.453) * var(--kfit,1));
   opacity:0;translate:0 10px;
   transition:opacity .4s ease, translate .45s cubic-bezier(.2,.86,.26,1);
 }
-.dist-val.na-mao{cursor:grabbing}
 .dist-val.on{opacity:1;translate:0 0}
 .dist-val .cam{
   display:inline-block;position:relative;margin:0 11px;
@@ -4351,70 +4355,24 @@ function acendeElemento(mesa, carta){
     distDe(z).map(([, sub]) =>
       '<span class="cam">' + sub +
         '<span class="br"></span><span class="lb">' + conta(sub) + '</span></span>').join('');
-  /* onde e de que tamanho ele a deixou da última vez */
-  if (ondeADist){
-    d.style.left = ondeADist.x.toFixed(0) + 'px';
-    d.style.top  = ondeADist.y.toFixed(0) + 'px';
-    d.style.setProperty('--kd', ondeADist.k.toFixed(3));
-  }
   mesa.appendChild(d);
+  cabeNaTela(d);
   revela(d, 'on');
 }
 
-/* ---- a distribuição anda e cresce com a mão ----
-   Ela é presa pela esquerda: arrastar leva o símbolo, e os subníveis
-   vão atrás dele. Um dedo a leva, dois em pinça mudam o tamanho da
-   letra, e a roda do mouse faz o mesmo no PC. Onde ela é largada fica
-   guardado, e a próxima nasce ali. */
-let distNaMao = null;
-let ondeADist = null;
-
-function guardaDist(d){
-  ondeADist = {
-    x: parseFloat(d.style.left) || 152,
-    y: parseFloat(d.style.top)  || 284,
-    k: parseFloat(d.style.getPropertyValue('--kd')) || 1.453
-  };
+/* ---- e o que não couber na tela encolhe ----
+   Os seis do fim da tabela escrevem sete camadas, e no corpo que ele
+   escolheu a linha deles passaria da borda direita. Em vez de um
+   número escrito à mão para eles, a peça se mede depois de escrita e
+   encolhe só o quanto for preciso: quem cabe fica do tamanho dele. */
+function cabeNaTela(d){
+  d.style.setProperty('--kfit', '1');
+  const palco = stage.getBoundingClientRect();
+  const r = d.getBoundingClientRect();
+  const cabe = (palco.right - 22 * fitScale) - r.left;
+  if (r.width > cabe && cabe > 0)
+    d.style.setProperty('--kfit', (cabe / r.width).toFixed(3));
 }
-function ancoraDist(){
-  const b = distNaMao;
-  b.base = centroDe(b.ptr);
-  b.x0 = parseFloat(b.d.style.left) || 152;
-  b.y0 = parseFloat(b.d.style.top)  || 284;
-  b.k0 = parseFloat(b.d.style.getPropertyValue('--kd')) || 1.453;
-}
-function comecaDist(mesa, d, ev){
-  distNaMao = { d, ptr: new Map(),
-                k: 1 / (fitScale * (leMesa(mesa).zoom || 1)) };
-  distNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  ancoraDist();
-  d.classList.add('na-mao');
-  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
-}
-document.addEventListener('pointermove', (ev) => {
-  const b = distNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  const agora = centroDe(b.ptr);
-  if (b.ptr.size > 1 && b.base.d > 12)
-    b.d.style.setProperty('--kd',
-      Math.max(.5, Math.min(3, b.k0 * (agora.d / b.base.d))).toFixed(3));
-  b.d.style.left = Math.max(10, Math.min(1180,
-    b.x0 + (agora.cx - b.base.cx) * b.k)).toFixed(0) + 'px';
-  b.d.style.top  = Math.max(40, Math.min(690,
-    b.y0 + (agora.cy - b.base.cy) * b.k)).toFixed(0) + 'px';
-});
-function soltaDist(ev){
-  const b = distNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.delete(ev.pointerId);
-  if (b.ptr.size){ ancoraDist(); return; }   /* sobrou dedo: recomeça dali */
-  b.d.classList.remove('na-mao');
-  guardaDist(b.d);
-  distNaMao = null;
-}
-document.addEventListener('pointerup', soltaDist);
-document.addEventListener('pointercancel', soltaDist);
 
 /* ---- o botão que troca de leitura ---- */
 function poeBreu(cena){
@@ -6091,16 +6049,7 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
-  /* e a distribuição do slide da valência, pelo mesmo motivo */
-  const dAlvo = ev.target.closest && ev.target.closest('.dist-val');
-  if (dAlvo){
-    if (!distNaMao) comecaDist(m, dAlvo, ev);
-    else if (distNaMao.ptr.size < 2){
-      distNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-      ancoraDist();
-    }
-    return;
-  }
+
 
   /* no slide dos grupos, o dedo na tabela é dela: parado, abre a
      tabela; aberta ela, arrasta o bloco. Em nenhum dos casos é gesto
@@ -6287,16 +6236,6 @@ document.addEventListener('pointercancel', largaMesa);
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
   if (!m) return;
-  /* a roda sobre a distribuição muda o tamanho da letra dela */
-  const dRoda = ev.target.closest && ev.target.closest('.dist-val');
-  if (dRoda){
-    const k0 = parseFloat(dRoda.style.getPropertyValue('--kd')) || 1.453;
-    dRoda.style.setProperty('--kd',
-      Math.max(.5, Math.min(3, k0 * (1 - ev.deltaY * 0.0015))).toFixed(3));
-    guardaDist(dRoda);
-    ev.preventDefault();
-    return;
-  }
   /* no slide dos grupos, com a tabela aberta, a roda faz sobre o bloco
      debaixo do cursor o que a pinça faz no tablete */
   if (atual === 5 && mesaPartida){
