@@ -1397,6 +1397,27 @@ function reiniciaCena2(){
     setTimeout(() => acende(1), 1020);
   });
 
+  /* ---- passo seguinte: o segundo critério ----
+     Ele chega como o primeiro, pela esquerda, e vai logo abaixo dele —
+     alinhado pela mesma margem, para os dois se lerem como uma lista. */
+  r.passos.push(() => {
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra2';
+    t.innerHTML = '<span class="regra-in"><b>2 -</b> Dentro de uma mesma coluna,' +
+                  ' os elementos são quimicamente semelhantes</span>';
+    cena.appendChild(t);
+    soltaSlide(slides[1]);
+    const m = MEDIDAS.get(t);
+    if (m){
+      m.esc = 1.11;
+      m.cy  = 168;
+      m.cx  = 107 + (m.w*m.esc)/2;      /* a esquerda dela na esquerda da 1ª */
+      aplicaEl(t);
+    }
+    requestAnimationFrame(() => t.classList.add('posta'));
+  });
+
   /* o convite: vermelho lento, e a carta passa a pegar o dedo */
   function acende(z){
     const c = cartas.get(z);
@@ -1998,7 +2019,7 @@ stage.addEventListener('pointerdown', (ev) => {
    de uma pequena ampliada.
    ------------------------------------------------------------ */
 const dedosMesa = new Map();
-let baseMesa = null, toqueMesa = null, houvePinca = false, ultimoToque = 0;
+let baseMesa = null, toqueMesa = null, houvePinca = false, ultimoToque = 0, esperaToque = null;
 
 /* ---- a tabela troca de modo ----
    Um toque na tabela pronta a abre em linhas; dois toques rápidos a
@@ -2177,6 +2198,7 @@ function largaMesa(ev){
        colunas e vice-versa. O primeiro dos dois já acendeu alguma
        coisa — a troca limpa tudo, então não fica rastro. */
     if (agora - ultimoToque < 380){
+      clearTimeout(esperaToque);        /* era o começo de um toque duplo */
       poeModo(m, modoMesa === 'colunas' ? 'linhas' : 'colunas');
       ultimoToque = 0;
     } else if (modoMesa === 'junta'){
@@ -2185,7 +2207,13 @@ function largaMesa(ev){
     } else {
       const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
       if (carta){ escolheCarta(m, carta); realceFaixa(m, carta); }
-      else limpaRealce(m);
+      else {
+        /* toque no vazio adianta a aula — mas só depois de passar a
+           janela do toque duplo, senão o primeiro dos dois já teria
+           virado a página antes de o segundo chegar */
+        clearTimeout(esperaToque);
+        esperaToque = setTimeout(() => passoAdiante(), 390);
+      }
       ultimoToque = agora;
     }
     toqueMesa = null;
@@ -2276,6 +2304,7 @@ const coordsDe  = document.getElementById('coords-de');
 const coordsMsg = document.getElementById('coords-msg');
 
 function nomeDe(el){
+  if (el.dataset.mont) return el.dataset.mont;   /* peça com nome próprio */
   const c = el.classList;
   if (c.contains('title'))     return 'titulo';
   if (c.contains('regra'))     return 'regra';
@@ -2381,6 +2410,10 @@ function mostraAjuda(v){
 stage.addEventListener('click', (ev) => {
   if (naMontagem() || stage.classList.contains('escrevendo')) return;
   if (ev.target.closest('button, a, input, .q-board, .pc')) return;
+  /* com a tabela aberta, os toques pertencem a ela: é ela que decide
+     se aquele toque acende um elemento, troca a leitura ou adianta a
+     aula — e a conta do toque duplo mora lá */
+  if (slides[atual].querySelector('.mesa.aberta')) return;
   passoAdiante();
 });
 
