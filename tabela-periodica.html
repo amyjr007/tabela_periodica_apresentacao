@@ -407,6 +407,37 @@ body{
 .mesa.pronta .pc{pointer-events:auto;cursor:pointer}
 .mesa.tem-realce .pc{transition:opacity .3s ease}
 .mesa.tem-realce .pc:not(.realce){opacity:.34}
+/* ---------- os blocos do slide 4 ----------
+   Puxada uma carta, anda o tipo inteiro. Enquanto o bloco está na mão
+   ele ganha altura e sombra, para se ver que saiu do tabuleiro. */
+.mesa.blocos .pc{cursor:grab}
+.mesa.blocos .pc.no-bloco{cursor:grabbing;z-index:22}
+.mesa.blocos .pc.no-bloco .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
+  0 10px 22px rgba(80,40,0,.34)}
+
+/* O ARRANCO
+   O bloco não se destaca de mansinho: ele dá um tranco para cima e
+   fica erguido e um pouco torto na mão, como peça que saiu do
+   encaixe. As cartas não saltam todas juntas — cada uma vai um
+   instante depois da outra, e é esse desencontro que faz parecer que
+   a estrutura cedeu, em vez de o bloco ter sido levantado inteiro.
+   A animação usa a propriedade `scale`, que se multiplica com o
+   transform do miolo em vez de apagá-lo, e não deixa rastro: quem
+   segura a carta erguida depois dela é o --sc. */
+@keyframes arranca{
+  0%  {scale:1}
+  32% {scale:1.16}
+  100%{scale:1}
+}
+.pc.arranca .pc-in{animation:arranca .42s cubic-bezier(.3,1.5,.5,1)}
+/* o nome do tipo, que aparece quando o bloco pousa */
+.rot-tipo{
+  position:absolute;z-index:9;transform:translate(-50%,-50%);
+  opacity:0;pointer-events:none;transition:opacity .45s ease;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.01em;
+}
+.rot-tipo.on{opacity:1}
+
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
   0 8px 20px rgba(80,40,0,.34), 0 0 0 2px rgba(226,162,43,.85)}
@@ -1186,7 +1217,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  const gira = (de === 1 && i === 2) || (de === 2 && i === 1);
+  /* a tabela atravessa os slides 2, 3 e 4 sem sair de cena: entre eles
+     a passagem é o giro, e não o empurrão */
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 3 && i >= 1 && i <= 3;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1323,7 +1356,10 @@ function giraCabecalhos(de, para){
                      : (yDaLinha(1,'junta') - CARTA_H/2 - 26).toFixed(0)+'px';
       });
     }
-    viraCartas(mesa, para > de ? 'face2' : 'familia');
+    /* a face é do slide de destino, e não do sentido da viagem: no
+       slide das coordenadas a tabela é um tabuleiro de uma cor só; nos
+       outros, ela volta a falar de famílias */
+    viraCartas(mesa, para === 2 ? 'face2' : 'familia');
   }
 
   slides[de].querySelectorAll(PECAS_CABECA).forEach(el => {
@@ -1544,6 +1580,30 @@ function posDe(z){
   if (z <= 103) return {col:3,     row:7};   /* os actinídeos */
   return          {col:z-100, row:7};        /* 104..118 -> 4..18 */
 }
+/* ---- os quatro tipos, e o hidrogênio à parte ----
+   As dez famílias se agrupam em quatro tipos. O hidrogênio fica sozinho
+   porque é o que ele é na tabela: um ametal sentado em cima dos metais
+   alcalinos, sem pertencer ao bloco de ninguém. */
+const NOMES_TIPO = {
+  metais:'Metais', semimetais:'Semimetais', ametais:'Ametais',
+  nobres:'Gases Nobres', hidrogenio:'Hidrogênio'
+};
+/* a cor de cada tipo é a da família que melhor o representa — três
+   delas são exatas, e os metais tomam a dos de transição, que são a
+   maior parte deles */
+const CORES_TIPO = {
+  metais:'transicao', semimetais:'semimetais', ametais:'ametais',
+  nobres:'nobres', hidrogenio:'ametais'
+};
+function tipoDe(z){
+  if (z === 1) return 'hidrogenio';
+  const f = familiaDoZ(z);
+  if (f === 'nobres')     return 'nobres';
+  if (f === 'semimetais') return 'semimetais';
+  if (f === 'ametais' || f === 'halogenios') return 'ametais';
+  return 'metais';
+}
+
 /* a família é do elemento, não da casa: as duas séries dividem a casa
    do grupo 3, que sozinha diria "metal de transição" */
 function familiaDoZ(z){
@@ -2079,6 +2139,147 @@ function montaRoteiro3(){
   }});
 }
 
+/* ============================================================
+   SLIDE 4 · OS TIPOS DE ELEMENTOS
+   A tabela chega do slide anterior com as cores das famílias de volta.
+   A frase diz quais são os tipos, cada nome na cor do seu bloco; dita
+   a frase, os blocos passam a se puxar com o dedo — todo um tipo anda
+   junto, como um bloco só, e ao ser solto ele diz o próprio nome.
+   ============================================================ */
+function montaRoteiro4(){
+  const sl = slides[3];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[3] = r;
+
+  r.passos.push(() => {
+    let cena = sl.querySelector('.cena');
+    if (!cena){
+      cena = document.createElement('div');
+      cena.className = 'cena';
+      sl.appendChild(cena);
+    }
+    const cor = t => 'style="color:var(--cat-' + CORES_TIPO[t] + ')"';
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra4';
+    t.innerHTML = '<span class="regra-in">Tipos de elemento estão organizados em blocos: ' +
+      '<em ' + cor('metais')     + '>Metais</em>, ' +
+      '<em ' + cor('semimetais') + '>Semimetais</em>, ' +
+      '<em ' + cor('ametais')    + '>Ametais</em> e ' +
+      '<em ' + cor('nobres')     + '>Gases Nobres</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(3);
+    requestAnimationFrame(() => t.classList.add('posta'));
+
+    /* dita a frase, os blocos se soltam do tabuleiro */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('blocos');
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){
+        m.classList.remove('blocos');
+        m.querySelectorAll('.rot-tipo').forEach(e => e.remove());
+      }
+    });
+  });
+}
+
+/* ---- os blocos se puxam com o dedo ----
+   Pegar uma carta é pegar o tipo inteiro: os metais andam com os
+   metais. Solto, o bloco diz o próprio nome, na cor dele. */
+let blocoAtivo = null;
+
+function comecaBloco(mesa, carta, ev){
+  const tipo = tipoDe(+carta.dataset.z);
+  const pecas = [...mesa.querySelectorAll('.pc')]
+    .filter(c => tipoDe(+c.dataset.z) === tipo)
+    .map(c => ({ c, x: parseFloat(c.style.left), y: parseFloat(c.style.top) }));
+  /* a caixa do bloco, para ele não poder ser empurrado para fora da
+     tela: o palco corta o que passa da borda, e um bloco perdido lá
+     fora não teria como ser trazido de volta */
+  let x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+  pecas.forEach(p => {
+    if (p.x < x1) x1 = p.x;   if (p.x > x2) x2 = p.x;
+    if (p.y < y1) y1 = p.y;   if (p.y > y2) y2 = p.y;
+  });
+  blocoAtivo = { id: ev.pointerId, tipo, mesa, x: ev.clientX, y: ev.clientY, pecas,
+                 caixa: {x1, y1, x2, y2} };
+  pecas.forEach((p,i) => {
+    p.c.classList.add('no-bloco', 'arranca');
+    const miolo = p.c.firstElementChild;
+    miolo.style.animationDelay = ((i % 9) * 16) + 'ms';   /* a estrutura cede aos poucos */
+    miolo.style.setProperty('--sc', '1.06');              /* ergue */
+    miolo.style.setProperty('--rot', ((i % 2 ? 1 : -1) * (1.4 + i % 3)).toFixed(1) + 'deg');
+    setTimeout(() => {
+      p.c.classList.remove('arranca');
+      miolo.style.removeProperty('animation-delay');
+    }, 560);
+  });
+  const rot = mesa.querySelector('.rot-tipo[data-tipo="'+tipo+'"]');
+  if (rot) rot.classList.remove('on');       /* o nome espera pousar de novo */
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+document.addEventListener('pointermove', (ev) => {
+  if (!blocoAtivo || ev.pointerId !== blocoAtivo.id) return;
+  /* O bloco pode sair da tela — o que não pode é sumir por inteiro:
+     fica sempre uma faixa dele à vista, senão não haveria por onde
+     pegá-lo de volta. É o pedaço que sobra que é garantido, e não a
+     caixa inteira. */
+  const c = blocoAtivo.caixa, mg = 110;
+  const dx = Math.max(mg - c.x2, Math.min(1280 - mg - c.x1,
+                      (ev.clientX - blocoAtivo.x)/fitScale));
+  const dy = Math.max(160 - c.y2, Math.min(640 - c.y1,
+                      (ev.clientY - blocoAtivo.y)/fitScale));
+  blocoAtivo.pecas.forEach(p => {
+    p.c.style.left = (p.x + dx).toFixed(1) + 'px';
+    p.c.style.top  = (p.y + dy).toFixed(1) + 'px';
+  });
+});
+function soltaBloco(ev){
+  if (!blocoAtivo || ev.pointerId !== blocoAtivo.id) return;
+  const {mesa, tipo, pecas} = blocoAtivo;
+  /* pousado, o bloco assenta: volta ao tamanho e endireita */
+  pecas.forEach(p => {
+    p.c.classList.remove('no-bloco', 'arranca');
+    const miolo = p.c.firstElementChild;
+    miolo.style.setProperty('--sc', '1');
+    miolo.style.setProperty('--rot', '0deg');
+  });
+  nomeiaBloco(mesa, tipo, pecas.map(p => p.c));
+  blocoAtivo = null;
+}
+document.addEventListener('pointerup', soltaBloco);
+document.addEventListener('pointercancel', soltaBloco);
+
+/* o nome do tipo, centrado acima do bloco onde ele parou */
+function nomeiaBloco(mesa, tipo, cartas){
+  let x1 = 1e9, x2 = -1e9, y1 = 1e9;
+  cartas.forEach(c => {
+    const x = parseFloat(c.style.left), y = parseFloat(c.style.top);
+    if (x < x1) x1 = x;
+    if (x > x2) x2 = x;
+    if (y < y1) y1 = y;
+  });
+  let rot = mesa.querySelector('.rot-tipo[data-tipo="'+tipo+'"]');
+  if (!rot){
+    rot = document.createElement('div');
+    rot.className = 'rot-tipo';
+    rot.dataset.tipo = tipo;
+    rot.textContent = NOMES_TIPO[tipo];
+    rot.style.color = 'var(--cat-' + CORES_TIPO[tipo] + ')';
+    mesa.appendChild(rot);
+  }
+  /* o nome fica sempre à vista, mesmo que o bloco tenha ido morar
+     meio para fora: é ele que diz o que aquilo é */
+  rot.style.left = Math.max(80, Math.min(1200, (x1 + x2)/2)).toFixed(0) + 'px';
+  rot.style.top  = Math.max(150, y1 - CARTA_H/2 - 24).toFixed(0) + 'px';
+  requestAnimationFrame(() => rot.classList.add('on'));
+}
+
 /* os confetes: papel picado com gravidade, na paleta das famílias */
 function confetes(){
   const cv = document.getElementById('festa');
@@ -2519,6 +2720,15 @@ const LAYOUTS = {
        ele andaria na tela a cada toque. */
     simbolo:     {x:306, y:323, esc:1.00},
     coordenadas: {x:439, y:338, esc:0.96}
+  },
+  /* slide 4 · Os Tipos de Elementos — a mesma tira do 3 */
+  3: {
+    numero:    {x:259,  y: 34, esc:1.00},
+    regua:     {x:120,  y: 32, esc:1.00},
+    titulo:    {esq:281, y: 30, esc:0.76},
+    subtitulo: {esq:744, y: 31, esc:1.08},
+    /* a frase é a mais longa da aula: em 1,11 ela encostaria na borda */
+    regra4:    {esq:104, y: 82, esc:1.00}
   }
 };
 
@@ -2860,6 +3070,12 @@ function ancoraMesa(m){
 stage.addEventListener('pointerdown', (ev) => {
   const m = mesaPronta();
   if (!m || ev.target.closest('button, a, input')) return;
+  /* no slide dos tipos, pegar uma carta é pegar o bloco dela — e aí o
+     gesto não é da mesa, é do bloco */
+  if (m.classList.contains('blocos')){
+    const c = ev.target.closest('.pc');
+    if (c){ comecaBloco(m, c, ev); return; }
+  }
   m.classList.remove('macia');            /* na mão, sem inércia */
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
   if (dedosMesa.size > 1) houvePinca = true;
@@ -3233,6 +3449,7 @@ document.getElementById('ver').textContent = VERSAO;
 ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
 montaRoteiro3();
+montaRoteiro4();
 pinta();
 seguraTela();
 
