@@ -270,9 +270,12 @@ body{
 /* ---------- cabeçalho: título + régua + subtítulo ---------- */
 .title{
   font-family:var(--display);font-weight:700;font-size:46px;line-height:1.05;
-  letter-spacing:-.02em;max-width:20ch;color:var(--tinta);
+  letter-spacing:-.02em;color:var(--tinta);
+  /* o nome do slide vive numa linha só: quebrado em duas ele deixa de
+     ser um nome e vira duas coisas, e a tira do cabeçalho — que é a
+     mesma em todos os slides — perde a altura que tem */
+  max-width:none;white-space:nowrap;
 }
-.title.uma{max-width:none;white-space:nowrap}
 
 /* a assinatura do tema: a régua dos períodos.
    Uma célula por slide; a acesa é onde a aula está. Dá pra tocar
@@ -654,6 +657,50 @@ body{
 /* aberta a tabela, as identificações somem: elas são da tabela
    inteira, e a tabela inteira deixou de existir por um momento */
 .mesa.partida .rot-grupo{opacity:0}
+
+/* ---------- as duas séries, no slide 7 ----------
+   A tabela sobe uma casa para abrir espaço embaixo: é ali que os
+   quinze de cada série vão pousar quando saírem da pilha. */
+.mesa{transition:translate .5s cubic-bezier(.3,.9,.3,1)}
+.mesa.subida{translate:0 -54px}
+
+/* a casa que fica vazia quando a série sai — e por onde ela volta */
+.buraco{
+  position:absolute;width:var(--cw,58px);height:var(--ch,48px);
+  transform:translate(-50%,-50%);z-index:6;
+  pointer-events:auto;cursor:pointer;
+  border:2px dashed color-mix(in srgb,var(--indigo) 55%,transparent);
+  background:color-mix(in srgb,var(--indigo) 7%,transparent);
+  opacity:0;transition:opacity .35s ease .2s, background .2s;
+}
+.buraco.on{opacity:1}
+.buraco:hover{background:color-mix(in srgb,var(--indigo) 16%,transparent)}
+
+/* o nome de cada série, à esquerda da fila que ela formou */
+.rot-serie{
+  position:absolute;z-index:10;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.01em;
+  color:var(--cs);opacity:0;translate:-14px 0;
+  transition:opacity .4s ease, translate .5s cubic-bezier(.2,.86,.26,1);
+}
+.rot-serie.on{opacity:1;translate:0 0}
+
+/* a cerca que junta as duas séries numa coisa só */
+.cerca{
+  position:absolute;z-index:5;pointer-events:none;border-radius:12px;
+  border:2px dashed var(--indigo);
+  background:color-mix(in srgb,var(--indigo) 7%,transparent);
+  opacity:0;transition:opacity .4s ease;
+}
+.cerca.on{opacity:1}
+.rot-cerca{
+  position:absolute;z-index:10;transform:translate(-50%,-50%);
+  pointer-events:none;text-align:center;line-height:1.15;
+  font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;
+  color:var(--indigo);opacity:0;transition:opacity .4s ease .15s;
+}
+.rot-cerca.on{opacity:1}
 
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
@@ -1395,11 +1442,9 @@ SLIDES.forEach((sl,i) => {
       '<div class="autor">Professor: <b>Amauri Junior</b></div>' +
       '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior" draggable="false"></figure>';
   } else {
-    /* título curto cabe numa linha só; longo pode quebrar em duas */
-    const uma = sl.title.length <= 26 ? ' uma' : '';
     el.innerHTML =
       '<div class="num" data-mont="numero">'+i+'</div>' +
-      '<h2 class="title'+uma+'">'+esc(sl.title)+'</h2>' +
+      '<h2 class="title">'+esc(sl.title)+'</h2>' +
       '<div class="regua" aria-label="Ir para um slide"></div>' +
       '<div class="subtitle">'+esc(sl.subtitle || '')+'</div>' +
       '<div class="body-area"><div class="vazio">conteúdo do slide '+(i+1)+'</div></div>';
@@ -1439,9 +1484,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2 a 6 sem sair de cena: entre eles a
+  /* a tabela atravessa os slides 2 a 7 sem sair de cena: entre eles a
      passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 5 && i >= 1 && i <= 5;
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 6 && i >= 1 && i <= 6;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1523,7 +1568,7 @@ const FUNDO_FACE2 = 'linear-gradient(145deg,#DCD7F3,#C0B8E8)';
 
 /* a carta vira: no fio da meia-volta, quando ela está de perfil e não
    se vê nada, a cara é trocada */
-function viraCartas(mesa, face, pintadas){
+function viraCartas(mesa, face, slide){
   mesa.querySelectorAll('.pc').forEach(c => {
     const z = +c.dataset.z, p = posDe(z);
     const atraso = (p.col + p.row) * 11;      /* a onda atravessa na diagonal */
@@ -1531,9 +1576,9 @@ function viraCartas(mesa, face, pintadas){
     miolo.style.animationDelay = atraso + 'ms';
     c.classList.add('virando');
     setTimeout(() => {
-      /* no slide das famílias, quem já foi levantado vira mostrando a
-         cor que ganhou: pintar depois faria a carta piscar em lilás */
-      const pintada = pintadas && corPintadaDe(c);
+      /* quem tem cor própria neste slide vira já mostrando essa cor:
+         pintar depois a faria piscar na cor da face antes */
+      const pintada = corExtraDe(c, slide);
       if (pintada){
         c.classList.remove('face2');
         miolo.style.background = fundoDe(pintada);
@@ -1600,8 +1645,28 @@ function corDoBloco(col){
    o fundo, para o giro e a troca sem giro nunca discordarem. */
 function faceDe(i){
   if (i === 2 || i === 4) return 'face2';   /* coordenadas e famílias */
-  if (i === 5)            return 'ab';      /* os grupos A e B */
+  if (i === 5 || i === 6) return 'ab';      /* os grupos A e B, e as séries */
   return 'familia';
+}
+/* A face diz a cor de toda a tabela; alguns slides põem uma cor por
+   cima dela em algumas cartas — as famílias já levantadas no slide 5,
+   as séries fora da pilha no 7. Uma função só responde por essas, para
+   o giro e a troca sem giro não discordarem. */
+function corExtraDe(c, i){
+  if (i === 4) return corPintadaDe(c);
+  if (i === 6){
+    const chave = serieDe(+c.dataset.z);
+    return (chave && seriesAbertas.has(chave)) ? corDaSerie(+c.dataset.z) : null;
+  }
+  return null;
+}
+function pintaExtras(mesa, i){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const cor = corExtraDe(c, i);
+    if (!cor) return;
+    c.classList.remove('face2');
+    c.firstElementChild.style.background = fundoDe(cor);
+  });
 }
 function fundoDaFace(c, face){
   if (face === 'ab')    return fundoDe(corDoBloco(+c.dataset.col));
@@ -1651,6 +1716,11 @@ function estadoMesaPara(mesa, i){
   if (i !== 5) apagaGrupos(mesa);
   mesa.classList.toggle('grupos', i === 5 && !!slides[5].querySelector('.regra'));
   if (i === 5) poeGrupos(mesa);
+  /* o slide das séries: a tabela sobe uma casa para caber a fila que
+     vai nascer embaixo dela, e fora dali as séries voltam para a pilha */
+  mesa.classList.toggle('subida', i === 6);
+  mesa.classList.toggle('series', i === 6 && !!slides[6].querySelector('.regra7b, [data-mont="regra7b"]'));
+  arrumaSeries(mesa, i === 6);
   if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
@@ -1667,8 +1737,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 5) return mesa;
-  /* os slides 3 a 6 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 6) return mesa;
+  /* os slides 3 a 7 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -1688,8 +1758,8 @@ function levaMesaPara(i, comGiro){
   const face = faceDe(i);
   /* e o slide das famílias devolve a cor às colunas que a aula já
      levantou: a tinta não mora na carta, que a perde ao virar a face */
-  if (comGiro) viraCartas(mesa, face, i === 4);
-  else { aplicaFace(mesa, face); if (i === 4) pintaFamilias(mesa); }
+  if (comGiro) viraCartas(mesa, face, i);
+  else { aplicaFace(mesa, face); pintaExtras(mesa, i); }
   return mesa;
 }
 
@@ -1768,9 +1838,9 @@ function montaMiniaturas(){
     copia.classList.add('is-active');
     /* A tabela é uma só e mora no slide em que a aula está. Para a
        miniatura mostrar o que CADA slide tem, ela é copiada para os
-       cinco que a usam, cada cópia na cara daquele slide. */
+       seis que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 5){
+    if (mesaViva && i >= 1 && i <= 6){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -1795,7 +1865,10 @@ function montaMiniaturas(){
       marcaPrincipais(m, i === 4);
       m.classList.toggle('familias', i === 4 && mesaViva.classList.contains('familias'));
       apagaFamilia(m);
-      if (i === 4) pintaFamilias(m);
+      /* as séries só estão fora da pilha no slide delas */
+      m.classList.toggle('subida', i === 6);
+      arrumaSeries(m, i === 6);
+      pintaExtras(m, i);
     }
     /* na miniatura nada é clicável: ela inteira é um alvo só */
     copia.querySelectorAll('button').forEach(b => { b.tabIndex = -1; b.disabled = true; });
@@ -2082,7 +2155,7 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 5; i++){
+  for (let i = 1; i <= 6; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
@@ -2090,8 +2163,11 @@ function reiniciaCena2(){
   if (typeof montaRoteiro4 === 'function') montaRoteiro4();
   if (typeof montaRoteiro5 === 'function') montaRoteiro5();
   if (typeof montaRoteiro6 === 'function') montaRoteiro6();
+  if (typeof montaRoteiro7 === 'function') montaRoteiro7();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   gruposDitos.clear();               /* e sem nome de grupo dito */
+  blocosNomeados = false;
+  seriesAbertas.clear();             /* e com as séries de volta na casa delas */
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -3248,6 +3324,293 @@ function montaRoteiro6(){
   });
 }
 
+/* ============================================================
+   SLIDE 7 · OS LANTANÍDEOS E OS ACTINÍDEOS
+   A tabela chega com as cores dos dois blocos e sobe uma casa: é
+   embaixo dela que as duas séries vão pousar. Contada a história, um
+   toque no intervalo — aquele 57–71 — manda as quinze cartas que
+   moram atrás dele saírem, uma atrás da outra, como quem dá as cartas
+   de um baralho. A casa fica vazia, e é por esse buraco que elas
+   voltam.
+
+   O lantânio e o actínio saem na cor da transição externa, e não na
+   da série: eles são do grupo 3B como qualquer outro elemento da
+   coluna, e é isso que a cor está dizendo.
+   ============================================================ */
+const SERIES = {
+  la: {de:57, ate:71,  linha:8, nome:'Lantanídeos', cor:'var(--cat-lantanideos)'},
+  ac: {de:89, ate:103, linha:9, nome:'Actinídeos',  cor:'var(--cat-actinideos)'}
+};
+const serieDe = z => (z >= 57 && z <= 71) ? 'la' : ((z >= 89 && z <= 103) ? 'ac' : null);
+const seriesAbertas = new Set();
+
+/* a fila que a série forma, começando debaixo do grupo 3 */
+function vagaDaSerie(z){
+  const s = SERIES[serieDe(z)];
+  return { x: xDaColuna(3, 'junta') + (z - s.de)*PASSO_X,
+           y: yDaLinha(s.linha, 'junta') };
+}
+/* a cor de cada carta da série: o primeiro é transição externa */
+function corDaSerie(z){
+  const s = SERIES[serieDe(z)];
+  return z === s.de ? corDoBloco(3) : s.cor;
+}
+
+/* ---- a carta sai da pilha e volta para ela ----
+   Fora da pilha ela é uma carta como outra qualquer; dentro, ou some
+   atrás da da frente, ou é a da frente e diz o intervalo que guarda. */
+function tiraDaPilha(c, z){
+  const miolo = c.firstElementChild;
+  if (PILHAS[z]){
+    miolo.classList.remove('pilha');
+    miolo.innerHTML = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+  }
+  c.style.removeProperty('visibility');
+}
+function poeNaPilha(c, z){
+  const miolo = c.firstElementChild, faixa = PILHAS[z];
+  if (faixa){
+    miolo.classList.add('pilha');
+    miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+    c.style.zIndex = '12';
+  } else {
+    c.style.visibility = 'hidden';
+    c.style.zIndex = '1';
+  }
+  miolo.style.background = fundoDe(corDoBloco(3));
+}
+
+/* ---- o buraco que a série deixa ---- */
+function poeBuraco(mesa, chave){
+  if (mesa.querySelector('.buraco[data-serie="'+chave+'"]')) return;
+  const s = SERIES[chave], a = alvoDe(s.ate, 'junta');
+  const b = document.createElement('div');
+  b.className = 'buraco';
+  b.dataset.serie = chave;
+  b.title = 'Devolver a série à tabela';
+  b.style.left = a.x.toFixed(0) + 'px';
+  b.style.top  = a.y.toFixed(0) + 'px';
+  mesa.appendChild(b);
+  revela(b, 'on');
+}
+function tiraBuraco(mesa, chave){
+  const b = mesa.querySelector('.buraco[data-serie="'+chave+'"]');
+  if (!b) return;
+  b.classList.remove('on');
+  setTimeout(() => b.remove(), 400);
+}
+
+/* ---- o nome da série, dito quando a última carta pousa ---- */
+function nomeiaSerie(mesa, chave){
+  if (!seriesAbertas.has(chave)) return;
+  if (mesa.querySelector('.rot-serie[data-serie="'+chave+'"]')) return;
+  const s = SERIES[chave];
+  const r = document.createElement('div');
+  r.className = 'rot-serie';
+  r.dataset.serie = chave;
+  r.textContent = s.nome;
+  r.style.setProperty('--cs', s.cor);
+  r.style.left = '116px';
+  r.style.top  = yDaLinha(s.linha, 'junta').toFixed(0) + 'px';
+  mesa.appendChild(r);
+  revela(r, 'on');
+}
+function tiraNome(mesa, chave){
+  const r = mesa.querySelector('.rot-serie[data-serie="'+chave+'"]');
+  if (!r) return;
+  r.classList.remove('on');
+  setTimeout(() => r.remove(), 500);
+}
+
+/* ---- as quinze saem, uma atrás da outra ----
+   A carta não voa em arco como no slide 2: aqui ela desliza, e o que
+   faz a coisa parecer um baralho é o atraso de uma para a outra. O
+   atraso vive no próprio transition, e não num setTimeout por carta:
+   assim as quinze partem de um estado só, e nenhuma fica para trás se
+   o navegador engasgar. */
+function abreSerie(mesa, chave){
+  if (seriesAbertas.has(chave)) return;
+  seriesAbertas.add(chave);
+  const s = SERIES[chave];
+  for (let z = s.de; z <= s.ate; z++){
+    const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+    if (!c) continue;
+    const i = z - s.de, miolo = c.firstElementChild, v = vagaDaSerie(z);
+    tiraDaPilha(c, z);
+    miolo.style.background = fundoDe(corDaSerie(z));
+    /* quem sai primeiro passa por cima de quem ainda está na pilha */
+    c.style.zIndex = String(40 - i);
+    c.style.transition = 'left .44s cubic-bezier(.25,.95,.3,1) ' + (i*55) + 'ms,' +
+                         ' top .44s cubic-bezier(.25,.95,.3,1) ' + (i*55) + 'ms';
+    c.getBoundingClientRect();          /* assenta o ponto de partida */
+    c.style.left = v.x.toFixed(1) + 'px';
+    c.style.top  = v.y.toFixed(1) + 'px';
+    setTimeout(() => { c.style.removeProperty('transition'); c.style.zIndex = ''; },
+               520 + i*55);
+  }
+  poeBuraco(mesa, chave);
+  /* o nome vem quando a última pousa */
+  setTimeout(() => nomeiaSerie(mesa, chave), 14*55 + 480);
+}
+
+/* e voltam pelo mesmo caminho, na ordem inversa: a última a sair é a
+   primeira a recolher-se */
+function fechaSerie(mesa, chave, animada){
+  if (!seriesAbertas.has(chave)) return;
+  seriesAbertas.delete(chave);
+  escondeCerca(mesa);
+  tiraBuraco(mesa, chave);
+  tiraNome(mesa, chave);
+  const s = SERIES[chave];
+  for (let z = s.ate; z >= s.de; z--){
+    const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+    if (!c) continue;
+    const i = s.ate - z, a = alvoDe(z, 'junta');
+    if (!animada){
+      c.style.removeProperty('transition');
+      c.style.left = a.x.toFixed(1) + 'px';
+      c.style.top  = a.y.toFixed(1) + 'px';
+      poeNaPilha(c, z);
+      continue;
+    }
+    c.style.zIndex = String(40 - i);
+    c.style.transition = 'left .44s cubic-bezier(.25,.95,.3,1) ' + (i*55) + 'ms,' +
+                         ' top .44s cubic-bezier(.25,.95,.3,1) ' + (i*55) + 'ms';
+    c.getBoundingClientRect();
+    c.style.left = a.x.toFixed(1) + 'px';
+    c.style.top  = a.y.toFixed(1) + 'px';
+    /* chegada a casa, ela some atrás da da frente — ou volta a ser a da
+       frente, dizendo o intervalo */
+    setTimeout(() => {
+      c.style.removeProperty('transition');
+      poeNaPilha(c, z);
+    }, 470 + i*55);
+  }
+}
+
+/* ---- a cerca: as duas séries são uma coisa só ---- */
+function mostraCerca(mesa){
+  if (seriesAbertas.size < 2) return;      /* só faz sentido com as duas fora */
+  let cerca = mesa.querySelector('.cerca');
+  if (!cerca){
+    cerca = document.createElement('div');
+    cerca.className = 'cerca';
+    const x1 = xDaColuna(3,'junta') - CARTA_W/2 - 10;
+    const x2 = xDaColuna(3,'junta') + 14*PASSO_X + CARTA_W/2 + 10;
+    const y1 = yDaLinha(8,'junta') - CARTA_H/2 - 10;
+    const y2 = yDaLinha(9,'junta') + CARTA_H/2 + 10;
+    cerca.style.left   = x1.toFixed(0) + 'px';
+    cerca.style.top    = y1.toFixed(0) + 'px';
+    cerca.style.width  = (x2 - x1).toFixed(0) + 'px';
+    cerca.style.height = (y2 - y1).toFixed(0) + 'px';
+    mesa.appendChild(cerca);
+
+    /* o nome vai ao lado, na faixa livre à direita da fila: em cima
+       está a tabela e embaixo a borda do palco */
+    const r = document.createElement('div');
+    r.className = 'rot-cerca';
+    r.innerHTML = 'Transição<br>interna';
+    r.style.left = (x2 + 58).toFixed(0) + 'px';
+    r.style.top  = ((y1 + y2)/2).toFixed(0) + 'px';
+    mesa.appendChild(r);
+  }
+  revela(cerca, 'on');
+  const r = mesa.querySelector('.rot-cerca');
+  if (r) revela(r, 'on');
+}
+function escondeCerca(mesa){
+  mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => e.classList.remove('on'));
+}
+
+/* o estado das séries quando a tabela chega a um slide, ou quando é
+   copiada para uma miniatura: fora do slide 7 elas moram na pilha */
+function arrumaSeries(mesa, comoEstao){
+  Object.keys(SERIES).forEach(chave => {
+    const s = SERIES[chave], aberta = comoEstao && seriesAbertas.has(chave);
+    for (let z = s.de; z <= s.ate; z++){
+      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+      if (!c) continue;
+      c.style.removeProperty('transition');
+      if (aberta){
+        const v = vagaDaSerie(z);
+        tiraDaPilha(c, z);
+        c.firstElementChild.style.background = fundoDe(corDaSerie(z));
+        c.style.left = v.x.toFixed(1) + 'px';
+        c.style.top  = v.y.toFixed(1) + 'px';
+        c.style.zIndex = '';
+      } else {
+        const a = alvoDe(z, 'junta');
+        c.style.left = a.x.toFixed(1) + 'px';
+        c.style.top  = a.y.toFixed(1) + 'px';
+        poeNaPilha(c, z);
+      }
+    }
+    if (aberta){
+      /* a série que já estava fora volta ao slide como estava: com o
+         buraco por onde se recolhe e com o nome dito */
+      poeBuraco(mesa, chave);
+      nomeiaSerie(mesa, chave);
+    } else {
+      mesa.querySelectorAll('.buraco[data-serie="'+chave+'"], ' +
+                            '.rot-serie[data-serie="'+chave+'"]').forEach(e => e.remove());
+    }
+  });
+  if (!comoEstao) mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => e.remove());
+}
+
+function montaRoteiro7(){
+  const sl = slides[6];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[6] = r;
+
+  /* ---- a pergunta ---- */
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra7';
+    t.innerHTML = '<span class="regra-in">Observe o grupo ' +
+      '<em style="color:var(--bloco-b)">3B</em>, período 6º e 7º. ' +
+      'Notou algo diferente?</span>';
+    cena.appendChild(t);
+    aplicaLayout(6);
+    revela(t, 'posta');
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+    });
+  });
+
+  /* ---- a resposta, e a tabela passa a responder ---- */
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra sem-traco';
+    t.dataset.mont = 'regra7b';
+    t.innerHTML = '<span class="regra-in">São os ' +
+      '<em style="color:var(--cat-lantanideos)">lantanídeos</em> e ' +
+      '<em style="color:var(--cat-actinideos)">actinídeos</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(6);
+    revela(t, 'posta');
+
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('series');
+
+    r.desfazer.push(() => {
+      r.i = 1;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){
+        Object.keys(SERIES).forEach(k => fechaSerie(m, k, true));
+        m.classList.remove('series');
+      }
+    });
+  });
+}
+
 /* ---- a caixa anda com o dedo ----
    Ela nasce no vazio da tabela, que é o lugar que não atrapalha
    ninguém — mas o lugar que não atrapalha nem sempre é o que a sala
@@ -4057,6 +4420,15 @@ const LAYOUTS = {
     titulo:    {esq:281, y: 30, esc:0.76},
     subtitulo: {esq:744, y: 31, esc:1.08},
     regra6:    {esq:104, y: 82, esc:1.00}
+  },
+  /* slide 7 · Os Lantanídeos e os Actinídeos — a mesma tira. Este slide
+     não tem subtítulo no esqueleto, e por isso ele não aparece aqui. */
+  6: {
+    numero:  {x:259,  y: 34, esc:1.00},
+    regua:   {x:120,  y: 32, esc:1.00},
+    titulo:  {esq:281, y: 30, esc:0.76},
+    regra7:  {esq:104, y: 82, esc:1.06},
+    regra7b: {esq:104, y:123, esc:1.06}
   }
 };
 
@@ -4508,6 +4880,24 @@ function largaMesa(ev){
       return;
     }
 
+    /* No slide das séries: o buraco as chama de volta, o intervalo as
+       manda sair, e uma carta de série já fora pede a cerca. */
+    if (atual === 6){
+      const onde = s => toqueMesa.alvo.closest && toqueMesa.alvo.closest(s);
+      const bur = onde('.buraco');
+      const c   = onde('.pc');
+      if (bur) fechaSerie(m, bur.dataset.serie, true);
+      else if (c && m.classList.contains('series')){
+        const z = +c.dataset.z, chave = serieDe(z);
+        if (chave && seriesAbertas.has(chave))    mostraCerca(m);
+        else if (chave && PILHAS[z])              abreSerie(m, chave);
+        else                                      escondeCerca(m);
+      }
+      else if (!c) passoAdiante();
+      toqueMesa = null;
+      return;
+    }
+
     if (atual === 4){
       const perto = s => toqueMesa.alvo.closest && toqueMesa.alvo.closest(s);
       const nome = perto('.rot-fam:not(.saindo)');
@@ -4865,6 +5255,7 @@ montaRoteiro3();
 montaRoteiro4();
 montaRoteiro5();
 montaRoteiro6();
+montaRoteiro7();
 pinta();
 seguraTela();
 
