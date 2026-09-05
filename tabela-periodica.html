@@ -2507,14 +2507,18 @@ const LAYOUTS = {
      centros deixaria as margens desencontradas ao passar de um slide
      para o outro — justamente o que o giro faz o olho reparar. */
   2: {
-    numero:    {x:259,  y: 34, esc:1.00},
-    regua:     {x:120,  y: 32, esc:1.00},
-    titulo:    {esq:281, y: 30, esc:0.76},
-    subtitulo: {esq:744, y: 31, esc:1.08},
-    regra3:    {esq:104, y: 82, esc:1.11},
-    /* sem traço, ela começa 22px adiante para a LETRA cair sob a letra
-       da de cima, e não sob o traço dela */
-    regra3b:   {esq:126, y:123, esc:1.11}
+    numero:      {x:259,  y: 34, esc:1.00},
+    regua:       {x:120,  y: 32, esc:1.00},
+    titulo:      {esq:281, y: 30, esc:0.76},
+    subtitulo:   {esq:744, y: 31, esc:1.08},
+    regra3:      {esq:104, y: 82, esc:1.11},
+    regra3b:     {esq:198, y:123, esc:1.11},
+    /* A ficha do elemento e os nomes das coordenadas ficam pelo CENTRO,
+       e não pela margem: o símbolo muda de largura de um elemento para
+       o outro — "F" e "Og" não medem o mesmo —, e preso pela esquerda
+       ele andaria na tela a cada toque. */
+    simbolo:     {x:306, y:323, esc:1.00},
+    coordenadas: {x:439, y:338, esc:0.96}
   }
 };
 
@@ -2788,6 +2792,7 @@ function poeRotulos(mesa){
   /* solto na montagem, o lugar dele é o que o professor escolheu: a
      cena não o arrasta de volta a cada elemento tocado */
   if (!r || r.classList.contains('solto')) return;
+  if (LAYOUTS[atual] && LAYOUTS[atual].coordenadas){ aplicaLayout(atual); return; }
   r.style.left = (xDaColuna(6, modoMesa) + 62).toFixed(0) + 'px';
   r.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
 }
@@ -2805,10 +2810,15 @@ function mostraFicha(mesa, z){
   const troca = () => {
     f.querySelector('span').textContent = z;
     f.querySelector('b').textContent = SIMBOLOS[z-1];
-    /* solta na montagem, ela fica onde o professor a deixou */
+    /* Solta na montagem, ela fica onde o professor a deixou. E se o
+       slide já lhe deu lugar no layout, é de lá que ela sai — assim
+       ela não aparece num canto para pular ao outro em seguida. */
     if (!f.classList.contains('solto')){
-      f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
-      f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+      if (LAYOUTS[atual] && LAYOUTS[atual].simbolo) aplicaLayout(atual);
+      else {
+        f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
+        f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+      }
     }
     f.classList.add('on');
   };
