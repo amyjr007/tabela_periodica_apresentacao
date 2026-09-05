@@ -694,16 +694,40 @@ body{
 }
 .pc.acende-nat .pc-in{animation:acendeNat .44s ease-out}
 
-/* Dos transurânicos não fica cor nenhuma: passa um brilho âmbar em
-   volta da carta e vai-se embora. O que eles são fica dito no nome,
-   não na tabela — nenhum deles se acha na natureza. */
+/* O verde do urânio não chega de repente: entra por cima da carta,
+   apagando-se para dentro. É uma folha de cor sobre o miolo, e não a
+   troca do fundo dele — a opacidade de uma folha se anima sempre, e a
+   passagem de um gradiente para outro nem sempre. Passada a entrada, a
+   folha sai e a cor de verdade fica embaixo. */
+@keyframes nasceVerde{from{opacity:0} to{opacity:1}}
+.pc.nasce-verde .pc-in::after{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(145deg,
+    color-mix(in srgb,var(--natural) 84%,#fff),
+    color-mix(in srgb,var(--natural) 86%,#000));
+  animation:nasceVerde .75s ease-out forwards;
+}
+
+/* Os transurânicos não ganham cor: ganham um brilho âmbar em volta, e
+   ele fica. A onda que passa é só a chegada — um clarão mais forte no
+   instante em que cada um é alcançado —, e o que sobra depois é o halo
+   aceso, que os deixa marcados na tabela sem os pintar de nada.
+
+   Duas maneiras de dizer a mesma coisa, e é de propósito: o tecnécio e
+   o promécio são âmbar por dentro, porque são casas vazias no meio dos
+   naturais; estes são âmbar por fora, porque estão além do fim da
+   conta. */
 @keyframes brilhaArt{
   0%  {box-shadow:0 2px 6px rgba(80,40,0,.22)}
-  30% {box-shadow:0 0 0 3px var(--ouro-luz), 0 0 22px 4px rgba(226,162,43,.75)}
-  100%{box-shadow:0 2px 6px rgba(80,40,0,.22)}
+  30% {box-shadow:0 0 0 3px var(--ouro-luz), 0 0 26px 6px rgba(226,162,43,.85)}
+  100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),
+                 0 0 0 2px var(--ouro-luz), 0 0 14px 2px rgba(226,162,43,.55)}
 }
 .pc.brilha-art{z-index:24}
 .pc.brilha-art .pc-in{animation:brilhaArt .9s ease-out}
+.pc.art{z-index:14}
+.pc.art .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),
+  0 0 0 2px var(--ouro-luz), 0 0 14px 2px rgba(226,162,43,.55)}
 
 /* os dois nomes, no vazio acima dos metais de transição */
 .rot-nat{
@@ -721,6 +745,13 @@ body{
 /* no slide da natureza só o urânio e os transurânicos pegam o dedo */
 .mesa.natureza .pc{cursor:default}
 .mesa.natureza .pc.chamando{cursor:pointer}
+/* A letra troca de cor quando a carta deixa o tabuleiro liso: escura
+   no lilás, branca na cor. Nesta cena isso acontece noventa e duas
+   vezes, uma atrás da outra, e sem transição cada troca seria um
+   estalo. */
+.mesa.natureza .pc i,
+.mesa.natureza .pc b,
+.mesa.natureza .pc u{transition:color .35s ease}
 
 /* O CONVITE DAS DUAS PILHAS
    Dita a frase, as duas cartas de intervalo passam a piscar: são elas
@@ -3895,7 +3926,12 @@ let artificiaisVarridos = false;
 
 const NOMES_NATUREZA = {
   naturais:    {texto:'Naturais <i>(cisurânicos)</i>',      cor:'var(--natural)',  y:306},
-  artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)', y:356}
+  /* O nome dos artificiais mora no vão que se abriu entre a última
+     linha da tabela e a fila dos lantanídeos, no trecho que vai do
+     rutherfórdio ao fleróvio — bem debaixo dos vinte e seis que ele
+     nomeia, e sem tapar nenhum. */
+  artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)',
+                x:838, y:649}
 };
 function diNatureza(mesa, chave){
   if (mesa.querySelector('.rot-nat[data-nat="'+chave+'"]')) return;
@@ -3905,7 +3941,7 @@ function diNatureza(mesa, chave){
   r.dataset.nat = chave;
   r.innerHTML = d.texto;
   r.style.setProperty('--cn', d.cor);
-  r.style.left = '518px';
+  r.style.left = (d.x || 518) + 'px';
   r.style.top  = d.y + 'px';
   mesa.appendChild(r);
   revela(r, 'on');
@@ -3945,7 +3981,7 @@ function varreNaturais(mesa){
       c.firstElementChild.style.setProperty('--sc', '1.5');
       c.style.zIndex = '26';
       diNatureza(mesa, 'naturais');
-    }, (z - 1) * 38);
+    }, (z - 1) * 22);        /* a conta sobe depressa: são noventa e dois */
   }
 }
 /* ---- e o brilho âmbar passa pelos transurânicos ---- */
@@ -3957,7 +3993,7 @@ function varreArtificiais(mesa){
     setTimeout(() => {
       const c = mesa.querySelector('.pc[data-z="'+z+'"]');
       if (!c) return;
-      c.classList.add('brilha-art');
+      c.classList.add('brilha-art', 'art');
       setTimeout(() => { c.classList.remove('brilha-art'); c.style.zIndex = ''; }, 950);
       if (z === 118) setTimeout(() => diNatureza(mesa, 'artificiais'), 300);
     }, (z - Z_NATURAL - 1) * 55);
@@ -3970,7 +4006,7 @@ function varreArtificiais(mesa){
 function apagaNaturais(mesa){
   mesa.querySelectorAll('.rot-nat').forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => {
-    c.classList.remove('acende-nat', 'brilha-art', 'chamando', 'pisca');
+    c.classList.remove('acende-nat', 'brilha-art', 'art', 'chamando', 'pisca');
     c.firstElementChild.style.removeProperty('--sc');
     c.style.removeProperty('z-index');
   });
@@ -3985,7 +4021,13 @@ function poeNaturais(mesa){
     }
     diNatureza(mesa, 'naturais');
   }
-  if (artificiaisVarridos) diNatureza(mesa, 'artificiais');
+  if (artificiaisVarridos){
+    for (let z = Z_NATURAL + 1; z <= 118; z++){
+      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+      if (c) c.classList.add('art');
+    }
+    diNatureza(mesa, 'artificiais');
+  }
 }
 /* e o clique de voltar zera a conta */
 function zeraNaturais(mesa){
@@ -4014,7 +4056,16 @@ function montaRoteiro8(){
     const mesa = sl.querySelector('.mesa');
     naturaisDitos = true;
     if (mesa){
-      pintaExtras(mesa, 7);
+      const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
+      if (u){
+        u.classList.add('nasce-verde');
+        /* a folha de cor sai quando a entrada acaba, e o fundo de
+           verdade já está debaixo dela */
+        setTimeout(() => {
+          u.classList.remove('nasce-verde');
+          pintaExtras(mesa, 7);
+        }, 700);
+      } else pintaExtras(mesa, 7);
       marcaChamando(mesa);
     }
 
