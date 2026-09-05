@@ -2171,6 +2171,7 @@ function reiniciaCena2(){
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   gruposDitos.clear();               /* e sem nome de grupo dito */
   blocosNomeados = false;
+  festejouGrupos = false;
   seriesAbertas.clear();             /* e com as séries de volta na casa delas */
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
@@ -2563,13 +2564,8 @@ function reiniciaCena2(){
   /* a tabela montada: uma onda verde que a atravessa na diagonal,
      e os confetes por cima */
   function festa(){
-    cena.querySelectorAll('.pc').forEach(c => {
-      const p = posDe(+c.dataset.z);
-      c.style.setProperty('--onda', ((p.col + p.row)*24) + 'ms');
-      c.classList.add('verde');
-    });
+    brilhoVerde(mesa);
     confetes();
-    setTimeout(() => cena.querySelectorAll('.pc').forEach(c => c.classList.remove('verde')), 2400);
     /* pronta a tabela, o botão do canto entra junto com o brilho verde */
     mesa.classList.add('pronta');
     cena.classList.add('tem-botao');
@@ -3053,10 +3049,19 @@ function poeBlocos(mesa){
    maneira: já não há coluna para nomear, e o toque volta a ser o do
    slide das coordenadas — a cruz da linha com a coluna, e o símbolo
    do elemento no vazio da tabela. */
+let festejouGrupos = false;
 function conferGrupos(mesa){
   const completa = gruposDitos.size === 18;
   mesa.classList.toggle('cruzada', completa);
-  if (completa) baixaGrupo(mesa);
+  if (!completa) return;
+  baixaGrupo(mesa);
+  /* Dita a última das dezoito, a tabela comemora com a mesma festa da
+     montagem do slide 2 — a onda verde e os confetes. Uma vez só: quem
+     volta ao slide encontra a tabela nomeada, e não a festa de novo. */
+  if (festejouGrupos) return;
+  festejouGrupos = true;
+  brilhoVerde(mesa);
+  confetes();
 }
 function diGrupo(mesa, col){
   gruposDitos.add(col);
@@ -3327,6 +3332,7 @@ function montaRoteiro6(){
         apagaGrupos(m);
         m.classList.remove('grupos');
         gruposDitos.clear();          /* voltar apaga também o que já foi dito */
+        festejouGrupos = false;       /* e a festa volta a poder acontecer */
       }
     });
   });
@@ -3983,6 +3989,20 @@ function nomeiaBloco(mesa, tipo, cartas){
   rot.style.left = Math.max(80, Math.min(1200, (x1 + x2)/2)).toFixed(0) + 'px';
   rot.style.top  = Math.max(150, y1 - CARTA_H/2 - 24).toFixed(0) + 'px';
   revela(rot, 'on');
+}
+
+/* A ONDA VERDE
+   Atravessa a tabela na diagonal, cada carta um pouco depois da
+   vizinha. Nasceu no slide 2, para a tabela montada, e serve a
+   qualquer cena que se complete: é o mesmo gesto de dizer pronto. */
+function brilhoVerde(mesa){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const p = posDe(+c.dataset.z);
+    c.style.setProperty('--onda', ((p.col + p.row)*24) + 'ms');
+    c.classList.add('verde');
+  });
+  setTimeout(() => mesa.querySelectorAll('.pc')
+    .forEach(c => c.classList.remove('verde')), 2400);
 }
 
 /* os confetes: papel picado com gravidade, na paleta das famílias */
