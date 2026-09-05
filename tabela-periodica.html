@@ -886,7 +886,9 @@ body{
    quatro: lá ela só destaca, aqui ela separa. */
 .mesa.valencia .pc{transition:translate .5s ease, opacity .45s ease}
 .mesa.valencia .pc:not(.repr){opacity:.26;pointer-events:none}
-.mesa.valencia .pc.repr{cursor:pointer}
+/* a tabela só responde depois da frase: antes dela é a ilustração da
+   cena, como em todos os outros slides */
+.mesa.valencia.viva .pc.repr{cursor:pointer}
 .mesa.valencia .pc.no-alto{translate:0 -54px;z-index:18}
 .mesa.valencia .pc.no-alto .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
@@ -923,17 +925,18 @@ body{
    elemento de cada vez: tocado, ele cresce, fica verde, e a
    distribuição dele se escreve em cima da tabela. */
 .botao-pauling{
-  /* A cena inteira não pega o dedo; quem pega diz que pega. Faltava
-     esta linha, e o botão era um desenho: clicar nele não fazia nada,
-     ainda que o código dele estivesse certo. */
-  position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
+  /* A cena inteira não pega o dedo; quem pega diz que pega — e este só
+     passa a pegar depois da frase, junto com o resto da cena. */
+  position:absolute;right:26px;bottom:18px;z-index:12;
+  opacity:0;pointer-events:none;
   display:flex;align-items:center;justify-content:center;
   width:64px;height:64px;border-radius:50%;
   border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
   font-family:var(--display);font-weight:700;font-size:12.5px;letter-spacing:.02em;
   box-shadow:0 7px 20px rgba(32,28,66,.2);
-  transition:background .2s, color .2s, transform .16s;
+  transition:opacity .45s ease, background .2s, color .2s, transform .16s;
 }
+.cena.valencia-viva .botao-pauling{opacity:1;pointer-events:auto}
 .botao-pauling:hover{background:var(--indigo);color:#fff}
 .botao-pauling:active{transform:scale(.94)}
 .botao-pauling.aceso{background:var(--indigo);color:#fff}
@@ -950,7 +953,9 @@ body{
    título e a régua continuam onde sempre estiveram, na claridade, e
    não precisam trocar de cor por causa de um modo. */
 .breu{
-  position:absolute;left:0;right:0;top:96px;bottom:0;z-index:0;
+  /* começa abaixo da frase: ela é da cena inteira, e não do modo, e
+     tem de continuar legível quando o palco escurece */
+  position:absolute;left:0;right:0;top:120px;bottom:0;z-index:0;
   pointer-events:none;
   /* a borda de cima não é um corte: o escuro entra em vinte pixels,
      para o palco parecer que escureceu e não que ganhou uma tarja */
@@ -2184,6 +2189,11 @@ function estadoMesaPara(mesa, i){
     const cena = cenaDe(slides[8]);
     poeLetrasA(mesa);
     poeBotaoPauling(cena, slides[8]);
+    /* a cena só responde depois da frase — e o que já foi dito continua
+       dito ao voltar ao slide */
+    const dita = !!slides[8].querySelector('[data-mont="regra9"]');
+    mesa.classList.toggle('viva', dita);
+    cena.classList.toggle('valencia-viva', dita);
     /* O canto tem de dizer o que a tabela é agora. Ao trocar de slide a
        mesa já mudou de dono, e quem apaga o modo não alcança mais o
        breu nem o botão, que ficaram no slide de trás — é aqui, na
@@ -4472,7 +4482,7 @@ function apagaValencia(mesa){
   baixaColuna(mesa);
   apagaElemento(mesa);
   modoPauling = false;
-  mesa.classList.remove('pauling');
+  mesa.classList.remove('pauling', 'viva');
   const cena = mesa.parentNode;
   if (cena){
     const breu = cena.querySelector('.breu');
@@ -4487,11 +4497,37 @@ function apagaValencia(mesa){
 
 function montaRoteiro9(){
   const sl = slides[8];
-  ROTEIROS[8] = { i:0, espera:null, passos:[], desfazer:[] };
-  /* a cena não tem passos: a tabela já chega falando, e o que ela tem
-     a dizer está todo no dedo */
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[8] = r;
   const cena = cenaDe(sl);
   poeBotaoPauling(cena, sl);
+
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra9';
+    t.innerHTML = '<span class="regra-in">O número de elétrons de valência ' +
+      'coincide com a família dos <em>elem. Representativos</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(8);
+    revela(t, 'posta');
+
+    /* dita a frase, a tabela responde ao dedo e o botão do canto
+       aparece */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('viva');
+    cena.classList.add('valencia-viva');
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){ apagaValencia(m); m.classList.remove('viva'); }
+      cena.classList.remove('valencia-viva');
+    });
+  });
 }
 
 /* ============================================================
@@ -5752,7 +5788,8 @@ const LAYOUTS = {
   8: {
     numero: {x:259,  y: 34, esc:1.00},
     regua:  {x:120,  y: 32, esc:1.00},
-    titulo: {esq:281, y: 30, esc:0.76}
+    titulo: {esq:281, y: 30, esc:0.76},
+    regra9: {esq:104, y: 82, esc:1.00}
   }
 };
 
@@ -6210,7 +6247,8 @@ function largaMesa(ev){
     /* No slide da valência, o que o dedo pega depende da leitura: na
        primeira é a família inteira, na de Pauling é o elemento. */
     if (atual === 8){
-      const c = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc.repr');
+      const c = m.classList.contains('viva') && toqueMesa.alvo.closest
+              ? toqueMesa.alvo.closest('.pc.repr') : null;
       if (c && modoPauling)   acendeElemento(m, c);
       else if (c)             sobeColuna(m, +c.dataset.col);
       else if (!toqueMesa.alvo.closest || !toqueMesa.alvo.closest('.pc')) passoAdiante();
