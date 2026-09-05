@@ -1158,7 +1158,17 @@ function passoAdiante(){
      é o caminho de quem conduz a aula pelo controle remoto */
   if (r.espera){ const faz = r.espera; r.espera = null; faz(); return true; }
   if (r.i >= r.passos.length) return false;
-  r.passos[r.i++]();
+
+  /* Um passo pode ter hora certa. Enquanto ela não chega, o clique não
+     faz nada — e, sobretudo, não passa de slide: no meio de uma cena
+     que ainda está correndo, virar a página seria um acidente. */
+  const p = r.passos[r.i];
+  const faz = typeof p === 'function' ? p : p.faz;
+  const so  = typeof p === 'function' ? null : p.so;
+  if (so && !so()) return true;
+
+  r.i++;
+  faz();
   return true;
 }
 
@@ -1450,8 +1460,12 @@ function reiniciaCena2(){
 
   /* ---- passo seguinte: o segundo critério ----
      Ele chega como o primeiro, pela esquerda, e vai logo abaixo dele —
-     alinhado pela mesma margem, para os dois se lerem como uma lista. */
-  r.passos.push(() => {
+     alinhado pela mesma margem, para os dois se lerem como uma lista.
+
+     E só depois que a tabela inteira estiver montada: o critério fala
+     das colunas, e antes de existir coluna ele não teria do que falar.
+     Até lá o clique não o traz nem passa de slide. */
+  r.passos.push({ so: () => !!cena.querySelector('.mesa.pronta'), faz: () => {
     const t = document.createElement('div');
     t.className = 'regra';
     t.dataset.mont = 'regra2';
@@ -1467,7 +1481,7 @@ function reiniciaCena2(){
       aplicaEl(t);
     }
     requestAnimationFrame(() => t.classList.add('posta'));
-  });
+  }});
 
   /* o convite: vermelho lento, e a carta passa a pegar o dedo */
   function acende(z){
