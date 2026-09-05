@@ -1168,15 +1168,6 @@ function gradeVagas(){
                    y: y0 + l*dy + dy/2 + (Math.random()-.5)*dy*.42 });
   return vagas;
 }
-/* um lugar qualquer para lá da borda: é de onde os outros 68 virão */
-function foraDaTela(){
-  const lado = (Math.random()*4)|0;
-  if (lado === 0) return {x: -90 - Math.random()*240, y: Math.random()*900 - 90};
-  if (lado === 1) return {x: 1370 + Math.random()*240, y: Math.random()*900 - 90};
-  if (lado === 2) return {x: Math.random()*1460 - 90, y: -90 - Math.random()*220};
-  return                 {x: Math.random()*1460 - 90, y: 810 + Math.random()*220};
-}
-
 /* o cinza de quem ainda não tem lugar: morno, e escurecendo devagar
    com o número atômico — mesmo anônimo, o monte tem uma ordem escondida */
 function fundoCinza(z){
@@ -1243,37 +1234,32 @@ function reiniciaCena2(){
   const r = { i:0, espera:null, passos:[] };
   ROTEIROS[1] = r;
 
-  /* ---- 1º clique: os 118 entram, e só 50 cabem na tela ---- */
+  /* ---- 1º clique: os 118 entram, e só os 50 primeiros cabem na tela ----
+     Na tela ficam os elementos de 1 a 50 — é um corte no número atômico,
+     e não um sorteio. Como se vai tocar neles em ordem crescente, ter os
+     primeiros à mão é o que faz a interação funcionar sem remendo. Os
+     outros 68 esperam para lá da borda direita, e é de lá que virão
+     quando a tabela se montar. As POSIÇÕES é que são sorteadas: cada um
+     dos cinquenta cai numa vaga qualquer da grade. */
   r.passos.push(() => {
-    const ordem = embaralha(Array.from({length:118}, (_,i) => i+1));
-    /* Os sete primeiros TÊM de estar em cena: é neles que se vai tocar.
-       Se o sorteio os jogou para fora, eles trocam de lugar com alguém
-       de dentro que não seja um deles. */
-    const presos = [1,2,3,4,5,6,7];
-    presos.forEach(z => {
-      const k = ordem.indexOf(z);
-      if (k < 50) return;
-      let t; do { t = (Math.random()*50)|0; } while (presos.includes(ordem[t]));
-      [ordem[k], ordem[t]] = [ordem[t], ordem[k]];
-    });
-
     const vagas = embaralha(gradeVagas());
-    ordem.slice(0,50).forEach((z,i) => {
-      const c = criaCarta(z), v = vagas[i];
-      poe(c, v.x, v.y, Math.random()*34 - 17);
-      c.style.opacity = '0';
-      mesa.appendChild(c); cartas.set(z, c);
-      setTimeout(() => {
-        c.style.opacity = '1';
-        c.classList.add('surge');
-        setTimeout(() => c.classList.remove('surge'), 700);
-      }, 130 + i*13);
-    });
-    ordem.slice(50).forEach(z => {
-      const c = criaCarta(z), p = foraDaTela();
-      poe(c, p.x, p.y, Math.random()*60 - 30);
-      mesa.appendChild(c); cartas.set(z, c);
-    });
+    for (let z = 1; z <= 118; z++){
+      const c = criaCarta(z);
+      cartas.set(z, c);
+      mesa.appendChild(c);
+      if (z <= 50){
+        const v = vagas[z-1];
+        poe(c, v.x, v.y, Math.random()*34 - 17);
+        c.style.opacity = '0';
+        setTimeout(() => {
+          c.style.opacity = '1';
+          c.classList.add('surge');
+          setTimeout(() => c.classList.remove('surge'), 700);
+        }, 130 + (z-1)*13);
+      } else {
+        poe(c, 1390 + Math.random()*250, 40 + Math.random()*640, Math.random()*60 - 30);
+      }
+    }
 
     const cl = cena.querySelector('.clarao');
     cl.classList.add('on');
