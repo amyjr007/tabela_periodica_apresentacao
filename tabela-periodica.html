@@ -4334,6 +4334,9 @@ function acendeElemento(mesa, carta){
 
   const d = document.createElement('div');
   d.className = 'dist-val';
+  /* nome próprio, para a folha do Ctrl+C saber dizer onde ela está: é
+     por essa folha que as posições viram código */
+  d.dataset.mont = 'distribuicao';
   /* quantos elétrons cabem naquela camada: a soma dos expoentes dos
      subníveis dela */
   const conta = sub => [...sub.matchAll(/<sup>(\d+)<\/sup>/g)]
@@ -5593,7 +5596,8 @@ const COM_ALTURA = '.body-area, .q-board, .risco, .regua, .capa .foto';
 const ENCOLHE = '.title, .subtitle, .regua, .regra, .ficha-sel, .rotulos,' +
                 ' .capa .marca, .capa .autor, .capa h1';
 /* quem tem letra que interessa medir */
-const COM_LETRA = '.title, .subtitle, .regra, .capa .marca, .capa .autor, .capa h1';
+const COM_LETRA = '.title, .subtitle, .regra, .capa .marca, .capa .autor, .capa h1,' +
+                  ' .dist-val';
 
 const MEDIDAS = new WeakMap();          /* elemento -> {cx, cy, w, h, esc} */
 const coord = document.getElementById('coord');
