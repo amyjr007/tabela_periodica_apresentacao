@@ -68,6 +68,13 @@
      O verde é o dos naturais; o âmbar aceso, das duas exceções que
      moram no meio deles. */
   --natural: #1F9D55;
+  /* O bege dos estáveis: claro na carta, e escuro quando é letra —
+     bege sobre lavanda não se lê. E puxado para o cinza de propósito:
+     ao lado do âmbar dos radioativos, um bege dourado seria a mesma
+     cor duas vezes, e é justamente a diferença entre os dois que esta
+     leitura tem para mostrar. */
+  --estavel:       #CBBEA4;
+  --estavel-forte: #7E6E4E;
 
   /* tempos e curvas das transições */
   --t-capa: .82s;
@@ -699,13 +706,13 @@ body{
    troca do fundo dele — a opacidade de uma folha se anima sempre, e a
    passagem de um gradiente para outro nem sempre. Passada a entrada, a
    folha sai e a cor de verdade fica embaixo. */
-@keyframes nasceVerde{from{opacity:0} to{opacity:1}}
-.pc.nasce-verde .pc-in::after{
+@keyframes nasceCor{from{opacity:0} to{opacity:1}}
+.pc.nasce-cor .pc-in::after{
   content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
   background:linear-gradient(145deg,
-    color-mix(in srgb,var(--natural) 84%,#fff),
-    color-mix(in srgb,var(--natural) 86%,#000));
-  animation:nasceVerde .75s ease-out forwards;
+    color-mix(in srgb,var(--folha) 84%,#fff),
+    color-mix(in srgb,var(--folha) 86%,#000));
+  animation:nasceCor .75s ease-out forwards;
 }
 
 /* Os transurânicos não ganham cor: ganham um brilho âmbar em volta, e
@@ -1791,9 +1798,16 @@ function corExtraDe(c, i){
     return (chave && seriesAbertas.has(chave)) ? corDaSerie(+c.dataset.z) : null;
   }
   if (i === 7){
+    /* a leitura mais recente é a que manda: a segunda passa por cima
+       da primeira, carta por carta, à medida que a onda a alcança */
     const z = +c.dataset.z;
-    if (naturaisVarridos && z <= Z_NATURAL) return corNatural(z);
-    if (naturaisDitos && z === Z_NATURAL)   return 'var(--natural)';
+    if (estaveisVarridos && z <= Z_ESTAVEL)     return 'var(--estavel)';
+    if (radioativosVarridos && z > Z_ESTAVEL)   return 'var(--ouro-luz)';
+    /* o chumbo se acende antes da onda dele, e tem de vencer o verde
+       que a leitura anterior lhe deu: por isso vem antes */
+    if (estaveisDitos && z === Z_ESTAVEL)       return 'var(--estavel)';
+    if (naturaisVarridos && z <= Z_NATURAL)     return corNatural(z);
+    if (naturaisDitos && z === Z_NATURAL)       return 'var(--natural)';
   }
   return null;
 }
@@ -2314,7 +2328,8 @@ function reiniciaCena2(){
   seriesAbertas.clear();             /* e com as séries de volta na casa delas */
   modoFull = false;
   mesaAntesDoFull = null;
-  naturaisDitos = naturaisVarridos = false;
+  naturaisDitos = naturaisVarridos = artificiaisVarridos = false;
+  estaveisDitos = estaveisVarridos = radioativosVarridos = false;
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -3920,12 +3935,21 @@ const Z_NATURAL = 92;
 const ARTIFICIAIS_ATE_92 = new Set([43, 61]);
 const corNatural = z => ARTIFICIAIS_ATE_92.has(z) ? 'var(--ouro-luz)' : 'var(--natural)';
 
-let naturaisDitos = false;      /* a frase entrou: o urânio está verde */
+const Z_ESTAVEL = 82;           /* do bismuto em diante não há isótopo estável */
+
+let naturaisDitos = false;      /* a 1ª frase entrou: o urânio está verde */
 let naturaisVarridos = false;   /* a onda verde já subiu até ele */
 let artificiaisVarridos = false;
+let estaveisDitos = false;      /* a 2ª frase entrou: o chumbo está bege */
+let estaveisVarridos = false;
+let radioativosVarridos = false;
 
 const NOMES_NATUREZA = {
   naturais:    {texto:'Naturais <i>(cisurânicos)</i>',      cor:'var(--natural)',  y:306},
+  /* a segunda leitura ocupa os mesmos dois lugares da primeira: ela
+     vem no lugar dela, e não ao lado */
+  estaveis:    {texto:'Estáveis',   cor:'var(--estavel-forte)', y:306},
+  radioativo:  {texto:'Radioativo', cor:'var(--ouro-luz)', x:838, y:649},
   /* O nome dos artificiais mora no vão que se abriu entre a última
      linha da tabela e a fila dos lantanídeos, no trecho que vai do
      rutherfórdio ao fleróvio — bem debaixo dos vinte e seis que ele
@@ -3933,6 +3957,19 @@ const NOMES_NATUREZA = {
   artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)',
                 x:838, y:649}
 };
+/* a carta que dá a partida se acende devagar, por cima: a folha de cor
+   entra em fade e sai quando o fundo de verdade já está debaixo dela */
+function acendeCarta(mesa, z, cor){
+  const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+  if (!c){ pintaExtras(mesa, 7); return; }
+  c.style.setProperty('--folha', cor);
+  c.classList.add('nasce-cor');
+  setTimeout(() => {
+    c.classList.remove('nasce-cor');
+    c.style.removeProperty('--folha');
+    pintaExtras(mesa, 7);
+  }, 700);
+}
 function diNatureza(mesa, chave){
   if (mesa.querySelector('.rot-nat[data-nat="'+chave+'"]')) return;
   const d = NOMES_NATUREZA[chave];
@@ -3952,37 +3989,71 @@ function diNatureza(mesa, chave){
 function marcaChamando(mesa){
   mesa.querySelectorAll('.pc').forEach(c => {
     const z = +c.dataset.z;
-    const chama = naturaisDitos &&
-      ((z === Z_NATURAL && !naturaisVarridos) || (z > Z_NATURAL && !artificiaisVarridos));
+    let chama = false, pisca = false;
+    /* vale a leitura que estiver em cena: entrada a segunda frase, o
+       chumbo toma o lugar do urânio */
+    if (estaveisDitos){
+      chama = (z === Z_ESTAVEL && !estaveisVarridos) ||
+              (z >  Z_ESTAVEL && !radioativosVarridos);
+      pisca = z === Z_ESTAVEL && !estaveisVarridos;
+    } else if (naturaisDitos){
+      chama = (z === Z_NATURAL && !naturaisVarridos) ||
+              (z >  Z_NATURAL && !artificiaisVarridos);
+      pisca = z === Z_NATURAL && !naturaisVarridos;
+    }
     c.classList.toggle('chamando', chama);
-    c.classList.toggle('pisca', naturaisDitos && z === Z_NATURAL && !naturaisVarridos);
+    c.classList.toggle('pisca', pisca);
   });
 }
-function pintaNatural(mesa, z){
-  const c = mesa.querySelector('.pc[data-z="'+z+'"]');
-  if (!c) return;
-  c.classList.remove('face2');
-  c.firstElementChild.style.background = fundoDe(corNatural(z));
+/* ---- a onda de cor sobe pelos números ----
+   Uma função só para as três varreduras da cena: a que conta os
+   naturais, a que conta os estáveis e a que marca os radioativos. O
+   passo é o mesmo em todas — vinte e dois milésimos por carta —, para
+   as três se lerem como o mesmo gesto. */
+function varreCores(mesa, de, ate, corDe, aoFim){
+  for (let z = de; z <= ate; z++){
+    setTimeout(() => {
+      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+      if (!c) return;
+      c.classList.remove('face2', 'art');
+      c.firstElementChild.style.background = fundoDe(corDe(z));
+      c.classList.add('acende-nat');
+      setTimeout(() => c.classList.remove('acende-nat'), 500);
+      if (z === ate && aoFim) aoFim(c);
+    }, (z - de) * 22);
+  }
 }
-/* ---- a onda verde sobe pelos números ---- */
+/* a carta que dá a partida cresce e fica: é ela o fim da conta */
+function ergueCarta(c){
+  c.firstElementChild.style.setProperty('--sc', '1.5');
+  c.style.zIndex = '26';
+}
 function varreNaturais(mesa){
   if (naturaisVarridos) return;
   naturaisVarridos = true;
   marcaChamando(mesa);
-  for (let z = 1; z <= Z_NATURAL; z++){
-    setTimeout(() => {
-      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
-      if (!c) return;
-      pintaNatural(mesa, z);
-      c.classList.add('acende-nat');
-      setTimeout(() => c.classList.remove('acende-nat'), 500);
-      if (z !== Z_NATURAL) return;
-      /* o urânio já estava verde: a ele cabe só crescer e dizer o nome */
-      c.firstElementChild.style.setProperty('--sc', '1.5');
-      c.style.zIndex = '26';
-      diNatureza(mesa, 'naturais');
-    }, (z - 1) * 22);        /* a conta sobe depressa: são noventa e dois */
-  }
+  varreCores(mesa, 1, Z_NATURAL, corNatural, c => {
+    /* o urânio já estava verde: a ele cabe só crescer e dizer o nome */
+    ergueCarta(c);
+    diNatureza(mesa, 'naturais');
+  });
+}
+/* ---- a segunda leitura: o que é estável e o que é radioativo ---- */
+function varreEstaveis(mesa){
+  if (estaveisVarridos) return;
+  estaveisVarridos = true;
+  marcaChamando(mesa);
+  varreCores(mesa, 1, Z_ESTAVEL, () => 'var(--estavel)', c => {
+    ergueCarta(c);
+    diNatureza(mesa, 'estaveis');
+  });
+}
+function varreRadioativos(mesa){
+  if (radioativosVarridos) return;
+  radioativosVarridos = true;
+  marcaChamando(mesa);
+  varreCores(mesa, Z_ESTAVEL + 1, 118, () => 'var(--ouro-luz)',
+             () => diNatureza(mesa, 'radioativo'));
 }
 /* ---- e o brilho âmbar passa pelos transurânicos ---- */
 function varreArtificiais(mesa){
@@ -4006,13 +4077,19 @@ function varreArtificiais(mesa){
 function apagaNaturais(mesa){
   mesa.querySelectorAll('.rot-nat').forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => {
-    c.classList.remove('acende-nat', 'brilha-art', 'art', 'chamando', 'pisca');
+    c.classList.remove('acende-nat', 'brilha-art', 'art', 'chamando', 'pisca', 'nasce-cor');
     c.firstElementChild.style.removeProperty('--sc');
     c.style.removeProperty('z-index');
   });
 }
 function poeNaturais(mesa){
   marcaChamando(mesa);
+  if (estaveisVarridos){
+    ergueCarta(mesa.querySelector('.pc[data-z="' + Z_ESTAVEL + '"]'));
+    diNatureza(mesa, 'estaveis');
+  }
+  if (radioativosVarridos) diNatureza(mesa, 'radioativo');
+  if (estaveisDitos) return;      /* a segunda leitura apagou a primeira */
   if (naturaisVarridos){
     const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
     if (u){
@@ -4032,7 +4109,21 @@ function poeNaturais(mesa){
 /* e o clique de voltar zera a conta */
 function zeraNaturais(mesa){
   naturaisDitos = naturaisVarridos = artificiaisVarridos = false;
+  estaveisDitos = estaveisVarridos = radioativosVarridos = false;
   apagaNaturais(mesa);
+}
+/* e voltar um passo desfaz só a segunda leitura */
+function zeraEstaveis(mesa){
+  estaveisDitos = estaveisVarridos = radioativosVarridos = false;
+  mesa.querySelectorAll('.rot-nat[data-nat="estaveis"], ' +
+                        '.rot-nat[data-nat="radioativo"]').forEach(e => e.remove());
+  mesa.querySelectorAll('.pc').forEach(c => {
+    c.firstElementChild.style.removeProperty('--sc');
+    c.style.removeProperty('z-index');
+  });
+  aplicaFace(mesa, 'face2');
+  pintaExtras(mesa, 7);
+  poeNaturais(mesa);
 }
 
 function montaRoteiro8(){
@@ -4056,16 +4147,7 @@ function montaRoteiro8(){
     const mesa = sl.querySelector('.mesa');
     naturaisDitos = true;
     if (mesa){
-      const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
-      if (u){
-        u.classList.add('nasce-verde');
-        /* a folha de cor sai quando a entrada acaba, e o fundo de
-           verdade já está debaixo dela */
-        setTimeout(() => {
-          u.classList.remove('nasce-verde');
-          pintaExtras(mesa, 7);
-        }, 700);
-      } else pintaExtras(mesa, 7);
+      acendeCarta(mesa, Z_NATURAL, 'var(--natural)');
       marcaChamando(mesa);
     }
 
@@ -4075,6 +4157,46 @@ function montaRoteiro8(){
       setTimeout(() => t.remove(), 950);
       const m = sl.querySelector('.mesa');
       if (m){ zeraNaturais(m); aplicaFace(m, 'face2'); }
+    });
+  });
+
+  /* ---- a segunda leitura da mesma tabela ----
+     Agora não é mais de onde o elemento vem, é se ele dura. O chumbo
+     toma o lugar do urânio: é nele que a conta acaba, e é nele que se
+     toca. Os nomes da primeira leitura saem de cena — a tabela vai
+     dizer outra coisa, e não pode ficar com duas legendas. */
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra sem-traco';
+    t.dataset.mont = 'regra8b';
+    t.innerHTML = '<span class="regra-in">Do 1 ao 82 os isótopos mais comuns são ' +
+      '<em style="color:var(--estavel-forte)">estáveis</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(7);
+    revela(t, 'posta');
+
+    const mesa = sl.querySelector('.mesa');
+    estaveisDitos = true;
+    if (mesa){
+      mesa.querySelectorAll('.rot-nat[data-nat="naturais"], ' +
+                            '.rot-nat[data-nat="artificiais"]').forEach(e => {
+        e.classList.remove('on');
+        setTimeout(() => e.remove(), 500);
+      });
+      /* o urânio devolve o tamanho: quem cresce agora é o chumbo */
+      const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
+      if (u){ u.firstElementChild.style.removeProperty('--sc'); u.style.removeProperty('z-index'); }
+      acendeCarta(mesa, Z_ESTAVEL, 'var(--estavel)');
+      marcaChamando(mesa);
+    }
+
+    r.desfazer.push(() => {
+      r.i = 1;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m) zeraEstaveis(m);
     });
   });
 }
@@ -4991,7 +5113,8 @@ const LAYOUTS = {
     numero: {x:259,  y: 34, esc:1.00},
     regua:  {x:120,  y: 32, esc:1.00},
     titulo: {esq:281, y: 30, esc:0.76},
-    regra8: {esq:104, y: 82, esc:1.06}
+    regra8:  {esq:104, y: 82, esc:1.06},
+    regra8b: {esq:104, y:123, esc:1.06}
   }
 };
 
@@ -5449,9 +5572,16 @@ function largaMesa(ev){
     if (atual === 7){
       const c = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
       const z = c ? +c.dataset.z : 0;
-      if (naturaisDitos && z === Z_NATURAL)      varreNaturais(m);
-      else if (naturaisDitos && z > Z_NATURAL)   varreArtificiais(m);
-      else if (!c)                               passoAdiante();
+      /* vale a leitura que estiver em cena */
+      if (estaveisDitos){
+        if (z === Z_ESTAVEL)      varreEstaveis(m);
+        else if (z > Z_ESTAVEL)   varreRadioativos(m);
+        else if (!c)              passoAdiante();
+      } else if (naturaisDitos){
+        if (z === Z_NATURAL)      varreNaturais(m);
+        else if (z > Z_NATURAL)   varreArtificiais(m);
+        else if (!c)              passoAdiante();
+      } else if (!c) passoAdiante();
       toqueMesa = null;
       return;
     }
