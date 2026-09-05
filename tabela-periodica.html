@@ -707,6 +707,15 @@ body{
    passagem de um gradiente para outro nem sempre. Passada a entrada, a
    folha sai e a cor de verdade fica embaixo. */
 @keyframes nasceCor{from{opacity:0} to{opacity:1}}
+/* e a mesma folha ao contrário, para a cor sair sem estalo: ela guarda
+   o fundo que a carta tinha e apaga-se por cima do fundo novo, que já
+   está debaixo dela */
+@keyframes someCor{from{opacity:1} to{opacity:0}}
+.pc.some-cor .pc-in::after{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:var(--folha-fim);
+  animation:someCor .6s ease-out forwards;
+}
 .pc.nasce-cor .pc-in::after{
   content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
   background:linear-gradient(145deg,
@@ -1820,8 +1829,15 @@ function corExtraDe(c, i){
     /* o chumbo se acende antes da onda dele, e tem de vencer o verde
        que a leitura anterior lhe deu: por isso vem antes */
     if (estaveisDitos && z === Z_ESTAVEL)       return 'var(--estavel)';
-    if (naturaisVarridos && z <= Z_NATURAL)     return corNatural(z);
-    if (naturaisDitos && z === Z_NATURAL)       return 'var(--natural)';
+    if (naturaisVarridos && z <= Z_NATURAL){
+      /* entrada a segunda frase, o verde já saiu: só o âmbar dos dois
+         sem isótopo estável atravessa de uma leitura para a outra */
+      if (!estaveisDitos)                       return corNatural(z);
+      if (SEM_ISOTOPO_ESTAVEL.has(z))           return 'var(--ouro-luz)';
+    }
+    /* o verde solitário do urânio, entre a primeira frase e a onda —
+       e só até a segunda frase chegar */
+    if (naturaisDitos && !estaveisDitos && z === Z_NATURAL) return 'var(--natural)';
   }
   return null;
 }
@@ -3979,6 +3995,24 @@ const NOMES_NATUREZA = {
   artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)',
                 x:838, y:649}
 };
+/* A cor sai da carta sem estalo: a folha guarda o fundo que ela tinha,
+   o fundo novo entra por baixo e a folha apaga-se em cima. A letra
+   troca de branca para escura no meio do caminho, quando o fundo já
+   clareou o bastante para ela se ler. */
+function apagaCorDaCarta(mesa, z){
+  const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+  if (!c || c.classList.contains('face2')) return;
+  const miolo = c.firstElementChild;
+  c.style.setProperty('--folha-fim', miolo.style.background);
+  c.classList.add('some-cor');
+  miolo.style.background = FUNDO_FACE2;
+  setTimeout(() => c.classList.add('face2'), 300);
+  setTimeout(() => {
+    c.classList.remove('some-cor');
+    c.style.removeProperty('--folha-fim');
+  }, 640);
+}
+
 /* dois saltos na carta que falta tocar */
 function chamaAtencao(mesa, z, cor){
   const c = mesa.querySelector('.pc[data-z="'+z+'"]');
@@ -4114,7 +4148,8 @@ function varreArtificiais(mesa){
 function apagaNaturais(mesa){
   mesa.querySelectorAll('.rot-nat').forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => {
-    c.classList.remove('acende-nat', 'brilha-art', 'art', 'chamando', 'pisca', 'nasce-cor');
+    c.classList.remove('acende-nat', 'brilha-art', 'art', 'chamando', 'pisca',
+                       'nasce-cor', 'some-cor', 'puxa-olho');
     c.firstElementChild.style.removeProperty('--sc');
     c.style.removeProperty('z-index');
   });
@@ -4233,6 +4268,12 @@ function montaRoteiro8(){
       /* o urânio devolve o tamanho: quem cresce agora é o chumbo */
       const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
       if (u){ u.firstElementChild.style.removeProperty('--sc'); u.style.removeProperty('z-index'); }
+      /* e o verde sai de cena: a tabela volta ao liso para a leitura
+         nova começar do zero. O âmbar dos dois sem isótopo estável
+         fica — a razão dele é a mesma nas duas leituras. */
+      for (let z = 1; z <= Z_NATURAL; z++){
+        if (!SEM_ISOTOPO_ESTAVEL.has(z)) apagaCorDaCarta(mesa, z);
+      }
       acendeCarta(mesa, Z_ESTAVEL, 'var(--estavel)');
       marcaChamando(mesa);
     }
