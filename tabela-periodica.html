@@ -265,15 +265,10 @@ body{
 
 /* A MESA
    Tudo o que pertence à tabela mora aqui dentro — as sombras das casas
-   e as 118 cartas. Enquanto a aula monta, ela é só um invólucro; quando
-   a tabela fica pronta, a mesa TRAVA e passa a ser uma coisa só, que se
-   amplia com dois dedos. A regra escrita fica de fora, na cena: ela
-   comenta a tabela, não faz parte dela. */
-.mesa{
-  position:absolute;inset:0;
-  transform:translate(var(--px,0px),var(--py,0px)) scale(var(--zoom,1));
-}
-.mesa.macia{transition:transform .32s cubic-bezier(.3,.82,.3,1)}
+   e as 118 cartas —, separado do que apenas comenta a tabela, como a
+   regra escrita. O tamanho das cartas é fixo: foi escolhido na pinça e
+   está nas constantes do JS, não num zoom por cima. */
+.mesa{position:absolute;inset:0}
 
 /* a carta: x,y são o centro dela; quem gira e cresce é o miolo, para
    o voo (left/top) e o salto (transform) não disputarem a mesma
@@ -281,15 +276,16 @@ body{
 /* A carta não anda por transição de left/top: isso a levaria em linha
    reta. Ela é posta no destino de uma vez e o VOO é uma animação do
    deslocamento — um arco, calculado em voa(). */
-.pc{position:absolute;width:46px;height:38px;transform:translate(-50%,-50%)}
+.pc{position:absolute;width:var(--cw,63px);height:var(--ch,52px);
+  transform:translate(-50%,-50%)}
 /* Solto, o elemento é anônimo: papel branco e tinta cinzenta. A cor da
    família é o que ele ganha ao achar o lugar dele — antes disso, um
    monte colorido já contaria a história que a aula ainda vai contar. */
 .pc-in{
-  position:relative;width:100%;height:100%;border-radius:4px;overflow:hidden;
+  position:relative;width:100%;height:100%;border-radius:5px;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  background:#fff;border:1.2px solid rgba(32,28,66,.3);
-  box-shadow:0 2px 6px rgba(32,28,66,.16);
+  background:#fff;border:1.5px solid rgba(32,28,66,.3);
+  box-shadow:0 2px 7px rgba(32,28,66,.16);
   font-family:var(--mono);
   transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
   transition:transform .34s ease-out, border-color .5s ease,
@@ -297,8 +293,8 @@ body{
 }
 .pc-in::before{content:'';position:absolute;inset:0;
   background:var(--cor,var(--indigo));opacity:0;transition:opacity .5s ease}
-.pc i{position:absolute;top:1px;left:4px;font-style:normal;font-size:8px;color:var(--tinta-dim)}
-.pc b{position:relative;font-size:15px;font-weight:500;line-height:1;color:var(--tinta)}
+.pc i{position:absolute;top:2px;left:6px;font-style:normal;font-size:11px;color:var(--tinta-dim)}
+.pc b{position:relative;font-size:21px;font-weight:500;line-height:1;color:var(--tinta)}
 
 /* encaixado: a cor da família chega junto com o lugar */
 .pc.encaixada .pc-in{border-color:var(--cor)}
@@ -308,11 +304,11 @@ body{
 /* a carta da frente de uma pilha — lantanídeos e actinídeos moram
    quinze numa casa só, e quem aparece diz o intervalo que guarda */
 .pc-in.pilha{
-  box-shadow:0 2px 6px rgba(32,28,66,.16),
-             2px 2px 0 -1px #fff, 2px 2px 0 0 rgba(32,28,66,.24),
-             4px 4px 0 -2px #fff, 4px 4px 0 -1px rgba(32,28,66,.17);
+  box-shadow:0 2px 7px rgba(32,28,66,.16),
+             3px 3px 0 -1px #fff, 3px 3px 0 0 rgba(32,28,66,.24),
+             6px 6px 0 -2px #fff, 6px 6px 0 -1px rgba(32,28,66,.17);
 }
-.pc b.faixa{font-size:11px;letter-spacing:-.02em}
+.pc b.faixa{font-size:15px;letter-spacing:-.03em}
 
 /* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
 @keyframes surge{
@@ -341,7 +337,8 @@ body{
 /* a sombra da tabela: onde cada elemento vai morar */
 .fantasma{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity .9s ease}
 .fantasma.on{opacity:1}
-.fantasma i{position:absolute;display:block;width:46px;height:38px;border-radius:4px;
+.fantasma i{position:absolute;display:block;
+  width:var(--cw,63px);height:var(--ch,52px);border-radius:5px;
   border:1px dashed rgba(32,28,66,.16);transform:translate(-50%,-50%)}
 
 /* A regra escrita: vem de longe, pela esquerda, e freia ao chegar.
@@ -1079,9 +1076,15 @@ const SIMBOLOS = (
   'Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl ' +
   'Mc Lv Ts Og').split(' ');
 
-const CARTA_W = 46, CARTA_H = 38, PASSO_X = 50, PASSO_Y = 42;
-const TAB_ESQ = 640 - (18*PASSO_X)/2;    /* a tabela nasce centrada no palco */
-const TAB_TOPO = 272;
+/* O tamanho das cartas é o que o professor achou na pinça: a tabela
+   ocupando a largura da tela, que é o que a turma do fundo enxerga.
+   Não é um zoom por cima — a carta tem mesmo este tamanho, e por isso
+   a letra dela sai nítida no projetor. */
+const CARTA_W = 63, CARTA_H = 52, PASSO_X = 69, PASSO_Y = 58;
+/* centrada na largura do palco, e na altura em torno de y=417, que é
+   onde a tabela ficou depois que as séries f entraram para dentro */
+const TAB_ESQ  = 640 - (17*PASSO_X + CARTA_W)/2;
+const TAB_TOPO = 417 - ( 6*PASSO_Y + CARTA_H)/2;
 
 /* Onde cada número atômico mora na tabela.
    Lantanídeos e actinídeos ficam DENTRO dela, na casa do grupo 3 que é
@@ -1136,7 +1139,9 @@ function embaralha(a){
    e cada carta cai no meio da sua parte, com um tremor. É o que faz o
    monte parecer desarrumado sem deixar buracos nem pilhas. */
 function gradeVagas(){
-  const x0 = 84, x1 = 1196, y0 = 262, y1 = 664, cols = 10, linhas = 5;
+  /* com as cartas maiores, o monte usa a folha inteira abaixo do
+     cabeçalho — senão elas se encavalariam */
+  const x0 = 76, x1 = 1204, y0 = 200, y1 = 684, cols = 10, linhas = 5;
   const dx = (x1-x0)/cols, dy = (y1-y0)/linhas, vagas = [];
   for (let l = 0; l < linhas; l++)
     for (let c = 0; c < cols; c++)
@@ -1181,12 +1186,11 @@ function reiniciaCena2(){
                    '<div class="clarao"></div>';
   sl.appendChild(cena);
 
-  /* a mesa cresce a partir do meio da própria tabela, e não do meio do
-     palco: assim ela abre para os dois lados por igual */
   const mesa = cena.querySelector('.mesa');
-  mesa.style.transformOrigin =
-    (TAB_ESQ  + (17*PASSO_X + CARTA_W)/2).toFixed(0) + 'px ' +
-    (TAB_TOPO + ( 6*PASSO_Y + CARTA_H)/2).toFixed(0) + 'px';
+  /* o CSS desenha a carta com a medida que o JS usa para posicioná-la:
+     uma fonte só, para as duas nunca discordarem do tamanho */
+  cena.style.setProperty('--cw', CARTA_W + 'px');
+  cena.style.setProperty('--ch', CARTA_H + 'px');
 
   /* A sombra de cada posição: o lugar vazio que espera o elemento. Uma
      casa por posição — as duas séries f dividem a sua, e desenhá-la
@@ -1342,9 +1346,8 @@ function reiniciaCena2(){
     });
     confetes();
     setTimeout(() => cena.querySelectorAll('.pc').forEach(c => c.classList.remove('verde')), 2400);
-    /* pronta a tabela, a mesa trava: daqui em diante ela é uma peça só,
-       e a pinça de dois dedos a amplia inteira */
-    mesa.classList.add('travada');
+    /* pronta a tabela, ela fica: nada mais a move nem a redimensiona */
+    mesa.classList.add('pronta');
   }
 }
 
@@ -1836,88 +1839,9 @@ stage.addEventListener('pointerdown', (ev) => {
   ev.stopPropagation();               /* na montagem, o gesto é da peça */
 }, true);
 
-/* ------------------------------------------------------------
-   A MESA TRAVADA
-   Montada a tabela, ela deixa de ser 118 cartas e passa a ser uma
-   coisa só. Dois dedos em pinça a ampliam inteira — é assim que se
-   acha o tamanho bom das cartas para a turma do fundo enxergar. Com
-   ela ampliada, um dedo a passeia; no tamanho natural o arrasto não
-   faz nada, para um toque perdido não sair tirando a tabela do lugar.
-   Voltando ao tamanho de origem, ela volta sozinha para o centro.
-   ------------------------------------------------------------ */
-const dedosMesa = new Map();
-let baseMesa = null;
-
-function mesaTravada(){
-  if (naMontagem() || stage.classList.contains('escrevendo')) return null;
-  const sl = slides[atual];
-  return sl ? sl.querySelector('.mesa.travada') : null;
-}
-function leMesa(m){
-  return {
-    zoom: parseFloat(m.style.getPropertyValue('--zoom')) || 1,
-    px:   parseFloat(m.style.getPropertyValue('--px'))   || 0,
-    py:   parseFloat(m.style.getPropertyValue('--py'))   || 0
-  };
-}
-function poeMesa(m, zoom, px, py){
-  m.style.setProperty('--zoom', zoom.toFixed(3));
-  m.style.setProperty('--px', px.toFixed(1) + 'px');
-  m.style.setProperty('--py', py.toFixed(1) + 'px');
-}
-function ancoraMesa(m){
-  baseMesa = Object.assign(centroDe(dedosMesa), leMesa(m));
-}
-
-stage.addEventListener('pointerdown', (ev) => {
-  const m = mesaTravada();
-  if (!m || ev.target.closest('button, a, input')) return;
-  m.classList.remove('macia');            /* na mão, sem inércia */
-  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  ancoraMesa(m);
-  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
-});
-document.addEventListener('pointermove', (ev) => {
-  if (!dedosMesa.has(ev.pointerId)) return;
-  const m = mesaTravada();
-  if (!m) return;
-  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  const agora = centroDe(dedosMesa), b = baseMesa;
-  let zoom = b.zoom;
-  if (dedosMesa.size > 1 && b.d > 12)
-    zoom = Math.max(.5, Math.min(3.5, b.zoom * (agora.d / b.d)));
-  /* passear só faz sentido quando há mais tabela do que tela */
-  const passeia = dedosMesa.size > 1 || zoom > 1.02;
-  poeMesa(m, zoom,
-    passeia ? b.px + (agora.cx - b.cx)/fitScale : b.px,
-    passeia ? b.py + (agora.cy - b.cy)/fitScale : b.py);
-});
-function largaMesa(ev){
-  if (!dedosMesa.has(ev.pointerId)) return;
-  dedosMesa.delete(ev.pointerId);
-  const m = mesaTravada();
-  if (!m) return;
-  if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
-  /* de volta ao tamanho de origem, ela mesma se recentra */
-  const e = leMesa(m);
-  if (e.zoom <= 1.02){
-    m.classList.add('macia');
-    poeMesa(m, 1, 0, 0);
-  }
-}
-document.addEventListener('pointerup', largaMesa);
-document.addEventListener('pointercancel', largaMesa);
-
-/* a roda do mouse amplia a mesa como a pinça */
-stage.addEventListener('wheel', (ev) => {
-  const m = mesaTravada();
-  if (!m) return;
-  const e = leMesa(m);
-  const zoom = Math.max(.5, Math.min(3.5, e.zoom * (1 - ev.deltaY * 0.0015)));
-  m.classList.toggle('macia', zoom <= 1.02);
-  poeMesa(m, zoom, zoom <= 1.02 ? 0 : e.px, zoom <= 1.02 ? 0 : e.py);
-  ev.preventDefault();
-}, {passive:false});
+/* A tabela montada não se amplia mais com a pinça: o tamanho dela foi
+   escolhido assim e virou o tamanho de nascença das cartas. Durante a
+   aula ela fica quieta, que é o que se quer de uma tabela pronta. */
 
 /* Quem abre a montagem é a tecla G — ou o ícone ✥ da barra, para
    quando o tablet estiver sem teclado. É de propósito que ela não
@@ -2037,16 +1961,6 @@ function textoDoSlide(i){
            (o.fonte === null ? ' '.repeat(13) : ', fonte:' + pad(o.fonte,5)) +
            ', esc:' + o.esc.toFixed(2) + ' },\n';
   });
-  /* a mesa da tabela entra com o tamanho a que ela foi pinçada — é
-     esse número que fixa o tamanho das cartas no arquivo */
-  const mesa = slides[i].querySelector('.mesa');
-  if (mesa){
-    const e = leMesa(mesa);
-    out += '  { ' + "el:'mesa',".padEnd(16, ' ') +
-           ' zoom:' + e.zoom.toFixed(2) +
-           ', px:' + pad(Math.round(e.px),4) +
-           ', py:' + pad(Math.round(e.py),4) + ' },\n';
-  }
   return out;
 }
 function copiaPosicoes(todos){
