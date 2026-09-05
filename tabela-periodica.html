@@ -427,6 +427,27 @@ body{
 #botao-mesa svg{flex:none}
 @keyframes botaoEntra{from{opacity:0;transform:translateY(36px) scale(.8)}
                       to  {opacity:1;transform:none}}
+/* ---------- o atalho: montar tudo de uma vez ----------
+   Ele nasce com as cartas espalhadas e vive só enquanto a tabela não
+   está montada — é a saída de quem não quer tocar elemento por
+   elemento. Ocupa o mesmo canto do outro botão, e os dois nunca estão
+   em cena ao mesmo tempo: quando um chega, o outro já foi. */
+#botao-todos{
+  position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
+  display:none;align-items:center;justify-content:center;
+  width:58px;height:58px;border-radius:14px;
+  border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
+  font-family:var(--display);font-weight:600;font-size:13px;
+  box-shadow:0 7px 20px rgba(32,28,66,.2);
+  transition:background .2s,color .2s,transform .16s,box-shadow .2s;
+}
+.cena.tem-todos #botao-todos{
+  display:flex;
+  animation:botaoEntra .62s cubic-bezier(.2,1.35,.4,1) .3s backwards;
+}
+#botao-todos:hover{background:var(--indigo);color:#fff;box-shadow:0 9px 24px rgba(32,28,66,.28)}
+#botao-todos:active{transform:scale(.94)}
+
 @keyframes botaoChama{
   0%  {box-shadow:0 7px 20px rgba(32,28,66,.2), 0 0 0 0    rgba(226,162,43,.8)}
   70% {box-shadow:0 7px 20px rgba(32,28,66,.2), 0 0 0 18px rgba(226,162,43,0)}
@@ -1253,7 +1274,7 @@ const VAO_LINHA = 14, VAO_COL = 14, ZOOM_COL = 0.88;
 /* Aberta em linhas, a tabela sobe um pouco: embaixo à direita mora o
    botão, e as últimas cartas da sétima linha iriam parar debaixo dele. */
 const CY_ABERTA = 428;
-let modoMesa = 'junta';
+let modoMesa = 'junta', montandoTudo = false;
 
 function yDaLinha(row, modo){
   const aberta = modo === 'linhas';
@@ -1336,6 +1357,7 @@ function reiniciaCena2(){
   cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
                      '<div class="banda"></div><div class="aviso"></div>' +
                    '</div><div class="clarao"></div>' +
+                   '<button id="botao-todos" type="button">todos</button>' +
                    '<button id="botao-mesa" type="button"></button>';
   sl.appendChild(cena);
 
@@ -1396,6 +1418,10 @@ function reiniciaCena2(){
   ROTEIROS[1] = r;
   modoMesa = 'junta';                    /* a cena recomeça com a tabela junta */
   cicloMesa = 0;
+  montandoTudo = false;
+  cena.querySelector('#botao-todos').addEventListener('click', () => {
+    if (!mesa.classList.contains('pronta')) organizaTudo();
+  });
   const botao = cena.querySelector('#botao-mesa');
   botao.addEventListener('click', () => {
     const modo = CICLO[cicloMesa];
@@ -1441,6 +1467,7 @@ function reiniciaCena2(){
     cl.classList.add('on');
     setTimeout(() => cl.classList.remove('on'), 800);
     atualizaMarca();                       /* a tabela do canto sai de cena */
+    cena.classList.add('tem-todos');       /* e o atalho aparece com as cartas */
   });
 
   /* ---- 2º clique: a regra chega, e o primeiro elemento chama ---- */
@@ -1486,7 +1513,9 @@ function reiniciaCena2(){
   /* o convite: vermelho lento, e a carta passa a pegar o dedo */
   function acende(z){
     const c = cartas.get(z);
-    if (!c) return;
+    /* se a tabela já foi montada de uma vez, não há mais quem chamar —
+       este convite estava agendado de antes e chegou atrasado */
+    if (!c || montandoTudo) return;
     c.classList.add('chama');
     r.espera = () => leva(z);
     c.onclick = (ev) => { ev.stopPropagation(); leva(z); };
@@ -1502,8 +1531,16 @@ function reiniciaCena2(){
     if (z < 7) setTimeout(() => acende(z+1), 740);
     else       setTimeout(organizaTudo, 800);
   }
-  /* do sétimo em diante a tabela se monta sozinha, um atrás do outro */
+  /* do sétimo em diante a tabela se monta sozinha, um atrás do outro —
+     e é também o que o botão "todos" faz de uma vez */
   function organizaTudo(){
+    montandoTudo = true;
+    cena.classList.remove('tem-todos');   /* o atalho cumpriu o que tinha a fazer */
+    cena.querySelectorAll('.pc.chama').forEach(c => {
+      c.classList.remove('chama');
+      c.onclick = null;
+    });
+    r.espera = null;
     const resto = [...cena.querySelectorAll('.pc:not(.na-tabela)')]
                   .sort((a,b) => a.dataset.z - b.dataset.z);
     resto.forEach((c,i) => setTimeout(() => voa(c, alvoDe(+c.dataset.z), 520), i*20));
