@@ -217,6 +217,39 @@ body{
 }
 .capa .foto img{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px}
 
+/* ============================================================
+   O GIRO ENTRE OS SLIDES
+   O cabeçalho não desliza: ele gira para a direita e some, e o novo
+   vem girando atrás dele, no mesmo sentido, ocupar o lugar. As cartas
+   da tabela giram junto, cada uma por si, e voltam com a outra face.
+
+   O giro é feito na propriedade `rotate`, e não em `transform`: as
+   peças já usam o transform para se posicionar (translate(-50%,-50%)
+   e a escala da montagem), e uma animação de transform apagaria isso.
+   As duas se somam — primeiro rotate, depois transform.
+   ============================================================ */
+.gira-sai  {animation:cabSai   .46s cubic-bezier(.45,0,.7,1) both}
+.gira-entra{animation:cabEntra .46s cubic-bezier(.3,.25,.3,1) .46s both}
+@keyframes cabSai  {from{rotate:y 0deg;  opacity:1} to{rotate:y 90deg; opacity:0}}
+@keyframes cabEntra{from{rotate:y -90deg;opacity:0} to{rotate:y 0deg;  opacity:1}}
+
+/* a carta vira a face: meia volta, troca de cara no fio, e completa */
+@keyframes viraCarta{
+  0%   {rotate:y 0deg}
+  49.9%{rotate:y 90deg}
+  50%  {rotate:y -90deg}
+  100% {rotate:y 0deg}
+}
+.pc.virando .pc-in{animation:viraCarta .6s ease-in-out}
+
+/* ---------- o número do tópico, à esquerda do título ---------- */
+.num{
+  position:absolute;z-index:4;
+  font-family:var(--display);font-weight:700;font-size:46px;line-height:1;
+  color:var(--indigo);opacity:.34;
+  transform:translateY(-50%) scale(var(--esc,1));transform-origin:left center;
+}
+
 /* ---------- cabeçalho: título + régua + subtítulo ---------- */
 .title{
   font-family:var(--display);font-weight:700;font-size:46px;line-height:1.05;
@@ -282,7 +315,7 @@ body{
    reta. Ela é posta no destino de uma vez e o VOO é uma animação do
    deslocamento — um arco, calculado em voa(). */
 .pc{position:absolute;width:var(--cw,63px);height:var(--ch,52px);
-  transform:translate(-50%,-50%)}
+  transform:translate(-50%,-50%);perspective:420px}
 /* O TIJOLO — o desenho vem do app de tabela anterior:
    canto vivo, fio branco em volta, um brilho no alto como o de vidro,
    e a sombra caída embaixo. Dentro, três linhas: o número em cima à
@@ -311,6 +344,16 @@ body{
   text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 .pc u{font-family:var(--mono);font-size:9px;line-height:1;text-align:center;
   color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.55)}
+
+/* A OUTRA FACE — a que aparece depois do giro para o slide seguinte.
+   Todas as cartas na mesma cor, um lilás claro do tema: a tabela deixa
+   de falar de famílias e passa a ser um tabuleiro só, pronto para a
+   próxima leitura. Em cor clara a letra branca se perderia, então ela
+   escurece junto. */
+.pc.face2 .pc-in{border-color:rgba(76,63,191,.42)}
+.pc.face2 .pc-in::before{opacity:0}
+.pc.face2 i,.pc.face2 u{color:rgba(32,28,66,.58);text-shadow:none}
+.pc.face2 b{color:var(--tinta);text-shadow:none}
 
 /* a carta da frente de uma pilha — lantanídeos e actinídeos moram
    quinze numa casa só, e quem aparece diz o intervalo que guarda */
@@ -1037,6 +1080,7 @@ SLIDES.forEach((sl,i) => {
     /* título curto cabe numa linha só; longo pode quebrar em duas */
     const uma = sl.title.length <= 26 ? ' uma' : '';
     el.innerHTML =
+      '<div class="num" data-mont="numero">'+i+'</div>' +
       '<h2 class="title'+uma+'">'+esc(sl.title)+'</h2>' +
       '<div class="regua" aria-label="Ir para um slide"></div>' +
       '<div class="subtitle">'+esc(sl.subtitle || '')+'</div>' +
@@ -1074,10 +1118,12 @@ function go(i, dir){
   const de    = atual;
   const sai   = slides[atual];
   const entra = slides[i];
-  /* entre a capa e o slide 2 a passagem é o cubo girando; do 2 em
-     diante, o empurrão lateral */
-  const fx  = (atual === 0 || i === 0) ? 'cube' : 'desl';
-  const dur = fx === 'cube' ? 880 : 640;
+  /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
+     3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
+     giraCabecalhos(). Do resto, o empurrão lateral. */
+  const gira = (de === 1 && i === 2) || (de === 2 && i === 1);
+  const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
+  const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
   /* a cena dos 118 recomeça quando se entra nela pela capa — que é
      onde a história começa. Voltando do slide 3, ela fica como estava. */
@@ -1086,8 +1132,16 @@ function go(i, dir){
   andando = true;
   limpaFx(sai); limpaFx(entra);
   sai.classList.remove('is-active');
-  sai.classList.add('is-leaving', 'fx-'+fx+'-out-'+dir);
-  entra.classList.add('is-active', 'fx-'+fx+'-in-'+dir);
+  entra.classList.add('is-active');
+  if (fx === 'gira'){
+    /* no giro os slides ficam parados: quem se mexe é o cabeçalho de
+       cada um, e a tabela, que troca de dono e de face */
+    sai.classList.add('is-leaving');
+    giraCabecalhos(de, i);
+  } else {
+    sai.classList.add('is-leaving', 'fx-'+fx+'-out-'+dir);
+    entra.classList.add('fx-'+fx+'-in-'+dir);
+  }
 
   setTimeout(() => {
     sai.classList.remove('is-leaving');
@@ -1097,6 +1151,7 @@ function go(i, dir){
        Só aqui, com a animação terminada: medir um slide em movimento
        daria posições do meio do caminho. */
     if (naMontagem()) soltaSlide(entra);
+    poeNumero(entra);
   }, dur);
 
   atual = i;
@@ -1124,6 +1179,100 @@ function pinta(){
 
 /* avançar é, primeiro, adiantar a cena deste slide; só quando não há
    mais o que contar aqui é que se passa para o próximo */
+/* ============================================================
+   O GIRO
+   O cabeçalho do slide que sai gira para a direita e some; o do que
+   entra vem girando atrás, no mesmo sentido, e para no lugar. Ao mesmo
+   tempo a tabela troca de slide — ela não sai de cena, muda de dono —
+   e cada carta vira a face por conta própria, numa onda que atravessa
+   o tabuleiro na diagonal.
+   ============================================================ */
+const PECAS_CABECA = '.num, .title, .regua, .subtitle';
+const FUNDO_FACE2 = 'linear-gradient(145deg,#DCD7F3,#C0B8E8)';
+
+/* a carta vira: no fio da meia-volta, quando ela está de perfil e não
+   se vê nada, a cara é trocada */
+function viraCartas(mesa, face){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const z = +c.dataset.z, p = posDe(z);
+    const atraso = (p.col + p.row) * 11;      /* a onda atravessa na diagonal */
+    const miolo = c.firstElementChild;
+    miolo.style.animationDelay = atraso + 'ms';
+    c.classList.add('virando');
+    setTimeout(() => {
+      if (face === 'face2'){
+        c.classList.add('face2');
+        miolo.style.background = FUNDO_FACE2;
+      } else {
+        c.classList.remove('face2');
+        miolo.style.background = c.classList.contains('encaixada')
+                               ? fundoFamilia : fundoCinza(z);
+      }
+    }, atraso + 300);
+    setTimeout(() => {
+      c.classList.remove('virando');
+      miolo.style.removeProperty('animation-delay');
+    }, atraso + 640);
+  });
+}
+
+function giraCabecalhos(de, para){
+  /* a tabela muda de slide sem se mexer: as cartas estão em coordenadas
+     do palco, então trocar de pai não as move um pixel */
+  const mesa = slides[de].querySelector('.mesa');
+  if (mesa){
+    let cena = slides[para].querySelector('.cena');
+    if (!cena){
+      cena = document.createElement('div');
+      cena.className = 'cena';
+      cena.style.setProperty('--cw', CARTA_W + 'px');
+      cena.style.setProperty('--ch', CARTA_H + 'px');
+      slides[para].appendChild(cena);
+    }
+    const cenaVelha = mesa.parentNode;
+    cena.appendChild(mesa);
+    /* o slide que recebe a tabela deixa de estar vazio */
+    const marca = slides[para].querySelector('.body-area .vazio');
+    if (marca) marca.remove();
+    cena.style.transition = 'opacity .45s ease';
+    cena.style.opacity = '1';
+    /* o que ficou para trás — as regras escritas — se apaga junto */
+    if (cenaVelha && cenaVelha !== cena){
+      cenaVelha.style.transition = 'opacity .45s ease';
+      cenaVelha.style.opacity = '0';
+    }
+    viraCartas(mesa, para > de ? 'face2' : 'familia');
+  }
+
+  slides[de].querySelectorAll(PECAS_CABECA).forEach(el => {
+    el.classList.add('gira-sai');
+    setTimeout(() => el.classList.remove('gira-sai'), 520);
+  });
+  slides[para].querySelectorAll(PECAS_CABECA).forEach(el => {
+    el.classList.add('gira-entra');
+    setTimeout(() => el.classList.remove('gira-entra'), 1000);
+  });
+}
+
+/* O número do tópico cola-se à esquerda do título, seja onde ele
+   estiver: no fluxo normal ou no lugar em que a montagem o deixou.
+   Por isso ele é medido a partir do título, e não posto num x fixo. */
+function poeNumero(sl){
+  const t = sl.querySelector('.title'), n = sl.querySelector('.num');
+  if (!t || !n) return;
+  const rt = t.getBoundingClientRect(), rs = sl.getBoundingClientRect();
+  if (!rt.width) return;
+  const m = MEDIDAS.get(t);
+  /* A escala entra antes da medida: escalado, ele muda de largura, e é
+     a largura de verdade que diz onde começa para o fim dele cair ao
+     lado do título. */
+  n.style.setProperty('--esc', (m ? m.esc : 1).toFixed(3));
+  n.style.top = ((rt.top + rt.height/2 - rs.top)/fitScale).toFixed(0) + 'px';
+  n.style.left = '0px';
+  const larg = n.getBoundingClientRect().width / fitScale;
+  n.style.left = ((rt.left - rs.left)/fitScale - larg - 10).toFixed(0) + 'px';
+}
+
 /* a marca-d'água do canto se recolhe quando o slide em cena já tem
    cartas na tela; volta assim que a aula sai dele */
 function atualizaMarca(){
@@ -2802,7 +2951,11 @@ seguraTela();
    frase escrita na fonte de emergência é medir outra frase, e a peça
    ficaria com a largura errada pelo resto da aula. */
 (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
-  .then(() => Object.keys(LAYOUTS).forEach(i => aplicaLayout(+i)));
+  .then(() => {
+    Object.keys(LAYOUTS).forEach(i => aplicaLayout(+i));
+    /* e o número do tópico se encosta no título já no lugar dele */
+    slides.forEach(sl => poeNumero(sl));
+  });
 </script>
 </body>
 </html>
