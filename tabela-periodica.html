@@ -874,6 +874,99 @@ body{
 }
 .rot-cerca.on{opacity:1}
 
+/* ---------- os elétrons de valência, no slide 9 ----------
+   A tabela é a dos grupos A e B, mas com os de transição apagados: a
+   conta dos elétrons de valência é simples nos representativos, e é só
+   deles que esta cena fala. Sem números de linha, e no lugar dos
+   números dos grupos as letras que eles têm quando são A. */
+.mesa.valencia .pc{transition:translate .42s cubic-bezier(.26,1.1,.4,1),
+                              opacity .45s ease}
+.mesa.valencia .pc:not(.repr){opacity:.26;pointer-events:none}
+.mesa.valencia .pc.repr{cursor:pointer}
+.mesa.valencia .pc.no-alto{translate:0 -24px;z-index:18}
+.mesa.valencia .pc.no-alto .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
+
+/* as letras dos grupos, onde estariam os números */
+.rot-a{
+  position:absolute;z-index:10;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:-.01em;
+  color:var(--bloco-a);opacity:0;
+  transition:opacity .4s ease, translate .42s cubic-bezier(.26,1.1,.4,1);
+}
+.mesa.valencia .rot-a{opacity:1}
+.rot-a.no-alto{translate:0 -24px}
+
+/* a conta dos elétrons, que entra deslizando como o nome da família
+   entrava no slide das famílias */
+.rot-val{
+  position:absolute;z-index:11;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01em;
+  color:var(--bloco-a);opacity:0;translate:0 10px;
+  transition:opacity .4s ease, translate .46s cubic-bezier(.2,.86,.26,1);
+}
+.rot-val.on{opacity:1;translate:0 0}
+.rot-val b{font-weight:700;font-size:1.24em}
+
+/* ---- o modo Pauling ----
+   A mesma tabela deixa de falar de famílias e passa a falar de um
+   elemento de cada vez: tocado, ele cresce, fica verde, e a
+   distribuição dele se escreve em cima da tabela. */
+.botao-pauling{
+  position:absolute;right:26px;bottom:18px;z-index:12;
+  display:flex;align-items:center;justify-content:center;
+  width:64px;height:64px;border-radius:50%;
+  border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:12.5px;letter-spacing:.02em;
+  box-shadow:0 7px 20px rgba(32,28,66,.2);
+  transition:background .2s, color .2s, transform .16s;
+}
+.botao-pauling:hover{background:var(--indigo);color:#fff}
+.botao-pauling:active{transform:scale(.94)}
+.botao-pauling.aceso{background:var(--indigo);color:#fff}
+
+/* no modo Pauling a coluna não sobe: quem responde é a carta */
+.mesa.valencia.pauling .rot-a{opacity:.4}
+.mesa.valencia .pc.aceso{z-index:22}
+
+/* A DISTRIBUIÇÃO, EM CIMA DA TABELA
+   O desenho é o do app de ligações químicas: os subníveis de cada
+   camada juntos por uma chave, e a letra da camada embaixo dela. A
+   última camada — a de valência, que é do que o slide fala — sai na
+   cor do elemento aceso. */
+.dist-val{
+  position:absolute;left:640px;top:152px;transform:translate(-50%,-50%);
+  z-index:13;pointer-events:none;white-space:nowrap;text-align:center;
+  font-family:var(--display);font-weight:500;font-size:19px;color:var(--tinta);
+  opacity:0;translate:0 10px;
+  transition:opacity .4s ease, translate .45s cubic-bezier(.2,.86,.26,1);
+}
+.dist-val.on{opacity:1;translate:0 0}
+.dist-val .cam{
+  display:inline-block;position:relative;margin:0 11px;
+  white-space:nowrap;text-align:center;vertical-align:top;
+}
+.dist-val .br{
+  display:block;height:7px;margin-top:3px;
+  border:1.5px solid currentColor;border-top:none;
+  border-radius:0 0 4px 4px;opacity:.4;
+}
+.dist-val .lb{
+  display:block;margin-top:3px;
+  font-family:var(--mono);font-weight:500;font-size:.72em;letter-spacing:.1em;
+  color:var(--indigo);
+}
+.dist-val sup{font-size:.62em;vertical-align:.42em;font-weight:400}
+.dist-val .cam:last-child,
+.dist-val .cam:last-child .lb{color:var(--natural)}
+/* o símbolo do elemento, à frente da distribuição */
+.dist-val .quem{
+  display:inline-block;margin-right:16px;vertical-align:top;
+  font-family:var(--display);font-weight:700;font-size:1.35em;color:var(--natural);
+}
+
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
   0 8px 20px rgba(80,40,0,.34), 0 0 0 2px rgba(226,162,43,.85)}
@@ -1743,9 +1836,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2 a 8 sem sair de cena: entre eles a
+  /* a tabela atravessa os slides 2 a 9 sem sair de cena: entre eles a
      passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 7 && i >= 1 && i <= 7;
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 8 && i >= 1 && i <= 8;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1906,7 +1999,7 @@ function faceDe(i){
   /* o tabuleiro liso serve a três cenas: as coordenadas, as famílias e
      a natureza dos elementos — nas três a cor tem outro trabalho */
   if (i === 2 || i === 4 || i === 7) return 'face2';
-  if (i === 5 || i === 6) return 'ab';      /* os grupos A e B, e as séries */
+  if (i === 5 || i === 6 || i === 8) return 'ab';   /* grupos A e B, séries, valência */
   return 'familia';
 }
 /* A face diz a cor de toda a tabela; alguns slides põem uma cor por
@@ -2006,6 +2099,12 @@ function estadoMesaPara(mesa, i){
   mesa.classList.toggle('natureza', i === 7);
   apagaNaturais(mesa);
   if (i === 7) poeNaturais(mesa);
+  /* e o slide da valência: os representativos acesos, o resto apagado,
+     e as letras dos grupos no lugar dos números */
+  if (i !== 8) apagaValencia(mesa);
+  mesa.classList.toggle('valencia', i === 8);
+  marcaRepresentativos(mesa, i === 8);
+  if (i === 8){ poeLetrasA(mesa); poeBotaoPauling(cenaDe(slides[8]), slides[8]); }
   if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
@@ -2022,8 +2121,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 7) return mesa;
-  /* os slides 3 a 8 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 8) return mesa;
+  /* os slides 3 a 9 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -2123,9 +2222,9 @@ function montaMiniaturas(){
     copia.classList.add('is-active');
     /* A tabela é uma só e mora no slide em que a aula está. Para a
        miniatura mostrar o que CADA slide tem, ela é copiada para os
-       sete que a usam, cada cópia na cara daquele slide. */
+       oito que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 7){
+    if (mesaViva && i >= 1 && i <= 8){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -2446,7 +2545,7 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 7; i++){
+  for (let i = 1; i <= 8; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
@@ -2456,6 +2555,7 @@ function reiniciaCena2(){
   if (typeof montaRoteiro6 === 'function') montaRoteiro6();
   if (typeof montaRoteiro7 === 'function') montaRoteiro7();
   if (typeof montaRoteiro8 === 'function') montaRoteiro8();
+  if (typeof montaRoteiro9 === 'function') montaRoteiro9();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   gruposDitos.clear();               /* e sem nome de grupo dito */
   blocosNomeados = false;
@@ -4050,6 +4150,188 @@ function arrumaSeries(mesa, comoEstao, todasFora){
 }
 
 /* ============================================================
+   SLIDE 9 · A TABELA E OS ELÉTRONS DE VALÊNCIA
+   A tabela dos grupos A e B, com os de transição apagados: a conta dos
+   elétrons de valência é simples nos representativos, e é só deles que
+   esta cena fala. Sem os números das linhas, e no lugar dos números
+   dos grupos as letras que eles têm quando são A.
+
+   Duas leituras da mesma tabela, e um botão que troca de uma para a
+   outra. Na primeira, o dedo pega a FAMÍLIA: a coluna sobe com a letra
+   dela e diz quantos elétrons de valência tem. Na segunda — o modo
+   Pauling —, o dedo pega o ELEMENTO: ele cresce, fica verde, e a
+   distribuição dele se escreve em cima da tabela.
+   ============================================================ */
+/* a letra do grupo, e quantos elétrons de valência ele tem */
+const GRUPO_A = {1:'1A', 2:'2A', 13:'3A', 14:'4A', 15:'5A', 16:'6A', 17:'7A', 18:'8A'};
+const VALENCIA = {1:1, 2:2, 13:3, 14:4, 15:5, 16:6, 17:7, 18:8};
+const ehRepresentativo = col => !!GRUPO_A[col];
+
+/* ---- a distribuição eletrônica ----
+   Preenchida na ordem de energia — a diagonal de Pauling — e depois
+   reagrupada por camada, que é como a aula lê: K, L, M, cada uma com
+   os seus subníveis. É a mesma conta do app de ligações químicas, e o
+   desenho também: os subníveis de uma camada presos por uma chave, com
+   a letra dela embaixo. */
+const AUFBAU = ['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d','5p','6s',
+                '4f','5d','6p','7s','5f','6d','7p'];
+const CABE = {s:2, p:6, d:10, f:14};
+const CAMADAS = ['K','L','M','N','O','P','Q'];
+
+function distDe(z){
+  const por = {};                     /* número da camada -> subníveis */
+  let resto = z;
+  for (const sub of AUFBAU){
+    if (resto <= 0) break;
+    const n = +sub[0], q = Math.min(CABE[sub[1]], resto);
+    resto -= q;
+    (por[n] = por[n] || []).push(sub + '<sup>' + q + '</sup>');
+  }
+  return Object.keys(por).map(Number).sort((a,b) => a-b)
+    .map(n => [CAMADAS[n-1], por[n].join(' ')]);
+}
+
+let modoPauling = false;
+let colunaNoAlto = null;
+let elementoAceso = null;
+
+/* ---- as letras dos grupos, onde estariam os números ---- */
+function poeLetrasA(mesa){
+  Object.keys(GRUPO_A).forEach(col => {
+    if (mesa.querySelector('.rot-a[data-col="'+col+'"]')) return;
+    const r = document.createElement('div');
+    r.className = 'rot-a';
+    r.dataset.col = col;
+    r.textContent = GRUPO_A[col];
+    r.style.left = xDaColuna(+col, 'junta').toFixed(0) + 'px';
+    r.style.top  = '200px';
+    mesa.appendChild(r);
+  });
+}
+/* só os representativos respondem ao dedo, e só eles ficam acesos */
+function marcaRepresentativos(mesa, on){
+  mesa.querySelectorAll('.pc').forEach(c =>
+    c.classList.toggle('repr', on && ehRepresentativo(+c.dataset.col)));
+}
+
+/* ---- a primeira leitura: a família sobe e diz a conta ---- */
+function baixaColuna(mesa){
+  mesa.querySelectorAll('.pc.no-alto, .rot-a.no-alto')
+      .forEach(e => e.classList.remove('no-alto'));
+  const r = mesa.querySelector('.rot-val:not(.saindo)');
+  if (r){
+    r.classList.add('saindo');
+    r.classList.remove('on');
+    setTimeout(() => r.remove(), 520);
+  }
+  colunaNoAlto = null;
+}
+function sobeColuna(mesa, col){
+  const jaEstava = colunaNoAlto === col;
+  baixaColuna(mesa);
+  if (jaEstava) return;
+  mesa.querySelectorAll('.pc').forEach(c => {
+    if (+c.dataset.col === col) c.classList.add('no-alto');
+  });
+  const letra = mesa.querySelector('.rot-a[data-col="'+col+'"]');
+  if (letra) letra.classList.add('no-alto');
+  colunaNoAlto = col;
+
+  const n = VALENCIA[col];
+  const r = document.createElement('div');
+  r.className = 'rot-val';
+  r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons') +
+                ' de valência';
+  /* Acima da letra do grupo, e com folga: a letra sobe vinte e quatro
+     quando a coluna sobe, e as duas escritas ficariam encostadas se a
+     conta estivesse logo acima do lugar de repouso dela. Nas pontas a
+     frase se encolhe para dentro, para não sair pela borda. */
+  r.style.left = Math.max(180, Math.min(1100, xDaColuna(col, 'junta'))).toFixed(0) + 'px';
+  r.style.top  = '132px';
+  mesa.appendChild(r);
+  revela(r, 'on');
+}
+
+/* ---- a segunda leitura: o elemento e a distribuição dele ---- */
+function apagaElemento(mesa){
+  if (elementoAceso){
+    const c = mesa.querySelector('.pc[data-z="'+elementoAceso+'"]');
+    if (c){
+      c.classList.remove('aceso');
+      c.firstElementChild.style.removeProperty('--sc');
+      c.firstElementChild.style.background = fundoDe(corDoBloco(+c.dataset.col));
+    }
+    elementoAceso = null;
+  }
+  const d = mesa.querySelector('.dist-val:not(.saindo)');
+  if (d){
+    d.classList.add('saindo');
+    d.classList.remove('on');
+    setTimeout(() => d.remove(), 520);
+  }
+}
+function acendeElemento(mesa, carta){
+  const z = +carta.dataset.z;
+  const jaEstava = elementoAceso === z;
+  apagaElemento(mesa);
+  if (jaEstava) return;
+
+  carta.classList.add('aceso');
+  carta.firstElementChild.style.setProperty('--sc', '1.5');
+  carta.firstElementChild.style.background = fundoDe('var(--natural)');
+  elementoAceso = z;
+
+  const d = document.createElement('div');
+  d.className = 'dist-val';
+  d.innerHTML = '<span class="quem">' + SIMBOLOS[z-1] + '</span>' +
+    distDe(z).map(([cam, sub]) =>
+      '<span class="cam">' + sub +
+        '<span class="br"></span><span class="lb">' + cam + '</span></span>').join('');
+  mesa.appendChild(d);
+  revela(d, 'on');
+}
+
+/* ---- o botão que troca de leitura ---- */
+function poeBotaoPauling(cena, sl){
+  if (cena.querySelector('.botao-pauling')) return;
+  const b = document.createElement('button');
+  b.className = 'botao-pauling';
+  b.type = 'button';
+  b.textContent = 'Pauling';
+  b.title = 'A distribuição de cada elemento';
+  b.addEventListener('click', () => {
+    const m = sl.querySelector('.mesa');
+    if (!m) return;
+    modoPauling = !modoPauling;
+    m.classList.toggle('pauling', modoPauling);
+    b.classList.toggle('aceso', modoPauling);
+    /* cada leitura recomeça limpa: o que a outra deixou sai de cena */
+    baixaColuna(m);
+    apagaElemento(m);
+  });
+  cena.appendChild(b);
+}
+
+/* sem encenação, para a troca de slide */
+function apagaValencia(mesa){
+  baixaColuna(mesa);
+  apagaElemento(mesa);
+  modoPauling = false;
+  mesa.classList.remove('pauling');
+  mesa.querySelectorAll('.rot-a, .rot-val, .dist-val').forEach(e => e.remove());
+  mesa.querySelectorAll('.pc').forEach(c => c.classList.remove('repr', 'aceso'));
+}
+
+function montaRoteiro9(){
+  const sl = slides[8];
+  ROTEIROS[8] = { i:0, espera:null, passos:[], desfazer:[] };
+  /* a cena não tem passos: a tabela já chega falando, e o que ela tem
+     a dizer está todo no dedo */
+  const cena = cenaDe(sl);
+  poeBotaoPauling(cena, sl);
+}
+
+/* ============================================================
    SLIDE 8 · A NATUREZA DOS ELEMENTOS
    A mesma tabela do slide anterior, com as duas séries à vista
    embaixo, mas de volta ao tabuleiro liso: aqui a cor vai contar outra
@@ -5301,6 +5583,12 @@ const LAYOUTS = {
     titulo: {esq:281, y: 30, esc:0.76},
     regra8:  {esq:104, y: 82, esc:1.06},
     regra8b: {esq:104, y:123, esc:1.06}
+  },
+  /* slide 9 · A Tabela e os Elétrons de Valência — a mesma tira */
+  8: {
+    numero: {x:259,  y: 34, esc:1.00},
+    regua:  {x:120,  y: 32, esc:1.00},
+    titulo: {esq:281, y: 30, esc:0.76}
   }
 };
 
@@ -5752,6 +6040,17 @@ function largaMesa(ev){
       return;
     }
 
+    /* No slide da valência, o que o dedo pega depende da leitura: na
+       primeira é a família inteira, na de Pauling é o elemento. */
+    if (atual === 8){
+      const c = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc.repr');
+      if (c && modoPauling)   acendeElemento(m, c);
+      else if (c)             sobeColuna(m, +c.dataset.col);
+      else if (!toqueMesa.alvo.closest || !toqueMesa.alvo.closest('.pc')) passoAdiante();
+      toqueMesa = null;
+      return;
+    }
+
     /* No slide da natureza só duas coisas pegam o dedo: o urânio, que
        dá a partida na conta, e qualquer transurânico, que faz passar o
        brilho pelos vinte e seis. O resto da tabela é para se olhar. */
@@ -6150,6 +6449,7 @@ montaRoteiro5();
 montaRoteiro6();
 montaRoteiro7();
 montaRoteiro8();
+montaRoteiro9();
 animaCapa();
 pinta();
 seguraTela();
