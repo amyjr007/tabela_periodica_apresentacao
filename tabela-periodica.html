@@ -2364,6 +2364,29 @@ const descolados = new Set();            /* os tipos que já saíram da estrutur
    arrancar de esbarrar. */
 let esperaBloco = null;
 
+/* Um bloco só precisa ser arrancado enquanto estiver preso a algum
+   outro. Tirados os vizinhos, ele fica sozinho na estrutura — não há
+   mais encaixe nenhum a vencer — e passa a andar no primeiro toque.
+   Vizinhança é a da tabela: casas coladas de lado ou por cima. */
+function blocoIsolado(tipo){
+  const presas = new Map();
+  for (let z = 1; z <= 118; z++){
+    const t = tipoDe(z);
+    if (descolados.has(t)) continue;
+    const p = posDe(z);
+    presas.set(p.col + ':' + p.row, t);
+  }
+  for (let z = 1; z <= 118; z++){
+    if (tipoDe(z) !== tipo) continue;
+    const p = posDe(z);
+    for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const vizinho = presas.get((p.col+dc) + ':' + (p.row+dr));
+      if (vizinho && vizinho !== tipo) return false;
+    }
+  }
+  return true;
+}
+
 function agendaDescolar(mesa, carta, ev){
   const tipo = tipoDe(+carta.dataset.z);
   const pecas = [...mesa.querySelectorAll('.pc')].filter(p => tipoDe(+p.dataset.z) === tipo);
@@ -2396,6 +2419,7 @@ document.addEventListener('pointercancel', cancelaEspera);
 
 function comecaBloco(mesa, carta, ev){
   const tipo = tipoDe(+carta.dataset.z);
+  descolados.add(tipo);            /* na mão, ele já saiu da estrutura */
   const pecas = [...mesa.querySelectorAll('.pc')]
     .filter(c => tipoDe(+c.dataset.z) === tipo)
     .map(c => ({ c, x: parseFloat(c.style.left), y: parseFloat(c.style.top) }));
@@ -3382,9 +3406,10 @@ stage.addEventListener('pointerdown', (ev) => {
     if (c){
       if (!blocoAtivo){
         const tipo = tipoDe(+c.dataset.z);
-        /* já arrancado antes, ele anda no primeiro toque; ainda preso à
-           estrutura, primeiro é preciso soltá-lo */
-        if (descolados.has(tipo)) comecaBloco(m, c, ev);
+        /* Já arrancado antes, ou sozinho na estrutura porque levaram os
+           vizinhos dele, o bloco anda no primeiro toque. Ainda encaixado
+           entre outros, primeiro é preciso soltá-lo. */
+        if (descolados.has(tipo) || blocoIsolado(tipo)) comecaBloco(m, c, ev);
         else agendaDescolar(m, c, ev);
       }
       return;
