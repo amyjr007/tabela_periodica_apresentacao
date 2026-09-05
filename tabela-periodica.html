@@ -347,12 +347,51 @@ body{
 }
 .pc.verde .pc-in{animation:verde 1s var(--onda,0ms) ease-out}
 
+/* ---------- a tabela aberta em linhas ----------
+   Tocada, a tabela pronta se abre: as sete linhas se afastam, ganham
+   número à esquerda e o vazio acima dos metais de transição recebe o
+   aviso. Daí em diante, tocar num elemento acende a linha inteira. */
+.mesa.aberta .pc{pointer-events:auto;cursor:pointer}
+.mesa.tem-realce .pc{transition:opacity .3s ease}
+.mesa.tem-realce .pc:not(.realce){opacity:.34}
+
+/* o número de cada linha, à esquerda da tabela */
+.ln{
+  position:absolute;width:30px;height:30px;transform:translate(-50%,-50%);
+  display:none;align-items:center;justify-content:center;border-radius:50%;
+  font-family:var(--display);font-weight:600;font-size:16px;line-height:1;
+  color:var(--indigo);background:rgba(76,63,191,.12);border:1.5px solid var(--indigo);
+  transition:top .55s cubic-bezier(.3,.85,.3,1),background .25s,color .25s,
+             border-color .25s,transform .25s;
+}
+.mesa.aberta .ln{display:flex}
+.ln.realce{background:var(--ouro-luz);border-color:var(--ouro);color:#fff;
+  transform:translate(-50%,-50%) scale(1.14)}
+
+/* a faixa que acende a linha inteira, número junto */
+.banda{
+  position:absolute;opacity:0;pointer-events:none;z-index:0;border-radius:10px;
+  background:rgba(226,162,43,.18);border:1px solid rgba(226,162,43,.5);
+  transition:top .3s cubic-bezier(.3,.85,.3,1),opacity .3s ease;
+}
+.banda.on{opacity:1}
+
+/* o aviso, no vazio que existe acima dos metais de transição */
+.aviso{
+  position:absolute;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
+  font-family:var(--display);font-weight:600;font-size:26px;color:var(--tinta);
+  white-space:nowrap;transition:opacity .5s ease .3s;
+}
+.aviso b{color:var(--ouro);font-weight:700}
+.mesa.aberta .aviso{opacity:1}
+
 /* a sombra da tabela: onde cada elemento vai morar */
 .fantasma{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity .9s ease}
 .fantasma.on{opacity:1}
 .fantasma i{position:absolute;display:block;
   width:var(--cw,63px);height:var(--ch,52px);border-radius:5px;
-  border:1px dashed rgba(32,28,66,.16);transform:translate(-50%,-50%)}
+  border:1px dashed rgba(32,28,66,.16);transform:translate(-50%,-50%);
+  transition:top .55s cubic-bezier(.3,.85,.3,1)}
 
 /* A regra escrita: vem de longe, pela esquerda, e freia ao chegar.
    Quem viaja é o MIOLO, não a peça — a mesma divisão das cartas. A
@@ -1144,11 +1183,22 @@ function familiaDoZ(z){
   const p = posDe(z);
   return familiaDe(p.col, p.row);
 }
-function alvoDe(z){
+/* O quanto as linhas se afastam quando a tabela se abre. Abrindo, o
+   bloco cresce, então ele é recentrado em TAB_CY — senão a tabela
+   desceria pela tela ao se abrir. */
+const VAO_LINHA = 20;
+let abertaLinhas = false;
+
+function yDaLinha(row, aberta){
+  const passo = PASSO_Y + (aberta ? VAO_LINHA : 0);
+  const altura = 6*passo + CARTA_H;
+  return (TAB_CY - altura/2) + (row-1)*passo + CARTA_H/2;
+}
+function alvoDe(z, aberta){
   const p = posDe(z);
   return {
-    x: TAB_ESQ  + (p.col-1)*PASSO_X + CARTA_W/2,
-    y: TAB_TOPO + (p.row-1)*PASSO_Y + CARTA_H/2
+    x: TAB_ESQ + (p.col-1)*PASSO_X + CARTA_W/2,
+    y: yDaLinha(p.row, aberta === undefined ? abertaLinhas : aberta)
   };
 }
 
@@ -1190,6 +1240,7 @@ function criaCarta(z){
   const c = document.createElement('div');
   c.className = 'pc';
   c.dataset.z = z;
+  c.dataset.linha = posDe(z).row;
   /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
   c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
   c.innerHTML = '<div class="pc-in" style="background:'+fundoCinza(z)+'">' +
@@ -1212,8 +1263,10 @@ function reiniciaCena2(){
 
   const cena = document.createElement('div');
   cena.className = 'cena';
-  cena.innerHTML = '<div class="mesa"><div class="fantasma"></div></div>' +
-                   '<div class="clarao"></div>';
+  cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
+                     '<div class="banda"></div><div class="aviso">' +
+                       'São <b>7</b> linhas horizontais</div>' +
+                   '</div><div class="clarao"></div>';
   sl.appendChild(cena);
 
   const mesa = cena.querySelector('.mesa');
@@ -1235,14 +1288,32 @@ function reiniciaCena2(){
     const p = posDe(z), chave = p.col + ':' + p.row;
     if (vistas.has(chave)) continue;
     vistas.add(chave);
-    const a = alvoDe(z);
-    sombras += '<i style="left:'+a.x+'px;top:'+a.y+'px"></i>';
+    const a = alvoDe(z, false);
+    sombras += '<i data-linha="'+p.row+'" style="left:'+a.x+'px;top:'+a.y+'px"></i>';
   }
   cena.querySelector('.fantasma').innerHTML = sombras;
+
+  /* os números das linhas, à esquerda; nascem escondidos e só entram
+     em cena quando a tabela se abre */
+  for (let r = 1; r <= 7; r++){
+    const n = document.createElement('div');
+    n.className = 'ln';
+    n.dataset.linha = r;
+    n.textContent = r;
+    n.style.left = (TAB_ESQ - 32) + 'px';
+    n.style.top  = yDaLinha(r, false) + 'px';
+    mesa.appendChild(n);
+  }
+  /* o aviso vai no vazio acima dos metais de transição: colunas 3 a 12,
+     linhas 1 a 3 — o buraco que a tabela tem ali */
+  const aviso = mesa.querySelector('.aviso');
+  aviso.style.left = (TAB_ESQ + 6.5*PASSO_X + CARTA_W/2).toFixed(0) + 'px';
+  aviso.style.top  = yDaLinha(2, false).toFixed(0) + 'px';
 
   const cartas = new Map();
   const r = { i:0, espera:null, passos:[] };
   ROTEIROS[1] = r;
+  abertaLinhas = false;                  /* a cena recomeça com a tabela fechada */
 
   /* ---- 1º clique: os 118 entram, e só os 50 primeiros cabem na tela ----
      Na tela ficam os elementos de 1 a 50 — é um corte no número atômico,
@@ -1264,7 +1335,13 @@ function reiniciaCena2(){
         setTimeout(() => {
           c.style.opacity = '1';
           c.classList.add('surge');
-          setTimeout(() => c.classList.remove('surge'), 700);
+          setTimeout(() => {
+            c.classList.remove('surge');
+            /* a opacidade sai do estilo da carta: com ela presa em 1,
+               nenhuma regra conseguiria apagar as linhas de fora do
+               realce mais tarde */
+            c.style.removeProperty('opacity');
+          }, 700);
         }, 130 + (z-1)*13);
       } else {
         poe(c, 1390 + Math.random()*250, 40 + Math.random()*640, Math.random()*60 - 30);
@@ -1366,6 +1443,15 @@ function reiniciaCena2(){
     if (!faixa) return;
     miolo.classList.add('pilha');
     miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+    /* Pousada a carta da frente, as catorze de baixo saem de cena. Elas
+       já estavam escondidas atrás desta, mas bastava a linha apagar um
+       pouco para todas transparecerem de uma vez, embaralhadas. O
+       volume da pilha quem faz é a sombra da carta da frente. */
+    for (let k = faixa.de; k <= faixa.ate; k++){
+      if (k === z) continue;
+      const outra = cartas.get(k);
+      if (outra) outra.style.visibility = 'hidden';
+    }
   }
   /* a tabela montada: uma onda verde que a atravessa na diagonal,
      e os confetes por cima */
@@ -1884,7 +1970,51 @@ stage.addEventListener('pointerdown', (ev) => {
    de uma pequena ampliada.
    ------------------------------------------------------------ */
 const dedosMesa = new Map();
-let baseMesa = null;
+let baseMesa = null, toqueMesa = null, houvePinca = false;
+
+/* ---- a tabela se abre em linhas ----
+   Um toque na tabela pronta afasta as sete linhas umas das outras. O
+   bloco cresce ao abrir, então ele é recentrado: quem cai é a distância
+   entre as linhas, não a tabela pela tela. */
+function abreLinhas(mesa){
+  if (mesa.classList.contains('aberta')) return;
+  abertaLinhas = true;
+  mesa.classList.add('aberta');
+  mesa.querySelectorAll('.pc').forEach(c => {
+    c.style.transition = 'top .55s cubic-bezier(.3,.85,.3,1)';
+    c.style.top = yDaLinha(+c.dataset.linha, true).toFixed(1) + 'px';
+  });
+  mesa.querySelectorAll('.fantasma i, .ln').forEach(e => {
+    e.style.top = yDaLinha(+e.dataset.linha, true).toFixed(1) + 'px';
+  });
+  const aviso = mesa.querySelector('.aviso');
+  if (aviso) aviso.style.top = yDaLinha(2, true).toFixed(1) + 'px';
+}
+
+/* ---- e uma linha inteira se acende ----
+   A faixa vai da esquerda do número até depois da última coluna: o
+   número faz parte da linha, e por isso acende junto com ela. */
+function realceLinha(mesa, row){
+  mesa.classList.add('tem-realce');
+  mesa.querySelectorAll('.pc').forEach(c =>
+    c.classList.toggle('realce', +c.dataset.linha === row));
+  mesa.querySelectorAll('.ln').forEach(n =>
+    n.classList.toggle('realce', +n.dataset.linha === row));
+  const banda = mesa.querySelector('.banda');
+  if (!banda) return;
+  const alt = CARTA_H + 18;
+  banda.style.left   = (TAB_ESQ - 50) + 'px';
+  banda.style.width  = (17*PASSO_X + CARTA_W + 74) + 'px';
+  banda.style.height = alt + 'px';
+  banda.style.top    = (yDaLinha(row, true) - alt/2).toFixed(1) + 'px';
+  banda.classList.add('on');
+}
+function limpaRealce(mesa){
+  mesa.classList.remove('tem-realce');
+  mesa.querySelectorAll('.realce').forEach(e => e.classList.remove('realce'));
+  const b = mesa.querySelector('.banda');
+  if (b) b.classList.remove('on');
+}
 
 function mesaPronta(){
   if (naMontagem() || stage.classList.contains('escrevendo')) return null;
@@ -1912,6 +2042,12 @@ stage.addEventListener('pointerdown', (ev) => {
   if (!m || ev.target.closest('button, a, input')) return;
   m.classList.remove('macia');            /* na mão, sem inércia */
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if (dedosMesa.size > 1) houvePinca = true;
+  else {
+    houvePinca = false;
+    toqueMesa = {id:ev.pointerId, x:ev.clientX, y:ev.clientY,
+                 t:Date.now(), alvo:ev.target};
+  }
   ancoraMesa(m);
   try { stage.setPointerCapture(ev.pointerId); } catch(_){}
 });
@@ -1932,10 +2068,27 @@ document.addEventListener('pointermove', (ev) => {
 });
 function largaMesa(ev){
   if (!dedosMesa.has(ev.pointerId)) return;
+  /* toque é o dedo que sobe onde desceu, depressa e sozinho — o que
+     sobra depois de descontar a pinça e o arrasto */
+  const foiToque = toqueMesa && ev.pointerId === toqueMesa.id && !houvePinca &&
+                   Math.hypot(ev.clientX - toqueMesa.x, ev.clientY - toqueMesa.y) < 8 &&
+                   Date.now() - toqueMesa.t < 600;
   dedosMesa.delete(ev.pointerId);
   const m = mesaPronta();
   if (!m) return;
   if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
+
+  if (foiToque){
+    if (!m.classList.contains('aberta')) abreLinhas(m);
+    else {
+      /* com as linhas separadas, tocar num elemento acende a dele */
+      const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
+      if (carta) realceLinha(m, +carta.dataset.linha);
+      else limpaRealce(m);
+    }
+    toqueMesa = null;
+    return;
+  }
   const e = leMesa(m);
   if (e.zoom <= 1.02){                            /* de volta ao tamanho: recentra */
     m.classList.add('macia');
