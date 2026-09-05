@@ -433,25 +433,39 @@ body{
   from{opacity:0;transform:translate(-50%,calc(-50% - 24px)) scale(.5)}
   to  {opacity:1;transform:translate(-50%,-50%) scale(1)}
 }
-.mesa.modo-linhas .ln{
+.mesa.modo-linhas .ln,
+.mesa.numerada .ln{
   display:flex;
   animation:numLinha .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
 }
-.mesa.modo-colunas .cn{
+.mesa.modo-colunas .cn,
+.mesa.numerada .cn{
   display:flex;
   animation:numColuna .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
 }
 .ln.realce,.cn.realce{background:var(--ouro-luz);border-color:var(--ouro);color:#fff;
   transform:translate(-50%,-50%) scale(1.14)}
 
+/* a ficha do elemento escolhido, no vazio acima dos metais de
+   transição: o símbolo grande com o número atômico em cima */
+.ficha-sel{
+  position:absolute;z-index:7;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+  font-family:var(--display);line-height:1;
+}
+.ficha-sel.on{opacity:1}
+.ficha-sel span{font-family:var(--mono);font-size:22px;color:var(--tinta-dim);margin-bottom:6px}
+.ficha-sel b{font-size:72px;font-weight:600;color:var(--indigo);letter-spacing:-.02em}
+
 /* a faixa que acende a linha (ou a coluna) inteira, número junto */
-.banda{
+.banda,.banda2{
   position:absolute;opacity:0;pointer-events:none;z-index:0;border-radius:10px;
   background:rgba(226,162,43,.18);border:1px solid rgba(226,162,43,.5);
   transition:top .3s cubic-bezier(.3,.85,.3,1),left .3s cubic-bezier(.3,.85,.3,1),
              width .3s ease,height .3s ease,opacity .3s ease;
 }
-.banda.on{opacity:1}
+.banda.on,.banda2.on{opacity:1}
 
 /* o aviso, no vazio que existe acima dos metais de transição */
 .aviso{
@@ -1241,6 +1255,22 @@ function giraCabecalhos(de, para){
       cenaVelha.style.transition = 'opacity .45s ease';
       cenaVelha.style.opacity = '0';
     }
+    /* No slide das coordenadas a tabela chega junta e numerada nos dois
+       eixos: é a linha e a coluna juntas que dão o endereço. Voltando,
+       ela larga os números e volta a ser a do slide anterior. */
+    limpaRealce(mesa);
+    poeModo(mesa, 'junta');
+    mesa.classList.toggle('numerada', para === 2);
+    if (para === 2){
+      mesa.querySelectorAll('.ln, .cn').forEach(n => {
+        n.style.left = n.dataset.col
+                     ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
+                     : (xDaColuna(1,'junta') - CARTA_W/2 - 32).toFixed(0)+'px';
+        n.style.top  = n.dataset.linha
+                     ? yDaLinha(+n.dataset.linha, 'junta').toFixed(0)+'px'
+                     : (yDaLinha(1,'junta') - CARTA_H/2 - 26).toFixed(0)+'px';
+      });
+    }
     viraCartas(mesa, para > de ? 'face2' : 'familia');
   }
 
@@ -1544,7 +1574,9 @@ function reiniciaCena2(){
   const cena = document.createElement('div');
   cena.className = 'cena';
   cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
-                     '<div class="banda"></div><div class="aviso"></div>' +
+                     '<div class="banda"></div><div class="banda2"></div>' +
+                     '<div class="ficha-sel"><span></span><b></b></div>' +
+                     '<div class="aviso"></div>' +
                    '</div><div class="clarao"></div>' +
                    '<button id="botao-todos" type="button">todos</button>' +
                    '<button id="botao-mesa" type="button"></button>';
@@ -1903,6 +1935,49 @@ function reiniciaCena2(){
     mesa.classList.add('pronta');
     cena.classList.add('tem-botao');
   }
+}
+
+/* ============================================================
+   SLIDE 3 · AS COORDENADAS PERIÓDICAS
+   A tabela chega inteira do slide anterior, numerada nos dois eixos.
+   O primeiro clique escreve a frase que a explica; daí em diante,
+   tocar num elemento acende a linha e a coluna dele e põe a ficha
+   dele no vazio acima dos metais de transição.
+   ============================================================ */
+function montaRoteiro3(){
+  const sl = slides[2];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[2] = r;
+
+  r.passos.push(() => {
+    let cena = sl.querySelector('.cena');
+    if (!cena){
+      cena = document.createElement('div');
+      cena.className = 'cena';
+      sl.appendChild(cena);
+    }
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra3';
+    t.innerHTML = '<span class="regra-in">Cada elemento tem sua localização' +
+                  ' baseada na linha e coluna dele</span>';
+    cena.appendChild(t);
+    soltaSlide(sl);
+    const m = MEDIDAS.get(t);
+    if (m){
+      m.esc = 1.11;
+      m.cy  = 122;                       /* a altura do "critério 1" */
+      m.cx  = 107 + (m.w*m.esc)/2;       /* e a mesma margem esquerda */
+      aplicaEl(t);
+    }
+    requestAnimationFrame(() => t.classList.add('posta'));
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+    });
+  });
 }
 
 /* os confetes: papel picado com gravidade, na paleta das famílias */
@@ -2317,6 +2392,16 @@ const LAYOUTS = {
     subtitulo: {x:411, y: 64, esc:1.08},
     area:      {x:683, y:417, esc:0.68},
     regra:     {x:597, y:122, esc:1.11}
+  },
+  /* slide 3 · As Coordenadas Periódicas — o mesmo cabeçalho do 2.
+     Aqui as peças são alinhadas pela MARGEM ESQUERDA, e não pelo
+     centro: os títulos têm larguras diferentes, e alinhar os centros
+     deixaria as duas margens desencontradas ao passar de um para o
+     outro — justamente o que o giro faz reparar. */
+  2: {
+    titulo:    {esq: 78, y: 23, esc:0.76},
+    regua:     {x:191,  y: 62, esc:1.00},
+    subtitulo: {esq:322, y: 64, esc:1.08}
   }
 };
 
@@ -2328,7 +2413,9 @@ function aplicaLayout(i){
   sl.querySelectorAll(MOVEIS).forEach(el => {
     const p = mapa[nomeDe(el)], m = MEDIDAS.get(el);
     if (!p || !m) return;
-    m.cx = p.x; m.cy = p.y; m.esc = p.esc;
+    m.esc = p.esc;
+    m.cy  = p.y;
+    m.cx  = p.x !== undefined ? p.x : p.esq + (m.w*p.esc)/2;
     aplicaEl(el);
   });
 }
@@ -2519,39 +2606,70 @@ function escolheCarta(mesa, c){
    coluna) e acende junto com ela. */
 function realceFaixa(mesa, c){
   const linha = +c.dataset.linha, col = +c.dataset.col;
-  const porLinha = modoMesa !== 'colunas';
-  const chave = porLinha ? linha : col;
+  /* Numerada nos dois eixos — que é como a tabela chega ao slide das
+     coordenadas —, o elemento acende a linha E a coluna: é o encontro
+     das duas que dá o lugar dele. Fora daí, acende só o eixo aberto. */
+  const cruz = mesa.classList.contains('numerada');
+  const porLinha  = cruz || modoMesa !== 'colunas';
+  const porColuna = cruz || modoMesa === 'colunas';
+
   mesa.classList.add('tem-realce');
   mesa.querySelectorAll('.pc').forEach(p =>
-    p.classList.toggle('realce', +(porLinha ? p.dataset.linha : p.dataset.col) === chave));
+    p.classList.toggle('realce',
+      (porLinha  && +p.dataset.linha === linha) ||
+      (porColuna && +p.dataset.col   === col)));
   mesa.querySelectorAll('.ln').forEach(n =>
-    n.classList.toggle('realce', porLinha && +n.dataset.linha === chave));
+    n.classList.toggle('realce', porLinha && +n.dataset.linha === linha));
   mesa.querySelectorAll('.cn').forEach(n =>
-    n.classList.toggle('realce', !porLinha && +n.dataset.col === chave));
+    n.classList.toggle('realce', porColuna && +n.dataset.col === col));
 
-  const banda = mesa.querySelector('.banda');
-  if (!banda) return;
-  if (porLinha){
-    const alt = CARTA_H + 18;
-    banda.style.left   = (xDaColuna(1, modoMesa) - CARTA_W/2 - 50) + 'px';
-    banda.style.width  = (17*PASSO_X + CARTA_W + 74) + 'px';
-    banda.style.height = alt + 'px';
-    banda.style.top    = (yDaLinha(linha, modoMesa) - alt/2).toFixed(1) + 'px';
-  } else {
-    const larg = CARTA_W + 18;
-    banda.style.left   = (xDaColuna(col, modoMesa) - larg/2).toFixed(1) + 'px';
-    banda.style.width  = larg + 'px';
-    banda.style.top    = (yDaLinha(1, modoMesa) - CARTA_H/2 - 46) + 'px';
-    banda.style.height = (6*PASSO_Y + CARTA_H + 64) + 'px';
+  const b1 = mesa.querySelector('.banda'), b2 = mesa.querySelector('.banda2');
+  if (b1){
+    if (porLinha){
+      const alt = CARTA_H + 18;
+      b1.style.left   = (xDaColuna(1, modoMesa) - CARTA_W/2 - 50) + 'px';
+      b1.style.width  = (17*PASSO_X + CARTA_W + 74) + 'px';
+      b1.style.height = alt + 'px';
+      b1.style.top    = (yDaLinha(linha, modoMesa) - alt/2).toFixed(1) + 'px';
+      b1.classList.add('on');
+    } else b1.classList.remove('on');
   }
-  banda.classList.add('on');
+  if (b2){
+    if (porColuna){
+      const larg = CARTA_W + 18;
+      b2.style.left   = (xDaColuna(col, modoMesa) - larg/2).toFixed(1) + 'px';
+      b2.style.width  = larg + 'px';
+      b2.style.top    = (yDaLinha(1, modoMesa) - CARTA_H/2 - 46) + 'px';
+      b2.style.height = (6*PASSO_Y + CARTA_H + 64) + 'px';
+      b2.classList.add('on');
+    } else b2.classList.remove('on');
+  }
+  mostraFicha(mesa, +c.dataset.z);
 }
+
+/* A ficha do escolhido, uma linha e meia acima do cromo — no vazio que
+   a tabela tem ali. Ela troca em fade: a antiga sai, a nova entra. */
+function mostraFicha(mesa, z){
+  const f = mesa.querySelector('.ficha-sel');
+  if (!f || !mesa.classList.contains('numerada')) return;
+  const troca = () => {
+    f.querySelector('span').textContent = z;
+    f.querySelector('b').textContent = SIMBOLOS[z-1];
+    f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
+    f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+    f.classList.add('on');
+  };
+  if (f.classList.contains('on')){ f.classList.remove('on'); setTimeout(troca, 300); }
+  else troca();
+}
+
 function limpaRealce(mesa){
   mesa.classList.remove('tem-realce');
   mesa.querySelectorAll('.realce').forEach(e => e.classList.remove('realce'));
   escolheCarta(mesa, null);
-  const b = mesa.querySelector('.banda');
-  if (b) b.classList.remove('on');
+  mesa.querySelectorAll('.banda, .banda2').forEach(b => b.classList.remove('on'));
+  const f = mesa.querySelector('.ficha-sel');
+  if (f) f.classList.remove('on');
 }
 
 function mesaPronta(){
@@ -2623,9 +2741,10 @@ function largaMesa(ev){
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
       escolheCarta(m, carta);
-      /* a faixa só existe com a tabela aberta; junta, o elemento
-         cresce sozinho */
-      if (modoMesa !== 'junta') realceFaixa(m, carta);
+      /* a faixa existe com a tabela aberta, ou numerada nos dois eixos;
+         junta e sem números, o elemento cresce sozinho */
+      if (modoMesa !== 'junta' || m.classList.contains('numerada'))
+        realceFaixa(m, carta);
     }
     else passoAdiante();
     toqueMesa = null;
@@ -2944,6 +3063,7 @@ document.addEventListener('pointerdown', seguraTela, { once:true });
 document.getElementById('ver').textContent = VERSAO;
 ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
+montaRoteiro3();
 pinta();
 seguraTela();
 
