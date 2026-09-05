@@ -587,12 +587,41 @@ body{
 .mesa.grupos .pc.no-alto .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
 
-/* o aviso do dedo parado: os lados já começam a ceder antes de soltar,
-   e é esse começo que diz o que vai acontecer se a mão ficar */
-@keyframes cedeEsq{from{translate:0 0} to{translate:-9px 0}}
-@keyframes cedeDir{from{translate:0 0} to{translate: 9px 0}}
-.pc.cede-e .pc-in{animation:cedeEsq 1s ease-in both}
-.pc.cede-d .pc-in{animation:cedeDir 1s ease-in both}
+/* O AVISO DO DEDO PARADO
+   A tabela inteira treme, e a tremida vai crescendo: começa em nada e
+   chega a seis pixels no instante em que ela cede. É o encaixe
+   forçando, e o segundo de espera deixa de ser tempo morto — vê-se que
+   alguma coisa está para acontecer, e quanto falta.
+
+   O tremor mora na propriedade translate da mesa, que se compõe com o
+   transform onde vivem o zoom e o passeio dela, em vez de apagá-lo. O
+   último quadro volta ao repouso: assim, quando a classe sai e os
+   blocos partem, a tabela não dá um salto de seis pixels. */
+@keyframes treme{
+    0% {translate:0.00px 0.00px}
+    5% {translate:0.02px -0.01px}
+   10% {translate:-0.06px 0.03px}
+   14% {translate:0.13px 0.06px}
+   19% {translate:-0.24px -0.10px}
+   24% {translate:0.38px -0.16px}
+   29% {translate:-0.54px 0.23px}
+   34% {translate:0.73px 0.31px}
+   38% {translate:-0.96px -0.40px}
+   43% {translate:1.22px -0.51px}
+   48% {translate:-1.50px 0.63px}
+   53% {translate:1.82px 0.76px}
+   58% {translate:-2.16px -0.91px}
+   62% {translate:2.54px -1.06px}
+   67% {translate:-2.94px 1.23px}
+   72% {translate:3.38px 1.42px}
+   77% {translate:-3.84px -1.61px}
+   82% {translate:4.33px -1.82px}
+   86% {translate:-4.86px 2.04px}
+   91% {translate:5.41px 2.27px}
+   96% {translate:-6.00px -2.52px}
+  100% {translate:0 0}
+}
+.mesa.tremendo{animation:treme 1s linear both}
 
 /* aberta, a tabela deixa de responder ao toque e passa a andar em
    blocos — e sem transição, senão o bloco chegaria atrasado ao dedo */
@@ -2987,8 +3016,9 @@ function apagaGrupos(mesa){
   OFFSET_BLOCO.a = {x:0, y:0};
   OFFSET_BLOCO.b = {x:0, y:0};
   mesa.classList.remove('partida', 'puxando');
+  mesa.classList.remove('tremendo');
   mesa.querySelectorAll('.pc').forEach(c => {
-    c.classList.remove('no-alto', 'cede-e', 'cede-d');
+    c.classList.remove('no-alto');
     c.style.removeProperty('translate');
   });
   mesa.querySelectorAll('.rot-bloco, .rot-grupo').forEach(r => r.remove());
@@ -3001,23 +3031,23 @@ function apagaGrupos(mesa){
    ele corre, os dois lados já vão cedendo para fora: é esse começo de
    movimento que diz o que vai acontecer se a mão ficar. */
 let esperaGrupos = null;
-function limpaCede(mesa){
-  mesa.querySelectorAll('.cede-e, .cede-d').forEach(c =>
-    c.classList.remove('cede-e', 'cede-d'));
+function paraTremor(mesa){
+  mesa.classList.remove('tremendo');
 }
 function agendaPartir(mesa, carta, ev){
-  mesa.querySelectorAll('.pc').forEach(c => {
-    const lado = ladoDaColuna(+c.dataset.col);
-    if (lado === 'esq') c.classList.add('cede-e');
-    if (lado === 'dir') c.classList.add('cede-d');
-  });
+  /* recomeça a animação do zero mesmo que a anterior tenha sido
+     interrompida no meio: sem isto, um segundo dedo pegaria o tremor
+     já crescido */
+  mesa.classList.remove('tremendo');
+  void mesa.offsetWidth;
+  mesa.classList.add('tremendo');
   esperaGrupos = {
     id: ev.pointerId, mesa, carta, x: ev.clientX, y: ev.clientY, t0: Date.now(),
     t: setTimeout(() => {
       const e = esperaGrupos;
       esperaGrupos = null;
       if (!e) return;
-      limpaCede(e.mesa);
+      paraTremor(e.mesa);
       parteMesa(e.mesa);
     }, 1000)
   };
@@ -3025,7 +3055,7 @@ function agendaPartir(mesa, carta, ev){
 function desisteGrupos(){
   if (!esperaGrupos) return;
   clearTimeout(esperaGrupos.t);
-  limpaCede(esperaGrupos.mesa);
+  paraTremor(esperaGrupos.mesa);
   esperaGrupos = null;
 }
 
@@ -4193,10 +4223,15 @@ function realceFaixa(mesa, c){
   if (b2){
     if (porColuna){
       const larg = CARTA_W + 18;
+      /* No slide dos grupos a faixa sobe mais alto: a identificação da
+         coluna — 1A, 3B — mora acima da tabela e é parte do que a
+         faixa está apontando. Deixá-la de fora seria acender a coluna
+         e não acender o nome dela. */
+      const acima = mesa.classList.contains('cruzada') ? 88 : 46;
       b2.style.left   = (xDaColuna(col, modoMesa) - larg/2).toFixed(1) + 'px';
       b2.style.width  = larg + 'px';
-      b2.style.top    = (yDaLinha(1, modoMesa) - CARTA_H/2 - 46) + 'px';
-      b2.style.height = (6*PASSO_Y + CARTA_H + 64) + 'px';
+      b2.style.top    = (yDaLinha(1, modoMesa) - CARTA_H/2 - acima) + 'px';
+      b2.style.height = (6*PASSO_Y + CARTA_H + 18 + acima) + 'px';
       b2.classList.add('on');
     } else b2.classList.remove('on');
   }
