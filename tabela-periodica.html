@@ -971,14 +971,25 @@ body{
    sozinha: a proporção do desenho não se mexe. 464 x 535 é o tamanho
    do arquivo. */
 .diagrama-pauling{
-  position:absolute;left:518px;top:526px;transform:translate(-50%,-50%);
-  z-index:11;width:calc(191px * var(--ki,1));
+  /* o lugar e o tamanho que ele achou na mão: centro em 387,547 e 277
+     de largura, que é o 191 de origem vezes 1,45 */
+  position:absolute;left:387px;top:547px;transform:translate(-50%,-50%);
+  z-index:11;width:calc(191px * var(--ki,1.450));
   border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.45);
-  pointer-events:auto;cursor:grab;touch-action:none;
+  pointer-events:none;
   opacity:0;transition:opacity .5s ease;
 }
 .diagrama-pauling.on{opacity:1}
-.diagrama-pauling.na-mao{cursor:grabbing}
+
+/* o nome dele, logo acima — no escuro do modo Pauling, em letra clara */
+.rot-diagrama{
+  position:absolute;left:387px;top:362px;transform:translate(-50%,-50%);
+  z-index:11;pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;
+  color:#EFECF9;
+  opacity:0;transition:opacity .5s ease;
+}
+.rot-diagrama.on{opacity:1}
 
 /* A DISTRIBUIÇÃO, EM CIMA DA TABELA
    O desenho é o do app de ligações químicas: os subníveis de cada
@@ -4378,14 +4389,7 @@ function acendeElemento(mesa, carta){
   revela(d, 'on');
 }
 
-/* ---- o diagrama, e a mão que o ajusta ----
-   Ele nasce na área dos metais de transição, mas o lugar bom depende
-   do que estiver escrito em cima e de quão grande o professor o
-   quiser. Um dedo o leva, dois em pinça mudam o tamanho, e a roda do
-   mouse faz o mesmo no PC. Onde ele é largado fica guardado. */
-let diagramaNaMao = null;
-let ondeODiagrama = null;
-
+/* ---- o diagrama, que entra e sai com o modo ---- */
 function poeDiagrama(mesa){
   let f = mesa.querySelector('.diagrama-pauling');
   if (!f){
@@ -4395,68 +4399,25 @@ function poeDiagrama(mesa){
     f.alt = 'Diagrama de Pauling: a ordem de energia dos subníveis';
     f.draggable = false;
     f.dataset.mont = 'diagrama';
-    if (ondeODiagrama){
-      f.style.left = ondeODiagrama.x.toFixed(0) + 'px';
-      f.style.top  = ondeODiagrama.y.toFixed(0) + 'px';
-      f.style.setProperty('--ki', ondeODiagrama.k.toFixed(3));
-    }
     mesa.appendChild(f);
   }
+  let r = mesa.querySelector('.rot-diagrama');
+  if (!r){
+    r = document.createElement('div');
+    r.className = 'rot-diagrama';
+    r.dataset.mont = 'rotulo-diagrama';
+    r.textContent = 'Diagrama de Pauling';
+    mesa.appendChild(r);
+  }
   revela(f, 'on');
+  revela(r, 'on');
 }
 function tiraDiagrama(mesa){
-  const f = mesa.querySelector('.diagrama-pauling');
-  if (!f) return;
-  f.classList.remove('on');
-  setTimeout(() => f.remove(), 560);
+  mesa.querySelectorAll('.diagrama-pauling, .rot-diagrama').forEach(e => {
+    e.classList.remove('on');
+    setTimeout(() => e.remove(), 560);
+  });
 }
-function guardaDiagrama(f){
-  ondeODiagrama = {
-    x: parseFloat(f.style.left) || 518,
-    y: parseFloat(f.style.top)  || 526,
-    k: parseFloat(f.style.getPropertyValue('--ki')) || 1
-  };
-}
-function ancoraDiagrama(){
-  const b = diagramaNaMao;
-  b.base = centroDe(b.ptr);
-  b.x0 = parseFloat(b.f.style.left) || 518;
-  b.y0 = parseFloat(b.f.style.top)  || 526;
-  b.k0 = parseFloat(b.f.style.getPropertyValue('--ki')) || 1;
-}
-function comecaDiagrama(mesa, f, ev){
-  diagramaNaMao = { f, ptr: new Map(),
-                k: 1 / (fitScale * (leMesa(mesa).zoom || 1)) };
-  diagramaNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  ancoraDiagrama();
-  f.classList.add('na-mao');
-  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
-}
-document.addEventListener('pointermove', (ev) => {
-  const b = diagramaNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  const agora = centroDe(b.ptr);
-  if (b.ptr.size > 1 && b.base.d > 12)
-    b.f.style.setProperty('--ki',
-      Math.max(.3, Math.min(4, b.k0 * (agora.d / b.base.d))).toFixed(3));
-  b.f.style.left = Math.max(20, Math.min(1260,
-    b.x0 + (agora.cx - b.base.cx) * b.k)).toFixed(0) + 'px';
-  b.f.style.top  = Math.max(20, Math.min(700,
-    b.y0 + (agora.cy - b.base.cy) * b.k)).toFixed(0) + 'px';
-});
-function soltaDiagrama(ev){
-  const b = diagramaNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.delete(ev.pointerId);
-  if (b.ptr.size){ ancoraDiagrama(); return; }
-  b.f.classList.remove('na-mao');
-  guardaDiagrama(b.f);
-  diagramaNaMao = null;
-}
-document.addEventListener('pointerup', soltaDiagrama);
-document.addEventListener('pointercancel', soltaDiagrama);
-
 /* ---- e o que não couber na tela encolhe ----
    Os seis do fim da tabela escrevem sete camadas, e no corpo que ele
    escolheu a linha deles passaria da borda direita. Em vez de um
@@ -4519,7 +4480,7 @@ function apagaValencia(mesa){
     const b = cena.querySelector('.botao-pauling');
     if (b) b.classList.remove('aceso');
   }
-  mesa.querySelectorAll('.rot-a, .rot-val, .dist-val, .diagrama-pauling')
+  mesa.querySelectorAll('.rot-a, .rot-val, .dist-val, .diagrama-pauling, .rot-diagrama')
       .forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => c.classList.remove('repr', 'aceso'));
 }
@@ -6148,16 +6109,7 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
-  /* o diagrama do slide da valência, pelo mesmo motivo */
-  const fAlvo = ev.target.closest && ev.target.closest('.diagrama-pauling');
-  if (fAlvo){
-    if (!diagramaNaMao) comecaDiagrama(m, fAlvo, ev);
-    else if (diagramaNaMao.ptr.size < 2){
-      diagramaNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-      ancoraDiagrama();
-    }
-    return;
-  }
+
 
 
   /* no slide dos grupos, o dedo na tabela é dela: parado, abre a
@@ -6345,16 +6297,6 @@ document.addEventListener('pointercancel', largaMesa);
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
   if (!m) return;
-  /* a roda sobre o diagrama muda o tamanho dele */
-  const fRoda = ev.target.closest && ev.target.closest('.diagrama-pauling');
-  if (fRoda){
-    const k0 = parseFloat(fRoda.style.getPropertyValue('--ki')) || 1;
-    fRoda.style.setProperty('--ki',
-      Math.max(.3, Math.min(4, k0 * (1 - ev.deltaY * 0.0015))).toFixed(3));
-    guardaDiagrama(fRoda);
-    ev.preventDefault();
-    return;
-  }
   /* no slide dos grupos, com a tabela aberta, a roda faz sobre o bloco
      debaixo do cursor o que a pinça faz no tablete */
   if (atual === 5 && mesaPartida){
