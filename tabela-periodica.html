@@ -2498,9 +2498,14 @@ document.addEventListener('pointermove', (ev) => {
 
   /* O bloco pode sair da tela — o que não pode é sumir por inteiro:
      fica sempre uma faixa dele à vista, senão não haveria por onde
-     pegá-lo de volta. */
-  const c = b.caixa, mg = 110;
-  const dx = Math.max(mg - c.x2, Math.min(1280 - mg - c.x1,
+     pegá-lo de volta. A faixa nunca é mais larga que o próprio bloco:
+     os gases nobres são uma coluna só, e exigir deles uma faixa de 110
+     travava a coluna inteira bem antes da borda. As bordas do bloco,
+     e não os centros das cartas, é que encostam no limite. */
+  const c = b.caixa;
+  const e1 = c.x1 - CARTA_W/2, e2 = c.x2 + CARTA_W/2;
+  const mg = Math.min(110, e2 - e1);
+  const dx = Math.max(mg - e2, Math.min(1280 - mg - e1,
                       (agora.cx - b.base.cx)/fitScale));
   const dy = Math.max(160 - c.y2, Math.min(640 - c.y1,
                       (agora.cy - b.base.cy)/fitScale));
