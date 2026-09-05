@@ -1390,6 +1390,10 @@ function estadoMesaPara(mesa, i){
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
   if (!mesa || i < 1 || i > 3) return mesa;
+  /* os slides 3 e 4 falam de uma tabela: ela chega neles montada,
+     mesmo que a aula não tenha passado pela montagem */
+  const r2 = ROTEIROS[1];
+  if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
   const cena = cenaDe(slides[i]);
   const cenaVelha = mesa.parentNode;
   cena.appendChild(mesa);
@@ -1958,7 +1962,10 @@ function reiniciaCena2(){
      E só depois que a tabela inteira estiver montada: o critério fala
      das colunas, e antes de existir coluna ele não teria do que falar.
      Até lá o clique não o traz nem passa de slide. */
-  r.passos.push({ so: () => !!cena.querySelector('.mesa.pronta'), faz: () => {
+  /* Só depois que a tabela estiver montada E aberta em colunas: o
+     critério fala do que há dentro de uma coluna, e antes de as
+     colunas terem sido mostradas ele não teria a que se referir. */
+  r.passos.push({ so: () => !!cena.querySelector('.mesa.pronta.viu-colunas'), faz: () => {
     const t = document.createElement('div');
     t.className = 'regra';
     t.dataset.mont = 'regra2';
@@ -2131,6 +2138,35 @@ function reiniciaCena2(){
       if (outra) outra.style.visibility = 'hidden';
     }
   }
+  /* ---- a tabela pronta, sem passar pela história ----
+     Saltando direto para o slide das coordenadas ou o dos tipos — da
+     visão geral, da régua, das teclas —, a tabela tem de chegar lá
+     montada: aqueles slides falam de uma tabela, não de um monte. Aqui
+     ela é posta de pé de uma vez, sem voo nem festa, porque não houve
+     história nenhuma para encenar. */
+  r.garanteMontada = () => {
+    if (!cartas.size){ r.passos[0](); r.i = Math.max(r.i, 1); }
+    if (mesa.classList.contains('pronta')) return;
+    montandoTudo = true;
+    apagaConvite();
+    cena.querySelectorAll('.pc').forEach(c => {
+      const z = +c.dataset.z, a = alvoDe(z, 'junta'), miolo = c.firstElementChild;
+      c.style.left = a.x.toFixed(1) + 'px';
+      c.style.top  = a.y.toFixed(1) + 'px';
+      c.style.opacity = '1';
+      miolo.style.setProperty('--rot', '0deg');
+      miolo.style.setProperty('--sc', '1');
+      if (!c.classList.contains('na-tabela')){
+        c.classList.add('na-tabela');
+        encaixa(c, z);
+      }
+    });
+    mesa.classList.add('pronta');
+    cena.classList.remove('tem-todos');
+    cena.classList.add('tem-botao');
+    atualizaPista();
+  };
+
   /* a tabela montada: uma onda verde que a atravessa na diagonal,
      e os confetes por cima */
   function festa(){
