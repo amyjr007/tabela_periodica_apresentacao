@@ -1801,7 +1801,7 @@ function corExtraDe(c, i){
     /* a leitura mais recente é a que manda: a segunda passa por cima
        da primeira, carta por carta, à medida que a onda a alcança */
     const z = +c.dataset.z;
-    if (estaveisVarridos && z <= Z_ESTAVEL)     return 'var(--estavel)';
+    if (estaveisVarridos && z <= Z_ESTAVEL)     return corEstavel(z);
     if (radioativosVarridos && z > Z_ESTAVEL)   return 'var(--ouro-luz)';
     /* o chumbo se acende antes da onda dele, e tem de vencer o verde
        que a leitura anterior lhe deu: por isso vem antes */
@@ -3929,11 +3929,13 @@ function arrumaSeries(mesa, comoEstao, todasFora){
    nenhum deles se acha na natureza — o que eles são fica dito no nome.
    ============================================================ */
 const Z_NATURAL = 92;
-/* O tecnécio (43) e o promécio (61) são as duas exceções abaixo do
-   urânio: nenhum dos dois tem isótopo estável, e na prática só
-   existem feitos em laboratório. */
-const ARTIFICIAIS_ATE_92 = new Set([43, 61]);
-const corNatural = z => ARTIFICIAIS_ATE_92.has(z) ? 'var(--ouro-luz)' : 'var(--natural)';
+/* O tecnécio (43) e o promécio (61) são a exceção das duas leituras, e
+   pela mesma razão: nenhum dos dois tem isótopo estável. É por isso
+   que não se acham na natureza — e é por isso que também não entram
+   nos estáveis. Nas duas cenas eles ficam em âmbar. */
+const SEM_ISOTOPO_ESTAVEL = new Set([43, 61]);
+const corNatural = z => SEM_ISOTOPO_ESTAVEL.has(z) ? 'var(--ouro-luz)' : 'var(--natural)';
+const corEstavel = z => SEM_ISOTOPO_ESTAVEL.has(z) ? 'var(--ouro-luz)' : 'var(--estavel)';
 
 const Z_ESTAVEL = 82;           /* do bismuto em diante não há isótopo estável */
 
@@ -4043,7 +4045,7 @@ function varreEstaveis(mesa){
   if (estaveisVarridos) return;
   estaveisVarridos = true;
   marcaChamando(mesa);
-  varreCores(mesa, 1, Z_ESTAVEL, () => 'var(--estavel)', c => {
+  varreCores(mesa, 1, Z_ESTAVEL, corEstavel, c => {
     ergueCarta(c);
     diNatureza(mesa, 'estaveis');
   });
