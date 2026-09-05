@@ -1620,9 +1620,9 @@ function familiaDe(col, row){
    quem é.
 
    A ordem de quem acende é a que o professor pediu: sódio, ítrio,
-   lantânio, telúrio, amerício e oxigênio; depois cinco ao acaso, e
-   então a sequência recomeça. Ela só corre na capa: fora dali a
-   tabelinha é uma marca no canto, e não teria a quem dizer nada.
+   lantânio, telúrio, amerício e oxigênio; depois dez ao acaso, e então
+   a sequência recomeça. Ela só corre na capa: fora dali a tabelinha é
+   uma marca no canto, e não teria a quem dizer nada.
    ------------------------------------------------------------ */
 const ACENDE_NA_CAPA = [11, 39, 57, 52, 95, 8];   /* Na, Y, La, Te, Am, O */
 
@@ -1638,7 +1638,7 @@ function animaCapa(){
   function proxima(){
     if (!fila.length){
       fila = ACENDE_NA_CAPA.slice();
-      for (let i = 0; i < 5; i++) fila.push(+aoAcaso(comDono).dataset.z);
+      for (let i = 0; i < 10; i++) fila.push(+aoAcaso(comDono).dataset.z);
     }
     return fila.shift();
   }
