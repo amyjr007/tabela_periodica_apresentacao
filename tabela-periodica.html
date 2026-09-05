@@ -676,6 +676,34 @@ body{
 .buraco.on{opacity:1}
 .buraco:hover{background:color-mix(in srgb,var(--indigo) 16%,transparent)}
 
+/* O BOTÃO DA FORMA LONGA
+   Redondo como o de refazer, no mesmo canto, mas com uma palavra em
+   vez de um desenho. Entra e sai em fade: ele só existe enquanto as
+   duas séries estiverem fora, e aparecer de repente num canto onde não
+   havia nada assustaria mais do que convidaria. */
+.botao-full{
+  position:absolute;right:26px;bottom:18px;z-index:12;
+  display:flex;align-items:center;justify-content:center;
+  width:54px;height:54px;border-radius:50%;
+  border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.02em;
+  box-shadow:0 7px 20px rgba(32,28,66,.2);
+  opacity:0;pointer-events:none;
+  transition:opacity .42s ease, background .2s, color .2s, transform .16s;
+}
+.botao-full.on{opacity:1;pointer-events:auto}
+.botao-full:hover{background:var(--indigo);color:#fff}
+.botao-full:active{transform:scale(.94)}
+/* aceso, ele diz que a tabela está na forma longa */
+.botao-full.aceso{background:var(--indigo);color:#fff}
+
+/* Na forma longa não há buraco nem fila: as séries estão dentro da
+   tabela, no lugar delas. O que falava do lado de fora se cala. */
+.mesa.full .buraco,
+.mesa.full .rot-serie,
+.mesa.full .cerca,
+.mesa.full .rot-cerca{opacity:0}
+
 /* o nome de cada série, à esquerda da fila que ela formou */
 .rot-serie{
   position:absolute;z-index:10;transform:translate(-50%,-50%);
@@ -2173,6 +2201,8 @@ function reiniciaCena2(){
   blocosNomeados = false;
   festejouGrupos = false;
   seriesAbertas.clear();             /* e com as séries de volta na casa delas */
+  modoFull = false;
+  mesaAntesDoFull = null;
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -3488,6 +3518,7 @@ function abreSerie(mesa, chave){
                520 + i*55);
   }
   poeBuraco(mesa, chave);
+  atualizaBotaoFull(mesa);
   /* o nome vem quando a última pousa */
   setTimeout(() => nomeiaSerie(mesa, chave), 14*55 + 480);
 }
@@ -3500,6 +3531,7 @@ function fechaSerie(mesa, chave, animada){
   escondeCerca(mesa);
   tiraBuraco(mesa, chave);
   tiraNome(mesa, chave);
+  atualizaBotaoFull(mesa);
   const s = SERIES[chave];
   for (let z = s.ate; z >= s.de; z--){
     const c = mesa.querySelector('.pc[data-z="'+z+'"]');
@@ -3525,6 +3557,75 @@ function fechaSerie(mesa, chave, animada){
       poeNaPilha(c, z);
     }, 470 + i*55);
   }
+}
+
+/* ---- A FORMA LONGA ----
+   Os catorze de cada série voltam para dentro da tabela, no lugar que
+   é deles: o bloco f entre o grupo 3 e o grupo 4. São 32 colunas, e é
+   por isso que a mesa se afasta — a forma longa é assim mesmo, larga e
+   miúda, e é essa a razão de a tabela do dia a dia vir cortada, com as
+   duas séries penduradas embaixo.
+
+   O lantânio e o actínio ficam onde já estavam, no grupo 3: é a mesma
+   leitura que a cor deles vem fazendo desde que saíram da pilha. */
+const COL_FULL = 32;
+function colFull(z){
+  const chave = serieDe(z);
+  if (chave && z !== SERIES[chave].de) return 4 + (z - SERIES[chave].de - 1);
+  const col = posDe(z).col;
+  return col <= 3 ? col : col + 14;      /* os grupos 4 a 18 vão para 18 a 32 */
+}
+function vagaFull(z){
+  const larg = (COL_FULL - 1)*PASSO_X + CARTA_W;
+  return { x: (TAB_CX - larg/2) + (colFull(z) - 1)*PASSO_X + CARTA_W/2,
+           y: yDaLinha(posDe(z).row, 'junta') };
+}
+let modoFull = false;
+let mesaAntesDoFull = null;
+
+function poeFull(mesa, ligado, animada){
+  modoFull = ligado;
+  mesa.classList.toggle('full', ligado);
+  escondeCerca(mesa);
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const z = +c.dataset.z, chave = serieDe(z);
+    const v = ligado ? vagaFull(z)
+            : (chave && seriesAbertas.has(chave)) ? vagaDaSerie(z) : alvoDe(z, 'junta');
+    if (animada){
+      c.style.transition = 'left .62s cubic-bezier(.3,.9,.3,1),' +
+                           ' top .62s cubic-bezier(.3,.9,.3,1)';
+      setTimeout(() => c.style.removeProperty('transition'), 700);
+    } else c.style.removeProperty('transition');
+    c.style.left = v.x.toFixed(1) + 'px';
+    c.style.top  = v.y.toFixed(1) + 'px';
+  });
+  /* na forma longa a tabela não precisa do espaço de baixo, e cabe na
+     tela porque a mesa inteira se afasta */
+  mesa.classList.toggle('subida', !ligado);
+  mesa.classList.toggle('macia', animada);
+  if (ligado){
+    if (!mesaAntesDoFull) mesaAntesDoFull = leMesa(mesa);
+    /* medida na tela: as 32 colunas ocupam 1226px de largura e 224 de
+       altura; este par centra a tabela no espaço que sobra debaixo das
+       frases, com a mesma folga dos dois lados */
+    poeMesa(mesa, 0.60, -6, -10);
+  } else if (mesaAntesDoFull){
+    poeMesa(mesa, mesaAntesDoFull.zoom, mesaAntesDoFull.px, mesaAntesDoFull.py);
+    mesaAntesDoFull = null;
+  }
+  atualizaBotaoFull(mesa);
+}
+/* O botão só existe com as duas séries fora, e some com elas. Aceso, diz
+   que a tabela está na forma longa — e é aqui, e não em poeFull, que
+   isso se acerta: ao trocar de slide a mesa já mudou de dono, e o botão
+   que estava aceso ficou no slide de trás. Quem volta encontra o botão
+   dizendo o que a tabela é agora. */
+function atualizaBotaoFull(mesa){
+  const cena = mesa.parentNode;
+  const b = cena && cena.querySelector('.botao-full');
+  if (!b) return;
+  b.classList.toggle('on', seriesAbertas.size === 2);
+  b.classList.toggle('aceso', modoFull);
 }
 
 /* ---- os três blocos, com a tabela toda aberta ----
@@ -3583,6 +3684,9 @@ let blocoRealcado = null;
 
 function mostraBloco7(mesa, chave){
   if (seriesAbertas.size < 2) return;   /* só com a tabela toda aberta */
+  /* na forma longa as cercas não valem: elas foram medidas para a
+     tabela curta, e aqui os blocos estão noutro lugar */
+  if (modoFull) return;
   if (blocoRealcado === chave){ escondeCerca(mesa); return; }
   escondeCerca(mesa);
   const d = BLOCOS7[chave];
@@ -3618,6 +3722,9 @@ function escondeCerca(mesa){
 /* o estado das séries quando a tabela chega a um slide, ou quando é
    copiada para uma miniatura: fora do slide 7 elas moram na pilha */
 function arrumaSeries(mesa, comoEstao){
+  /* a tabela sai do slide sempre na forma curta: os outros slides
+     falam dela como ela é no dia a dia */
+  if (modoFull && !comoEstao) poeFull(mesa, false, false);
   Object.keys(SERIES).forEach(chave => {
     const s = SERIES[chave], aberta = comoEstao && seriesAbertas.has(chave);
     for (let z = s.de; z <= s.ate; z++){
@@ -3649,6 +3756,9 @@ function arrumaSeries(mesa, comoEstao){
     }
   });
   if (!comoEstao) mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => e.remove());
+  atualizaBotaoFull(mesa);
+  /* na forma longa as cartas ficam onde a forma longa as põe */
+  if (comoEstao && modoFull) poeFull(mesa, true, false);
 }
 
 function montaRoteiro7(){
@@ -3691,14 +3801,32 @@ function montaRoteiro7(){
     const mesa = sl.querySelector('.mesa');
     if (mesa) mesa.classList.add('series');
 
+    /* o botão da forma longa nasce escondido e só aparece quando as
+       duas séries estiverem fora */
+    if (!cena.querySelector('.botao-full')){
+      const b = document.createElement('button');
+      b.className = 'botao-full';
+      b.type = 'button';
+      b.textContent = 'full';
+      b.title = 'A tabela na forma longa';
+      b.addEventListener('click', () => {
+        const m = sl.querySelector('.mesa');
+        if (m) poeFull(m, !modoFull, true);
+      });
+      cena.appendChild(b);
+    }
+    if (mesa) atualizaBotaoFull(mesa);
+
     r.desfazer.push(() => {
       r.i = 1;
       t.classList.remove('posta');
       setTimeout(() => t.remove(), 950);
       const m = sl.querySelector('.mesa');
       if (m){
+        if (modoFull) poeFull(m, false, false);
         Object.keys(SERIES).forEach(k => fechaSerie(m, k, true));
         m.classList.remove('series');
+        atualizaBotaoFull(m);
       }
     });
   });
