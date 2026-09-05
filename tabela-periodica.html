@@ -1111,7 +1111,9 @@ function atualizaMarca(){
 }
 
 const avanca = () => { if (!passoAdiante()) go(atual+1, 'next'); };
-const volta  = () => go(atual-1, 'prev');
+/* voltar é, primeiro, desfazer o que se fez aqui; só quando não há mais
+   o que desfazer é que se volta de slide */
+const volta  = () => { if (!passoAtras()) go(atual-1, 'prev'); };
 
 slides[0].classList.add('is-active');
 
@@ -1171,6 +1173,18 @@ function mostraOverview(v){
    inteira se conduz com um gesto só, sem nunca pular a história.
    ============================================================ */
 const ROTEIROS = {};
+
+/* ---- e a aula também anda para trás ----
+   Cada coisa que acontece deixa aqui como se desfaz. O clique de voltar
+   consome uma dessas, e só quando não há mais nenhuma é que ele muda de
+   slide. É o mesmo caminho, ao contrário: a carta volta pelo arco, a
+   regra sai pela esquerda por onde entrou, a tabela se desmonta. */
+function passoAtras(){
+  const r = ROTEIROS[atual];
+  if (!r || !r.desfazer || !r.desfazer.length) return false;
+  r.desfazer.pop()();
+  return true;
+}
 
 function passoAdiante(){
   const r = ROTEIROS[atual];
@@ -1343,6 +1357,11 @@ function poe(c, x, y, rot){
   c.style.left = x.toFixed(1)+'px';
   c.style.top  = y.toFixed(1)+'px';
   c.firstElementChild.style.setProperty('--rot', rot.toFixed(1)+'deg');
+  /* o lugar de origem fica guardado na carta: é para onde ela volta
+     quando a aula anda para trás */
+  c.dataset.x0 = x.toFixed(1);
+  c.dataset.y0 = y.toFixed(1);
+  c.dataset.rot0 = rot.toFixed(1);
 }
 
 function reiniciaCena2(){
@@ -1414,7 +1433,7 @@ function reiniciaCena2(){
   aviso.style.top  = yDaLinha(2, 'junta').toFixed(0) + 'px';
 
   const cartas = new Map();
-  const r = { i:0, espera:null, passos:[] };
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
   ROTEIROS[1] = r;
   modoMesa = 'junta';                    /* a cena recomeça com a tabela junta */
   cicloMesa = 0;
@@ -1424,9 +1443,17 @@ function reiniciaCena2(){
   });
   const botao = cena.querySelector('#botao-mesa');
   botao.addEventListener('click', () => {
+    const de = modoMesa, ciclo = cicloMesa;
     const modo = CICLO[cicloMesa];
     cicloMesa = (cicloMesa + 1) % CICLO.length;
     poeModo(mesa, modo);                 /* poeModo é quem reescreve o rótulo */
+    /* desfazer: a tabela volta à leitura anterior, e o botão ao ponto
+       do ciclo em que estava */
+    r.desfazer.push(() => {
+      cicloMesa = ciclo;
+      poeModo(mesa, de);
+      atualizaBotao(mesa);
+    });
   });
   atualizaBotao(mesa);
 
@@ -1468,6 +1495,16 @@ function reiniciaCena2(){
     setTimeout(() => cl.classList.remove('on'), 800);
     atualizaMarca();                       /* a tabela do canto sai de cena */
     cena.classList.add('tem-todos');       /* e o atalho aparece com as cartas */
+
+    /* desfazer: as cartas simplesmente saem. A entrada delas é uma
+       chegada, e chegada não se assiste ao contrário */
+    r.desfazer.push(() => {
+      r.i = 0;
+      cena.querySelectorAll('.pc').forEach(c => c.remove());
+      cartas.clear();
+      cena.classList.remove('tem-todos');
+      atualizaMarca();                     /* e a tabela do canto volta */
+    });
   });
 
   /* ---- 2º clique: a regra chega, e o primeiro elemento chama ---- */
@@ -1483,6 +1520,16 @@ function reiniciaCena2(){
     requestAnimationFrame(() => t.classList.add('posta'));
     setTimeout(() => cena.querySelector('.fantasma').classList.add('on'), 720);
     setTimeout(() => acende(1), 1020);
+
+    /* desfazer: a regra sai pela esquerda por onde entrou, a sombra da
+       tabela se apaga e o convite se desliga */
+    r.desfazer.push(() => {
+      r.i = 1;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      cena.querySelector('.fantasma').classList.remove('on');
+      apagaConvite();
+    });
   });
 
   /* ---- passo seguinte: o segundo critério ----
@@ -1508,7 +1555,23 @@ function reiniciaCena2(){
       aplicaEl(t);
     }
     requestAnimationFrame(() => t.classList.add('posta'));
+
+    /* desfazer: sai pela esquerda, por onde veio */
+    r.desfazer.push(() => {
+      r.i = 2;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+    });
   }});
+
+  /* apaga o chamado que estiver aceso, seja qual for */
+  function apagaConvite(){
+    cena.querySelectorAll('.pc.chama').forEach(c => {
+      c.classList.remove('chama');
+      c.onclick = null;
+    });
+    r.espera = null;
+  }
 
   /* o convite: vermelho lento, e a carta passa a pegar o dedo */
   function acende(z){
@@ -1530,21 +1593,44 @@ function reiniciaCena2(){
     voa(c, alvoDe(z), 640);
     if (z < 7) setTimeout(() => acende(z+1), 740);
     else       setTimeout(organizaTudo, 800);
+
+    /* desfazer: ela volta ao monte pelo arco, e o convite volta a ser dela */
+    r.desfazer.push(() => {
+      apagaConvite();
+      desvoa(c, 640);
+      setTimeout(() => acende(z), 660);
+    });
   }
   /* do sétimo em diante a tabela se monta sozinha, um atrás do outro —
      e é também o que o botão "todos" faz de uma vez */
   function organizaTudo(){
     montandoTudo = true;
     cena.classList.remove('tem-todos');   /* o atalho cumpriu o que tinha a fazer */
-    cena.querySelectorAll('.pc.chama').forEach(c => {
-      c.classList.remove('chama');
-      c.onclick = null;
-    });
-    r.espera = null;
+    /* quem estava chamando fica anotado: desfazendo, o convite volta a
+       ser dele — é o estado exato de antes do atalho */
+    const acesa = cena.querySelector('.pc.chama');
+    const zAceso = acesa ? +acesa.dataset.z : 0;
+    apagaConvite();
     const resto = [...cena.querySelectorAll('.pc:not(.na-tabela)')]
                   .sort((a,b) => a.dataset.z - b.dataset.z);
     resto.forEach((c,i) => setTimeout(() => voa(c, alvoDe(+c.dataset.z), 520), i*20));
     setTimeout(festa, resto.length*20 + 740);
+
+    /* Desfazer: a tabela se desmancha DE UMA VEZ. Montar é uma história
+       que se conta um elemento de cada vez; desmontar não é história
+       nenhuma, e ver 111 cartas saindo em fila seria o dobro da espera
+       por nada. */
+    r.desfazer.push(() => {
+      montandoTudo = false;
+      limpaRealce(mesa);
+      poeModo(mesa, 'junta');
+      mesa.classList.remove('pronta');
+      cena.classList.remove('tem-botao');
+      cena.classList.add('tem-todos');
+      cicloMesa = 0;
+      resto.forEach(c => desvoa(c, 560));
+      if (zAceso) setTimeout(() => acende(zAceso), 600);
+    });
   }
   /* O VOO
      A carta é posta no destino de uma vez e depois trazida de volta ao
@@ -1553,25 +1639,28 @@ function reiniciaCena2(){
      ponto de controle fica acima da linha entre os dois lugares, como
      a de qualquer coisa que se atira. O parâmetro da curva é que vem
      freando; o tempo entre os quadros é reto. */
-  function voa(c, p, dur){
-    c.classList.add('na-tabela');
+  /* o arco puro: leva a carta de onde ela está até p, pela curva —
+     serve para ir e para voltar, que é o mesmo caminho ao contrário */
+  function arco(c, p, dur){
     const dx = parseFloat(c.style.left) - p.x;
     const dy = parseFloat(c.style.top)  - p.y;
     c.style.left = p.x.toFixed(1) + 'px';
     c.style.top  = p.y.toFixed(1) + 'px';
-    c.style.zIndex = 30;                       /* quem voa passa por cima */
-
     const alto = Math.min(200, Math.hypot(dx, dy) * 0.3) + 28;  /* a altura do arco */
     const cx = dx/2, cy = dy/2 - alto*2;       /* o controle: o dobro da subida */
     const N = 16, quadros = [];
     for (let i = 0; i <= N; i++){
       const t = 1 - Math.pow(1 - i/N, 2.6), u = 1 - t;
-      const x = u*u*dx + 2*u*t*cx;
-      const y = u*u*dy + 2*u*t*cy;
-      quadros.push({ translate: x.toFixed(1)+'px '+y.toFixed(1)+'px', offset: i/N });
+      quadros.push({ translate: (u*u*dx + 2*u*t*cx).toFixed(1)+'px ' +
+                                (u*u*dy + 2*u*t*cy).toFixed(1)+'px', offset: i/N });
     }
     c.animate(quadros, { duration: dur, easing: 'linear' });
+  }
 
+  function voa(c, p, dur){
+    c.classList.add('na-tabela');
+    c.style.zIndex = 30;                       /* quem voa passa por cima */
+    arco(c, p, dur);
     const miolo = c.firstElementChild;
     miolo.style.setProperty('--rot', '0deg');
     miolo.style.setProperty('--sc', '1.3');    /* cresce no meio do caminho */
@@ -1581,6 +1670,30 @@ function reiniciaCena2(){
     /* a carta de pilha guarda a altura que encaixa() lhe deu; as outras
        voltam ao empilhamento natural */
     setTimeout(() => { if (!naPilha(+c.dataset.z)) c.style.zIndex = ''; }, dur + 60);
+  }
+
+  /* O VOO AO CONTRÁRIO
+     A carta larga o lugar e volta ao monte pelo mesmo arco: perde a
+     cor da família, o intervalo se for a carta da frente de uma pilha,
+     e reencontra a inclinação torta que tinha quando caiu ali. */
+  function desvoa(c, dur){
+    const z = +c.dataset.z, miolo = c.firstElementChild;
+    c.classList.remove('na-tabela', 'encaixada', 'realce', 'escolhida');
+    const faixa = PILHAS[z];
+    if (faixa){
+      miolo.classList.remove('pilha');
+      miolo.innerHTML = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+      for (let k = faixa.de; k <= faixa.ate; k++){
+        const outra = cartas.get(k);
+        if (outra) outra.style.removeProperty('visibility');
+      }
+    }
+    miolo.style.background = fundoCinza(z);
+    miolo.style.setProperty('--sc', '1');
+    c.style.zIndex = '';
+    arco(c, {x:+c.dataset.x0, y:+c.dataset.y0}, dur);
+    /* a inclinação volta no meio do caminho, como se desfez na ida */
+    setTimeout(() => miolo.style.setProperty('--rot', c.dataset.rot0 + 'deg'), dur*0.4);
   }
 
   /* o pouso: a cor, a altura na pilha e, se for a carta da frente de
