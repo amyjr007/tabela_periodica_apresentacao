@@ -659,10 +659,11 @@ body{
 .mesa.partida .rot-grupo{opacity:0}
 
 /* ---------- as duas séries, no slide 7 ----------
-   A tabela sobe uma casa para abrir espaço embaixo: é ali que os
-   quinze de cada série vão pousar quando saírem da pilha. */
+   A tabela sobe uma casa e meia para abrir espaço embaixo: é ali que
+   os quinze de cada série vão pousar quando saírem da pilha, e a meia
+   casa a mais é o ar que faltava entre a última fila e a borda. */
 .mesa{transition:translate .5s cubic-bezier(.3,.9,.3,1)}
-.mesa.subida{translate:0 -54px}
+.mesa.subida{translate:0 -81px}
 
 /* a casa que fica vazia quando a série sai — e por onde ela volta */
 .buraco{
@@ -675,6 +676,27 @@ body{
 }
 .buraco.on{opacity:1}
 .buraco:hover{background:color-mix(in srgb,var(--indigo) 16%,transparent)}
+
+/* O CONVITE DAS DUAS PILHAS
+   Dita a frase, as duas cartas de intervalo passam a piscar: são elas
+   os botões desta cena, e sem isso não há como adivinhar que aquele
+   57–71 se toca. O anel nasce colado na carta e sai crescendo e
+   apagando, como uma onda de água. Mora num pseudo-elemento da carta,
+   e não no miolo dela: o miolo é quem faz o volume da pilha com a
+   sombra, e uma animação de box-shadow apagaria justamente isso.
+   Índigo, como o buraco e o botão da forma longa — nesta cena é a cor
+   do que responde ao dedo. */
+@keyframes piscaPilha{
+  0%  {opacity:.9; transform:scale(1)}
+  70% {opacity:0;  transform:scale(1.26)}
+  100%{opacity:0;  transform:scale(1.26)}
+}
+.pc.pisca::after{
+  content:'';position:absolute;inset:-4px;z-index:2;
+  border:2px solid var(--indigo);border-radius:3px;
+  pointer-events:none;opacity:0;
+  animation:piscaPilha 1.7s ease-out infinite;
+}
 
 /* O BOTÃO DA FORMA LONGA
    Redondo como o de refazer, no mesmo canto, mas com uma palavra em
@@ -3519,6 +3541,7 @@ function abreSerie(mesa, chave){
   }
   poeBuraco(mesa, chave);
   atualizaBotaoFull(mesa);
+  atualizaPisca(mesa);
   /* o nome vem quando a última pousa */
   setTimeout(() => nomeiaSerie(mesa, chave), 14*55 + 480);
 }
@@ -3532,6 +3555,7 @@ function fechaSerie(mesa, chave, animada){
   tiraBuraco(mesa, chave);
   tiraNome(mesa, chave);
   atualizaBotaoFull(mesa);
+  atualizaPisca(mesa);
   const s = SERIES[chave];
   for (let z = s.ate; z >= s.de; z--){
     const c = mesa.querySelector('.pc[data-z="'+z+'"]');
@@ -3614,6 +3638,7 @@ function poeFull(mesa, ligado, animada){
     mesaAntesDoFull = null;
   }
   atualizaBotaoFull(mesa);
+  atualizaPisca(mesa);
 }
 /* O botão só existe com as duas séries fora, e some com elas. Aceso, diz
    que a tabela está na forma longa — e é aqui, e não em poeFull, que
@@ -3626,6 +3651,15 @@ function atualizaBotaoFull(mesa){
   if (!b) return;
   b.classList.toggle('on', seriesAbertas.size === 2);
   b.classList.toggle('aceso', modoFull);
+}
+/* Pisca a pilha que ainda não saiu, e só enquanto a tabela estiver
+   nesta cena e na forma curta: na longa não há pilha nenhuma a abrir. */
+function atualizaPisca(mesa){
+  const chamando = mesa.classList.contains('series') && !modoFull;
+  Object.keys(SERIES).forEach(chave => {
+    const c = mesa.querySelector('.pc[data-z="' + SERIES[chave].ate + '"]');
+    if (c) c.classList.toggle('pisca', chamando && !seriesAbertas.has(chave));
+  });
 }
 
 /* ---- os três blocos, com a tabela toda aberta ----
@@ -3759,6 +3793,7 @@ function arrumaSeries(mesa, comoEstao){
   atualizaBotaoFull(mesa);
   /* na forma longa as cartas ficam onde a forma longa as põe */
   if (comoEstao && modoFull) poeFull(mesa, true, false);
+  atualizaPisca(mesa);
 }
 
 function montaRoteiro7(){
@@ -3815,7 +3850,7 @@ function montaRoteiro7(){
       });
       cena.appendChild(b);
     }
-    if (mesa) atualizaBotaoFull(mesa);
+    if (mesa){ atualizaBotaoFull(mesa); atualizaPisca(mesa); }
 
     r.desfazer.push(() => {
       r.i = 1;
@@ -3827,6 +3862,7 @@ function montaRoteiro7(){
         Object.keys(SERIES).forEach(k => fechaSerie(m, k, true));
         m.classList.remove('series');
         atualizaBotaoFull(m);
+        atualizaPisca(m);
       }
     });
   });
