@@ -375,8 +375,29 @@ body{
              background .25s,color .25s,border-color .25s,transform .25s;
 }
 .cn{width:27px;height:27px;font-size:14px}
-.mesa.modo-linhas  .ln{display:flex}
-.mesa.modo-colunas .cn{display:flex}
+/* Os números entram em cascata, cada um logo atrás do anterior: as
+   linhas chegam pela esquerda, as colunas caem de cima — pelo lado de
+   onde cada uma conta. É rápido de propósito; eles acompanham a
+   abertura da tabela, não a substituem.
+   O preenchimento é 'backwards' para segurar o estado inicial durante
+   a espera de cada um, sem tomar conta do fim: o número que acende no
+   realce precisa continuar podendo crescer. */
+@keyframes numLinha{
+  from{opacity:0;transform:translate(calc(-50% - 24px),-50%) scale(.5)}
+  to  {opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@keyframes numColuna{
+  from{opacity:0;transform:translate(-50%,calc(-50% - 24px)) scale(.5)}
+  to  {opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+.mesa.modo-linhas .ln{
+  display:flex;
+  animation:numLinha .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
+}
+.mesa.modo-colunas .cn{
+  display:flex;
+  animation:numColuna .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
+}
 .ln.realce,.cn.realce{background:var(--ouro-luz);border-color:var(--ouro);color:#fff;
   transform:translate(-50%,-50%) scale(1.14)}
 
@@ -1414,6 +1435,7 @@ function reiniciaCena2(){
     n.textContent = r;
     n.style.left = (xDaColuna(1,'junta') - CARTA_W/2 - 32).toFixed(0) + 'px';
     n.style.top  = yDaLinha(r, 'junta').toFixed(0) + 'px';
+    n.style.setProperty('--atraso', (r-1)*45 + 'ms');
     mesa.appendChild(n);
   }
   for (let g = 1; g <= 18; g++){
@@ -1423,6 +1445,7 @@ function reiniciaCena2(){
     n.textContent = g;
     n.style.left = xDaColuna(g, 'junta').toFixed(0) + 'px';
     n.style.top  = (yDaLinha(1,'junta') - CARTA_H/2 - 26).toFixed(0) + 'px';
+    n.style.setProperty('--atraso', (g-1)*22 + 'ms');
     mesa.appendChild(n);
   }
   /* o aviso vai no vazio acima dos metais de transição: colunas 3 a 12,
