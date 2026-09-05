@@ -626,15 +626,20 @@ body{
 /* aberta, a tabela deixa de responder ao toque e passa a andar em
    blocos — e sem transição, senão o bloco chegaria atrasado ao dedo */
 .mesa.grupos.partida .pc{cursor:grab}
+/* na mão, nem a carta nem o miolo dela esperam transição: o bloco tem
+   de chegar junto com o dedo, no arrasto e na pinça */
 .mesa.grupos.partida.puxando .pc{transition:none}
+.mesa.grupos.partida.puxando .pc-in{transition:none}
 .mesa.grupos.partida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.24),
   0 6px 16px rgba(80,40,0,.28)}
 
 /* o nome de cada bloco, que anda com ele */
+/* o nome do bloco cresce com ele: é do bloco, não da tela */
 .rot-bloco{
   position:absolute;z-index:11;transform:translate(-50%,-50%);
   pointer-events:none;white-space:nowrap;opacity:0;
-  font-family:var(--display);font-weight:700;font-size:25px;letter-spacing:-.01em;
+  font-family:var(--display);font-weight:700;letter-spacing:-.01em;
+  font-size:calc(25px * var(--kb,1));
   color:var(--cb);transition:opacity .45s ease .3s}
 .rot-bloco.on{opacity:1}
 
@@ -2895,6 +2900,25 @@ function ladoDaColuna(col){
 }
 const SEPARA = 42;                 /* o quanto cada lado se afasta ao abrir */
 const OFFSET_BLOCO = {a:{x:0,y:0}, b:{x:0,y:0}};
+const ESCALA_BLOCO = {a:1, b:1};
+
+/* O centro de cada pedaço, para a pinça ter em torno de que crescer.
+   São três pedaços e não dois: os dois representativos crescem com a
+   mesma escala, mas cada asa em torno de si mesma. Crescessem em torno
+   do centro comum — que é o centro da tabela — e a asa da esquerda
+   sairia pela borda antes de dar para ler qualquer coisa. */
+const CENTROS = {};
+function centroDoLado(mesa, lado){
+  if (CENTROS[lado]) return CENTROS[lado];
+  let x1=1e9, y1=1e9, x2=-1e9, y2=-1e9;
+  mesa.querySelectorAll('.pc').forEach(c => {
+    if (ladoDaColuna(+c.dataset.col) !== lado) return;
+    const x = parseFloat(c.style.left), y = parseFloat(c.style.top);
+    if (x<x1) x1=x;  if (x>x2) x2=x;
+    if (y<y1) y1=y;  if (y>y2) y2=y;
+  });
+  return (CENTROS[lado] = {x:(x1+x2)/2, y:(y1+y2)/2});
+}
 const gruposDitos = new Set();     /* as colunas que já disseram o nome */
 let mesaPartida = false;
 let grupoNoAlto = null;
@@ -2902,18 +2926,43 @@ let grupoNoAlto = null;
 /* Onde cada carta está agora: o afastamento da abertura mais o que a
    mão levou. Uma função só põe tudo no lugar — cartas e nomes —, para
    nunca haver dois cálculos discordando sobre onde o bloco está. */
+/* Para onde a peça vai: cresce em torno do centro do seu pedaço e
+   depois anda com o bloco. Como as cartas nunca mudam de left/top —
+   quem se mexe é sempre o translate delas —, o centro continua sendo
+   o mesmo o tempo todo, e a conta não acumula erro. */
+function levaPeca(el, lado, chave, x, y, extra){
+  const g = OFFSET_BLOCO[chave], k = ESCALA_BLOCO[chave];
+  const cen = centroDoLado(el.closest('.mesa'), lado);
+  const base = lado === 'esq' ? -SEPARA : lado === 'dir' ? SEPARA : 0;
+  const dx = (cen.x - x)*(1 - k) + base + g.x;
+  const dy = (cen.y - y)*(1 - k) + g.y;
+  el.style.translate = dx.toFixed(1) + 'px ' + dy.toFixed(1) + 'px';
+  if (extra) extra(k);
+}
 function poeBlocos(mesa){
   mesa.querySelectorAll('.pc').forEach(c => {
-    if (!mesaPartida){ c.style.removeProperty('translate'); return; }
+    const miolo = c.firstElementChild;
+    if (!mesaPartida){
+      c.style.removeProperty('translate');
+      miolo.style.removeProperty('--sc');
+      return;
+    }
     const lado = ladoDaColuna(+c.dataset.col);
-    const g = lado === 'meio' ? OFFSET_BLOCO.b : OFFSET_BLOCO.a;
-    const base = lado === 'esq' ? -SEPARA : lado === 'dir' ? SEPARA : 0;
-    c.style.translate = (base + g.x).toFixed(1) + 'px ' + g.y.toFixed(1) + 'px';
+    levaPeca(c, lado, lado === 'meio' ? 'b' : 'a',
+             parseFloat(c.style.left), parseFloat(c.style.top),
+             k => miolo.style.setProperty('--sc', k.toFixed(3)));
   });
   mesa.querySelectorAll('.rot-bloco').forEach(r => {
-    const g = OFFSET_BLOCO[r.dataset.bloco];
-    const base = r.dataset.bloco === 'a' ? SEPARA : 0;
-    r.style.translate = (base + g.x).toFixed(1) + 'px ' + g.y.toFixed(1) + 'px';
+    const d = ROTULOS_BLOCO[r.dataset.bloco];
+    if (!mesaPartida){
+      /* juntada a tabela, o nome volta ao lugar de origem, mas fica: é
+         o que a aula já disse, e dito não se apaga */
+      r.style.removeProperty('translate');
+      r.style.removeProperty('--kb');
+      return;
+    }
+    levaPeca(r, d.lado, r.dataset.bloco, d.x, d.y,
+             k => r.style.setProperty('--kb', k.toFixed(3)));
   });
 }
 
@@ -2946,6 +2995,7 @@ function diGrupo(mesa, col){
 function poeGrupos(mesa){
   gruposDitos.forEach(col => diGrupo(mesa, col));
   conferGrupos(mesa);
+  if (blocosNomeados) criaRotulosBloco(mesa);
 }
 function baixaGrupo(mesa){
   mesa.querySelectorAll('.pc.no-alto').forEach(c => c.classList.remove('no-alto'));
@@ -2966,17 +3016,17 @@ function alternaGrupo(mesa, carta){
 
 /* ---- abrir e fechar a tabela ---- */
 const ROTULOS_BLOCO = {
-  /* o nome do bloco de transição cabe no vazio em cima dos metais de
-     transição; o dos representativos, acima do hélio, que é a carta
-     mais alta daquele lado */
-  b: {texto:'Transição - B',       x:518,  y:360, cor:'var(--bloco-b)'},
-  a: {texto:'Representativos - A', x:1030, y:212, cor:'var(--bloco-a)'}
+  /* O nome do bloco de transição cabe no vazio em cima dos metais de
+     transição. O dos representativos fica mais alto do que a tabela:
+     abaixo dele passa a fila das identificações — 1A, 2A, 3B —, e os
+     dois no mesmo nível seria um por cima do outro. */
+  b: {texto:'Transição - B',       x:518,  y:360, lado:'meio', cor:'var(--bloco-b)'},
+  a: {texto:'Representativos - A', x:1030, y:150, lado:'dir',  cor:'var(--bloco-a)'}
 };
-function parteMesa(mesa){
-  if (mesaPartida) return;
-  mesaPartida = true;
-  baixaGrupo(mesa);                /* nada fica no alto com a tabela aberta */
-  mesa.classList.add('partida');
+let blocosNomeados = false;
+
+function criaRotulosBloco(mesa){
+  blocosNomeados = true;
   Object.keys(ROTULOS_BLOCO).forEach(k => {
     if (mesa.querySelector('.rot-bloco[data-bloco="'+k+'"]')) return;
     const d = ROTULOS_BLOCO[k];
@@ -2990,20 +3040,27 @@ function parteMesa(mesa){
     mesa.appendChild(r);
     revela(r, 'on');
   });
+}
+function parteMesa(mesa){
+  if (mesaPartida) return;
+  mesaPartida = true;
+  baixaGrupo(mesa);                /* nada fica no alto com a tabela aberta */
+  mesa.classList.add('partida');
+  criaRotulosBloco(mesa);
   poeBlocos(mesa);
   const cena = mesa.parentNode;
   if (cena) cena.classList.add('tem-refaz');
 }
+/* Juntar devolve as cartas ao lugar e o tamanho ao normal — mas os
+   nomes ficam. Eles são o que a aula já disse sobre a tabela, e o
+   botão desfaz a abertura, não a explicação. */
 function juntaMesa(mesa){
   mesaPartida = false;
   OFFSET_BLOCO.a = {x:0, y:0};
   OFFSET_BLOCO.b = {x:0, y:0};
+  ESCALA_BLOCO.a = ESCALA_BLOCO.b = 1;
   mesa.classList.remove('partida', 'puxando');
   poeBlocos(mesa);                 /* volta tudo a zero, com transição */
-  mesa.querySelectorAll('.rot-bloco').forEach(r => {
-    r.classList.remove('on');
-    setTimeout(() => r.remove(), 520);
-  });
   const cena = mesa.parentNode;
   if (cena) cena.classList.remove('tem-refaz');
 }
@@ -3015,6 +3072,9 @@ function apagaGrupos(mesa){
   mesa.classList.remove('cruzada');
   OFFSET_BLOCO.a = {x:0, y:0};
   OFFSET_BLOCO.b = {x:0, y:0};
+  ESCALA_BLOCO.a = ESCALA_BLOCO.b = 1;
+  mesa.querySelectorAll('.pc').forEach(c =>
+    c.firstElementChild.style.removeProperty('--sc'));
   mesa.classList.remove('partida', 'puxando');
   mesa.classList.remove('tremendo');
   mesa.querySelectorAll('.pc').forEach(c => {
@@ -3064,14 +3124,24 @@ function desisteGrupos(){
    pegar todos os representativos, os da esquerda e os da direita, que
    são a mesma coisa e por isso andam juntos. */
 let blocoAB = null;
+const blocoDaCarta = c => ladoDaColuna(+c.dataset.col) === 'meio' ? 'b' : 'a';
+/* de onde a conta parte: o centro dos dedos e a distância entre eles
+   no instante em que a mão muda — a cada dedo que entra ou sai, para
+   o bloco não dar um salto */
+function ancoraBlocoAB(){
+  const b = blocoAB;
+  b.base = centroDe(b.ptr);
+  b.x0 = OFFSET_BLOCO[b.chave].x;
+  b.y0 = OFFSET_BLOCO[b.chave].y;
+  b.k0 = ESCALA_BLOCO[b.chave];
+}
 function comecaBlocoAB(mesa, carta, ev){
-  const chave = ladoDaColuna(+carta.dataset.col) === 'meio' ? 'b' : 'a';
   blocoAB = {
-    id: ev.pointerId, mesa, chave,
-    x0: OFFSET_BLOCO[chave].x, y0: OFFSET_BLOCO[chave].y,
-    px: ev.clientX, py: ev.clientY,
+    mesa, chave: blocoDaCarta(carta), ptr: new Map(),
     k: 1 / (fitScale * (leMesa(mesa).zoom || 1))
   };
+  blocoAB.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraBlocoAB();
   mesa.classList.add('puxando');
   try { stage.setPointerCapture(ev.pointerId); } catch(_){}
 }
@@ -3082,13 +3152,19 @@ document.addEventListener('pointermove', (ev) => {
     desisteGrupos();
 
   const b = blocoAB;
-  if (!b || ev.pointerId !== b.id) return;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  const agora = centroDe(b.ptr);
+  /* dois dedos: a pinça muda o tamanho do bloco, e o nome dele cresce
+     junto — o nome é do bloco, não da tela */
+  if (b.ptr.size > 1 && b.base.d > 12)
+    ESCALA_BLOCO[b.chave] = Math.max(.4, Math.min(3, b.k0 * (agora.d / b.base.d)));
   /* solto, o bloco pode sair pela borda: os dois representativos juntos
      medem a tabela toda, e prendê-los pela caixa seria não os deixar
      andar */
   OFFSET_BLOCO[b.chave] = {
-    x: Math.max(-620, Math.min(620, b.x0 + (ev.clientX - b.px) * b.k)),
-    y: Math.max(-300, Math.min(300, b.y0 + (ev.clientY - b.py) * b.k))
+    x: Math.max(-620, Math.min(620, b.x0 + (agora.cx - b.base.cx) * b.k)),
+    y: Math.max(-300, Math.min(300, b.y0 + (agora.cy - b.base.cy) * b.k))
   };
   poeBlocos(b.mesa);
 });
@@ -3110,7 +3186,10 @@ function soltaBlocoAB(ev){
     }
   }
   const b = blocoAB;
-  if (!b || ev.pointerId !== b.id) return;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.delete(ev.pointerId);
+  /* sobrou dedo na tela: o gesto continua, recomeçando dali */
+  if (b.ptr.size){ ancoraBlocoAB(); return; }
   b.mesa.classList.remove('puxando');
   blocoAB = null;
 }
@@ -4340,7 +4419,14 @@ stage.addEventListener('pointerdown', (ev) => {
   if (atual === 5 && m.classList.contains('grupos')){
     const c = ev.target.closest && ev.target.closest('.pc');
     if (c){
-      if (mesaPartida){ if (!blocoAB) comecaBlocoAB(m, c, ev); }
+      if (mesaPartida){
+        if (!blocoAB) comecaBlocoAB(m, c, ev);
+        /* o segundo dedo, se cair no mesmo bloco, faz a pinça */
+        else if (blocoAB.ptr.size < 2 && blocoDaCarta(c) === blocoAB.chave){
+          blocoAB.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+          ancoraBlocoAB();
+        }
+      }
       else if (!esperaGrupos) agendaPartir(m, c, ev);
       return;
     }
@@ -4462,6 +4548,19 @@ document.addEventListener('pointercancel', largaMesa);
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
   if (!m) return;
+  /* no slide dos grupos, com a tabela aberta, a roda faz sobre o bloco
+     debaixo do cursor o que a pinça faz no tablete */
+  if (atual === 5 && mesaPartida){
+    const c = ev.target.closest && ev.target.closest('.pc');
+    if (c){
+      const chave = blocoDaCarta(c);
+      ESCALA_BLOCO[chave] = Math.max(.4, Math.min(3,
+        ESCALA_BLOCO[chave] * (1 - ev.deltaY * 0.0015)));
+      poeBlocos(m);
+      ev.preventDefault();
+      return;
+    }
+  }
   const e = leMesa(m);
   const zoom = Math.max(.5, Math.min(3.5, e.zoom * (1 - ev.deltaY * 0.0015)));
   m.classList.toggle('macia', zoom <= 1.02);
