@@ -149,7 +149,23 @@ body{
   transition:width .8s var(--e-capa),right .8s var(--e-capa),
              bottom .8s var(--e-capa),opacity .8s var(--e-capa);
 }
-#tabela .cel{stroke:rgba(255,255,255,.72);stroke-width:.5}
+#tabela .cel{stroke:rgba(255,255,255,.72);stroke-width:.5;
+  transition:fill 1.2s ease}
+
+/* A CASA QUE ACENDE
+   De vez em quando uma das casinhas da capa diz quem é: acende numa
+   carta clara, com o símbolo e o número atômico na cor da família
+   dela, e apaga-se logo depois. É o único lugar da capa onde a tabela
+   deixa de ser desenho e vira tabela. */
+#tabela .luz{
+  opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.84);
+  transition:opacity .3s ease, transform .4s cubic-bezier(.2,1.35,.4,1);
+}
+#tabela .luz.on{opacity:1;transform:scale(1)}
+#tabela .luz .carta{fill:#FFFDF8;fill-opacity:.96;stroke:var(--cl);stroke-width:.7}
+#tabela .luz .n{font-family:var(--mono);font-size:2.7px;fill:var(--tinta-dim)}
+#tabela .luz .s{font-family:var(--display);font-weight:600;font-size:5.4px;
+  fill:var(--cl);text-anchor:middle}
 #stage.na-capa #tabela{width:600px;right:6px;bottom:40px;opacity:1}
 /* onde há uma tabela de verdade em cena, a do canto sai: duas tabelas
    na mesma tela só disputariam o olho */
@@ -1569,20 +1585,103 @@ function familiaDe(col, row){
   const grupos = p => p > 3 ? Array.from({length:18},(_,i)=>i+1)
                     : (p === 1 ? [1,18] : [1,2,13,14,15,16,17,18]);
 
+  /* De que elemento é cada casa — o que posDe diz, ao contrário. As
+     duas casas do grupo 3 nas linhas 6 e 7 ficam sem dono: ali moram
+     as séries inteiras, e não um elemento. */
+  const naSerie = z => (z >= 57 && z <= 71) || (z >= 89 && z <= 103);
+  const zDaCasa = {};
+  for (let z = 1; z <= 118; z++){
+    if (naSerie(z)) continue;
+    const p = posDe(z);
+    zDaCasa[p.col + ':' + p.row] = z;
+  }
+
   let html = '';
   for (let p = 1; p <= 7; p++)
-    grupos(p).forEach(g => html += cel(g-1, p-1, familiaDe(g,p)));
+    grupos(p).forEach(g => html += cel(g-1, p-1, familiaDe(g,p), zDaCasa[g+':'+p]));
   /* as duas linhas f, afastadas do bloco principal */
-  for (let i = 0; i < 15; i++) html += cel(i+2, 8.4,  'lantanideos');
-  for (let i = 0; i < 15; i++) html += cel(i+2, 9.55, 'actinideos');
+  for (let i = 0; i < 15; i++) html += cel(i+2, 8.4,  'lantanideos', 57+i);
+  for (let i = 0; i < 15; i++) html += cel(i+2, 9.55, 'actinideos',  89+i);
   svg.innerHTML = html;
 
-  function cel(c, r, cat){
+  function cel(c, r, cat, z){
     const x = (c*(L+G)).toFixed(2), y = (r*(L+G)).toFixed(2);
     return '<rect class="cel" x="'+x+'" y="'+y+'" width="'+L+'" height="'+L+
-           '" rx="1.2" fill="var(--cat-'+cat+')"/>';
+           '" rx="1.2" fill="var(--cat-'+cat+')"' +
+           (z ? ' data-z="'+z+'"' : '') + '/>';
   }
 })();
+
+/* ------------------------------------------------------------
+   A TABELA DA CAPA, VIVA
+   De três em três segundos alguns pares de casas trocam de cor entre
+   si — a paleta continua exatamente a mesma, só se rearranja, e por
+   isso a ilustração nunca vira ruído — e uma das casas acende dizendo
+   quem é.
+
+   A ordem de quem acende é a que o professor pediu: sódio, ítrio,
+   lantânio, telúrio, amerício e oxigênio; depois cinco ao acaso, e
+   então a sequência recomeça. Ela só corre na capa: fora dali a
+   tabelinha é uma marca no canto, e não teria a quem dizer nada.
+   ------------------------------------------------------------ */
+const ACENDE_NA_CAPA = [11, 39, 57, 52, 95, 8];   /* Na, Y, La, Te, Am, O */
+
+function animaCapa(){
+  const svg = document.getElementById('tabela');
+  if (!svg) return;
+  const casas = [...svg.querySelectorAll('.cel')];
+  const comDono = casas.filter(c => c.dataset.z);
+  if (!comDono.length) return;
+  const aoAcaso = lista => lista[(Math.random()*lista.length)|0];
+
+  let fila = [];
+  function proxima(){
+    if (!fila.length){
+      fila = ACENDE_NA_CAPA.slice();
+      for (let i = 0; i < 5; i++) fila.push(+aoAcaso(comDono).dataset.z);
+    }
+    return fila.shift();
+  }
+
+  /* trocar, e não sortear: as cores mudam de lugar, mas são sempre as
+     mesmas dez, e a tabela continua parecendo uma tabela */
+  function baralha(){
+    for (let k = 0; k < 5; k++){
+      const a = aoAcaso(casas), b = aoAcaso(casas);
+      if (a === b) continue;
+      const cor = a.getAttribute('fill');
+      a.setAttribute('fill', b.getAttribute('fill'));
+      b.setAttribute('fill', cor);
+    }
+  }
+
+  function acende(z){
+    const casa = svg.querySelector('.cel[data-z="'+z+'"]');
+    if (!casa) return;
+    const x = +casa.getAttribute('x'), y = +casa.getAttribute('y');
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'luz');
+    g.style.setProperty('--cl', casa.getAttribute('fill'));
+    g.innerHTML =
+      '<rect class="carta" x="'+(x-0.9).toFixed(2)+'" y="'+(y-0.9).toFixed(2)+
+        '" width="10.8" height="10.8" rx="1.7"/>' +
+      '<text class="n" x="'+(x+1.3).toFixed(2)+'" y="'+(y+3.2).toFixed(2)+'">'+z+'</text>' +
+      '<text class="s" x="'+(x+4.5).toFixed(2)+'" y="'+(y+7.6).toFixed(2)+'">' +
+        SIMBOLOS[z-1] + '</text>';
+    svg.appendChild(g);
+    revela(g, 'on');
+    setTimeout(() => {
+      g.classList.remove('on');
+      setTimeout(() => g.remove(), 500);
+    }, 1100);
+  }
+
+  setInterval(() => {
+    if (atual !== 0 || document.hidden) return;   /* só na capa, e só à vista */
+    baralha();
+    acende(proxima());
+  }, 3000);
+}
 
 /* ------------------------------------------------------------
    MONTAGEM DOS SLIDES
@@ -6051,6 +6150,7 @@ montaRoteiro5();
 montaRoteiro6();
 montaRoteiro7();
 montaRoteiro8();
+animaCapa();
 pinta();
 seguraTela();
 
