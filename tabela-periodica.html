@@ -55,6 +55,15 @@
      faixa que sobrava na paleta. */
   --cat-calcogenios: #128B86;
 
+  /* ---- os dois blocos, grupos A e B ----
+     Não há padrão oficial de cores para separar representativos de
+     elementos de transição: cada livro pinta como quer. Estas são as
+     que o professor pediu — vermelho para os de transição, âmbar para
+     os representativos —, e ficam aqui, e não soltas no código, porque
+     são cor de tema como as outras. */
+  --bloco-a: #D9A21B;
+  --bloco-b: #C0332B;
+
   /* tempos e curvas das transições */
   --t-capa: .82s;
   --e-capa: cubic-bezier(.42,.02,.24,1);
@@ -1344,9 +1353,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2, 3, 4 e 5 sem sair de cena: entre
-     eles a passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 4 && i >= 1 && i <= 4;
+  /* a tabela atravessa os slides 2 a 6 sem sair de cena: entre eles a
+     passagem é o giro, e não o empurrão */
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 5 && i >= 1 && i <= 5;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1380,6 +1389,12 @@ function go(i, dir){
        Só aqui, com a animação terminada: medir um slide em movimento
        daria posições do meio do caminho. */
     if (naMontagem()) soltaSlide(entra);
+    /* E as posições fixadas do slide são postas agora, e não no
+       arranque: um slide que ainda não entrou em cena mede zero, e não
+       há como congelar peça nenhuma pela largura que ela não tem.
+       Quem tem cena chamava isto no primeiro passo dela; o slide que
+       ainda não tem cena nenhuma ficava sem cabeçalho no lugar. */
+    aplicaLayout(i);
     poeNumero(i);
   }, dur);
 
@@ -1436,13 +1451,9 @@ function viraCartas(mesa, face, pintadas){
       if (pintada){
         c.classList.remove('face2');
         miolo.style.background = fundoDe(pintada);
-      } else if (face === 'face2'){
-        c.classList.add('face2');
-        miolo.style.background = FUNDO_FACE2;
       } else {
-        c.classList.remove('face2');
-        miolo.style.background = c.classList.contains('encaixada')
-                               ? fundoFamilia : fundoCinza(z);
+        c.classList.toggle('face2', face === 'face2');
+        miolo.style.background = fundoDaFace(c, face);
       }
     }, atraso + 300);
     setTimeout(() => {
@@ -1487,18 +1498,35 @@ function montaCartasEm(mesa){
   }
 }
 
+/* ---- os grupos A e os grupos B ----
+   Representativos são os grupos A: as duas colunas da esquerda e as
+   seis da direita. De transição são os grupos B, as dez do meio — e as
+   duas linhas de baixo, que moram na casa do grupo 3, são a transição
+   interna, e por isso caem no lado certo sozinhas. */
+const REPRESENTATIVOS = new Set([1, 2, 13, 14, 15, 16, 17, 18]);
+function corDoBloco(col){
+  return REPRESENTATIVOS.has(col) ? 'var(--bloco-a)' : 'var(--bloco-b)';
+}
+
+/* ---- as caras da tabela ----
+   A mesma tabela mostra três coisas conforme o slide: as famílias, o
+   tabuleiro liso de uma cor só, e os dois blocos. Uma função só decide
+   o fundo, para o giro e a troca sem giro nunca discordarem. */
+function faceDe(i){
+  if (i === 2 || i === 4) return 'face2';   /* coordenadas e famílias */
+  if (i === 5)            return 'ab';      /* os grupos A e B */
+  return 'familia';
+}
+function fundoDaFace(c, face){
+  if (face === 'ab')    return fundoDe(corDoBloco(+c.dataset.col));
+  if (face === 'face2') return FUNDO_FACE2;
+  return c.classList.contains('encaixada') ? fundoFamilia : fundoCinza(+c.dataset.z);
+}
 /* a cara das cartas, sem o giro — para quando não há transição */
 function aplicaFace(mesa, face){
   mesa.querySelectorAll('.pc').forEach(c => {
-    const miolo = c.firstElementChild;
-    if (face === 'face2'){
-      c.classList.add('face2');
-      miolo.style.background = FUNDO_FACE2;
-    } else {
-      c.classList.remove('face2');
-      miolo.style.background = c.classList.contains('encaixada')
-                             ? fundoFamilia : fundoCinza(+c.dataset.z);
-    }
+    c.classList.toggle('face2', face === 'face2');
+    c.firstElementChild.style.background = fundoDaFace(c, face);
   });
 }
 /* o estado em que a tabela vive em cada slide */
@@ -1534,8 +1562,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 4) return mesa;
-  /* os slides 3, 4 e 5 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 5) return mesa;
+  /* os slides 3 a 6 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -1551,10 +1579,8 @@ function levaMesaPara(i, comGiro){
     cenaVelha.style.opacity = '0';
   }
   estadoMesaPara(mesa, i);
-  /* a face é do slide de DESTINO, e não do sentido da viagem: nos
-     slides das coordenadas e das famílias a tabela é um tabuleiro de
-     uma cor só — lá a cor tem outro trabalho a fazer */
-  const face = (i === 2 || i === 4) ? 'face2' : 'familia';
+  /* a face é do slide de DESTINO, e não do sentido da viagem */
+  const face = faceDe(i);
   /* e o slide das famílias devolve a cor às colunas que a aula já
      levantou: a tinta não mora na carta, que a perde ao virar a face */
   if (comGiro) viraCartas(mesa, face, i === 4);
@@ -1637,9 +1663,9 @@ function montaMiniaturas(){
     copia.classList.add('is-active');
     /* A tabela é uma só e mora no slide em que a aula está. Para a
        miniatura mostrar o que CADA slide tem, ela é copiada para os
-       quatro que a usam, cada cópia na cara daquele slide. */
+       cinco que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 4){
+    if (mesaViva && i >= 1 && i <= 5){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -1659,7 +1685,7 @@ function montaMiniaturas(){
          cartas, e a miniatura monta as suas para poder mostrá-la */
       if (!m.querySelector('.pc')) montaCartasEm(m);
       m.classList.toggle('numerada', i === 2);
-      aplicaFace(m, (i === 2 || i === 4) ? 'face2' : 'familia');
+      aplicaFace(m, faceDe(i));
       /* a família levantada é do slide 5, e só dele */
       marcaPrincipais(m, i === 4);
       m.classList.toggle('familias', i === 4 && mesaViva.classList.contains('familias'));
@@ -1700,14 +1726,14 @@ function mostraOverview(v){
    ============================================================ */
 const ROTEIROS = {};
 
-/* Acender uma peça recém-nascida.
+/* Revelar uma peça recém-nascida.
    Para a transição acontecer, o navegador precisa ter assentado o
    estado inicial da peça antes de a classe mudar — senão ela já nasce
    acesa, sem viagem nenhuma. Ler a caixa dela obriga esse assentamento
    na hora. O caminho antigo era esperar o quadro seguinte, e o quadro
    seguinte não chega quando a janela está atrás de outra: a frase
    ficava invisível até alguém voltar à aba. */
-function acende(el, classe){
+function revela(el, classe){
   el.getBoundingClientRect();
   el.classList.add(classe);
 }
@@ -1951,13 +1977,14 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 4; i++){
+  for (let i = 1; i <= 5; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
   if (typeof montaRoteiro3 === 'function') montaRoteiro3();
   if (typeof montaRoteiro4 === 'function') montaRoteiro4();
   if (typeof montaRoteiro5 === 'function') montaRoteiro5();
+  if (typeof montaRoteiro6 === 'function') montaRoteiro6();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
@@ -2115,7 +2142,7 @@ function reiniciaCena2(){
     aplicaLayout(1);                 /* a regra também tem lugar marcado */
     /* um quadro no lugar de partida e a viagem começa; a classe fica,
        porque é ela que guarda o repouso */
-    acende(t, 'posta');
+    revela(t, 'posta');
     setTimeout(() => cena.querySelector('.fantasma').classList.add('on'), 720);
     setTimeout(() => acende(1), 1020);
 
@@ -2148,7 +2175,7 @@ function reiniciaCena2(){
                   ' os elementos são quimicamente semelhantes</span>';
     cena.appendChild(t);
     aplicaLayout(1);                    /* o lugar dela está no layout */
-    acende(t, 'posta');
+    revela(t, 'posta');
 
     /* desfazer: sai pela esquerda, por onde veio */
     r.desfazer.push(() => {
@@ -2385,7 +2412,7 @@ function montaRoteiro3(){
                   ' baseada na linha e coluna dele</span>';
     cena.appendChild(t);
     aplicaLayout(2);                     /* o lugar dela está no layout */
-    acende(t, 'posta');
+    revela(t, 'posta');
 
     r.desfazer.push(() => {
       r.i = 0;
@@ -2408,7 +2435,7 @@ function montaRoteiro3(){
                   ' e colunas chamam Grupos ou <em>Famílias</em></span>';
     cena.appendChild(t);
     aplicaLayout(2);                     /* o lugar dela está no layout */
-    acende(t, 'posta');
+    revela(t, 'posta');
     /* dito o nome das coordenadas, os números passam a poder ser tocados */
     const mesa = sl.querySelector('.mesa');
     if (mesa) mesa.classList.add('batizada');
@@ -2456,7 +2483,7 @@ function montaRoteiro4(){
       '<em ' + cor('nobres')     + '>Gases Nobres</em></span>';
     cena.appendChild(t);
     aplicaLayout(3);
-    acende(t, 'posta');
+    revela(t, 'posta');
 
     /* dita a frase, os blocos se soltam do tabuleiro */
     const mesa = sl.querySelector('.mesa');
@@ -2687,7 +2714,7 @@ function alternaCaixa(mesa, rot){
   cx.innerHTML = '<h4><span class="anel"></span>' + rot.dataset.nome + '</h4>' +
                  textoDaFamilia(+rot.dataset.col, +rot.dataset.z);
   mesa.appendChild(cx);
-  acende(cx, 'on');
+  revela(cx, 'on');
   rot.classList.add('aberta');
 }
 /* Só uma família de cada vez: a nova sobe e a anterior desce, e tocar
@@ -2729,8 +2756,18 @@ function alternaFamilia(mesa, carta){
   rot.style.left = Math.max(150, Math.min(1130, xDaColuna(col, 'junta'))).toFixed(0) + 'px';
   rot.style.top  = '190px';
   mesa.appendChild(rot);
-  acende(rot, 'on');
+  revela(rot, 'on');
   familiaNoAlto = chave;
+}
+
+/* ============================================================
+   SLIDE 6 · OS GRUPOS A E B
+   Por enquanto ele é só a chegada: o giro traz a tabela pintada nos
+   dois blocos — âmbar nos representativos, vermelho nos de transição —
+   e a aula fica aí, esperando as cenas que ainda vamos montar juntos.
+   ============================================================ */
+function montaRoteiro6(){
+  ROTEIROS[5] = { i:0, espera:null, passos:[], desfazer:[] };
 }
 
 /* ---- a caixa anda com o dedo ----
@@ -2787,7 +2824,7 @@ function montaRoteiro5(){
     t.innerHTML = '<span class="regra-in">A tabela tem 5 famílias principais</span>';
     cena.appendChild(t);
     aplicaLayout(4);                     /* o lugar dela está no layout */
-    acende(t, 'posta');
+    revela(t, 'posta');
 
     /* dita a frase, a tabela passa a responder ao dedo */
     const mesa = sl.querySelector('.mesa');
@@ -3071,7 +3108,7 @@ function nomeiaBloco(mesa, tipo, cartas){
      meio para fora: é ele que diz o que aquilo é */
   rot.style.left = Math.max(80, Math.min(1200, (x1 + x2)/2)).toFixed(0) + 'px';
   rot.style.top  = Math.max(150, y1 - CARTA_H/2 - 24).toFixed(0) + 'px';
-  acende(rot, 'on');
+  revela(rot, 'on');
 }
 
 /* os confetes: papel picado com gravidade, na paleta das famílias */
@@ -3533,6 +3570,14 @@ const LAYOUTS = {
     titulo:    {esq:281, y: 30, esc:0.76},
     subtitulo: {esq:744, y: 31, esc:0.62},
     regra5:    {esq:104, y: 82, esc:1.11}
+  },
+  /* slide 6 · Os Grupos A e B — a mesma tira, e o subtítulo de volta ao
+     tamanho dos outros: este é curto */
+  5: {
+    numero:    {x:259,  y: 34, esc:1.00},
+    regua:     {x:120,  y: 32, esc:1.00},
+    titulo:    {esq:281, y: 30, esc:0.76},
+    subtitulo: {esq:744, y: 31, esc:1.08}
   }
 };
 
@@ -4293,6 +4338,7 @@ reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zer
 montaRoteiro3();
 montaRoteiro4();
 montaRoteiro5();
+montaRoteiro6();
 pinta();
 seguraTela();
 
