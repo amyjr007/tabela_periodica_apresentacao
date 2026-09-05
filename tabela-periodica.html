@@ -655,6 +655,7 @@ body{
    .viu-colunas, que entram na primeira abertura e não saem mais. */
 .mesa.modo-linhas .ln,
 .mesa.viu-linhas .ln,
+.mesa.so-linhas .ln,
 .mesa.numerada .ln{
   display:flex;
   animation:numLinha .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
@@ -667,6 +668,10 @@ body{
 }
 .ln.realce,.cn.realce{background:var(--ouro-luz);border-color:var(--ouro);color:#fff;
   transform:translate(-50%,-50%) scale(1.14)}
+/* aberta a tabela em blocos, os números das linhas saem junto com as
+   identificações: eles contam as linhas de uma tabela que naquele
+   momento não está inteira */
+.mesa.partida .ln{opacity:0;transition:opacity .3s ease}
 
 /* a ficha do elemento escolhido, no vazio acima dos metais de
    transição: o símbolo grande com o número atômico em cima */
@@ -1577,9 +1582,23 @@ function aplicaFace(mesa, face){
   });
 }
 /* o estado em que a tabela vive em cada slide */
+/* O que o slide 2 mostrou fica sabido: os números entraram lá como
+   referência daquela cena e não saíram mais. Mas isso é de lá — nos
+   slides seguintes cada um diz quais quer, e a marca do slide 2 fica
+   guardada aqui, para a volta. */
+const viuEixo = {linhas:false, colunas:false};
+
 function estadoMesaPara(mesa, i){
   limpaRealce(mesa);
   poeModo(mesa, 'junta');
+  if (mesa.classList.contains('viu-linhas'))  viuEixo.linhas  = true;
+  if (mesa.classList.contains('viu-colunas')) viuEixo.colunas = true;
+  mesa.classList.toggle('viu-linhas',  i === 1 && viuEixo.linhas);
+  mesa.classList.toggle('viu-colunas', i === 1 && viuEixo.colunas);
+  /* no slide dos grupos, só a numeração das linhas: as colunas já
+     dizem o nome delas, e um número em cima de "1A" seria dizer duas
+     vezes a mesma coisa com dois nomes diferentes */
+  mesa.classList.toggle('so-linhas', i === 5);
   /* o que foi arrancado no slide dos blocos volta para a estrutura: os
      outros slides falam da tabela inteira, e não de pedaços dela */
   if (i !== 3 && descolados.size) refazBlocos(mesa);
@@ -1598,7 +1617,7 @@ function estadoMesaPara(mesa, i){
   if (i !== 5) apagaGrupos(mesa);
   mesa.classList.toggle('grupos', i === 5 && !!slides[5].querySelector('.regra'));
   if (i === 5) poeGrupos(mesa);
-  if (i === 2) mesa.querySelectorAll('.ln, .cn').forEach(n => {
+  if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
                  : (xDaColuna(1,'junta') - CARTA_W/2 - 32).toFixed(0)+'px';
@@ -2867,8 +2886,18 @@ function poeBlocos(mesa){
 /* ---- a identificação da coluna ----
    Ela nasce quando a coluna sobe e não sai mais: descida a coluna, o
    nome fica, e ao fim da conversa a tabela está inteira nomeada. */
+/* Dito o nome das dezoito, a tabela passa a responder de outra
+   maneira: já não há coluna para nomear, e o toque volta a ser o do
+   slide das coordenadas — a cruz da linha com a coluna, e o símbolo
+   do elemento no vazio da tabela. */
+function conferGrupos(mesa){
+  const completa = gruposDitos.size === 18;
+  mesa.classList.toggle('cruzada', completa);
+  if (completa) baixaGrupo(mesa);
+}
 function diGrupo(mesa, col){
   gruposDitos.add(col);
+  conferGrupos(mesa);
   if (mesa.querySelector('.rot-grupo[data-col="'+col+'"]')) return;
   const r = document.createElement('div');
   r.className = 'rot-grupo';
@@ -2882,6 +2911,7 @@ function diGrupo(mesa, col){
 }
 function poeGrupos(mesa){
   gruposDitos.forEach(col => diGrupo(mesa, col));
+  conferGrupos(mesa);
 }
 function baixaGrupo(mesa){
   mesa.querySelectorAll('.pc.no-alto').forEach(c => c.classList.remove('no-alto'));
@@ -2948,6 +2978,7 @@ function juntaMesa(mesa){
 function apagaGrupos(mesa){
   mesaPartida = false;
   grupoNoAlto = null;
+  mesa.classList.remove('cruzada');
   OFFSET_BLOCO.a = {x:0, y:0};
   OFFSET_BLOCO.b = {x:0, y:0};
   mesa.classList.remove('partida', 'puxando');
@@ -3032,9 +3063,16 @@ function soltaBlocoAB(ev){
     const foiToque = Math.hypot(ev.clientX - e.x, ev.clientY - e.y) < 8 &&
                      Date.now() - e.t0 < 600;
     desisteGrupos();
-    /* dedo que sobe depressa e onde desceu é toque, e toque levanta a
-       coluna: aqui a tabela não passa pelo ouvinte da mesa */
-    if (foiToque) alternaGrupo(e.mesa, e.carta);
+    /* dedo que sobe depressa e onde desceu é toque: aqui a tabela não
+       passa pelo ouvinte da mesa, e o que o toque faz depende de a
+       tabela já ter dito o nome de todas as colunas ou não */
+    if (foiToque){
+      if (e.mesa.classList.contains('cruzada')){
+        escolheCarta(e.mesa, e.carta);
+        realceFaixa(e.mesa, e.carta);
+        mostraFicha(e.mesa, +e.carta.dataset.z);
+      } else alternaGrupo(e.mesa, e.carta);
+    }
   }
   const b = blocoAB;
   if (!b || ev.pointerId !== b.id) return;
@@ -4121,7 +4159,8 @@ function realceFaixa(mesa, c){
   /* Numerada nos dois eixos — que é como a tabela chega ao slide das
      coordenadas —, o elemento acende a linha E a coluna: é o encontro
      das duas que dá o lugar dele. Fora daí, acende só o eixo aberto. */
-  const cruz = mesa.classList.contains('numerada');
+  const cruz = mesa.classList.contains('numerada') ||
+               mesa.classList.contains('cruzada');
   const porLinha  = cruz || modoMesa !== 'colunas';
   const porColuna = cruz || modoMesa === 'colunas';
 
@@ -4190,7 +4229,9 @@ function limpaRotulos(mesa){
    a tabela tem ali. Ela troca em fade: a antiga sai, a nova entra. */
 function mostraFicha(mesa, z){
   const f = mesa.querySelector('.ficha-sel');
-  if (!f || !mesa.classList.contains('numerada')) return;
+  if (!f) return;
+  if (!mesa.classList.contains('numerada') &&
+      !mesa.classList.contains('cruzada')) return;
   /* outro elemento, outras coordenadas: os nomes antigos saem */
   limpaRotulos(mesa);
   const troca = () => {
