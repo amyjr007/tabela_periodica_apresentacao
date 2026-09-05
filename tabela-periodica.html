@@ -1352,6 +1352,29 @@ function cenaDe(sl){
   }
   return cena;
 }
+/* Uma tabela inteira, montada de uma vez, dentro de uma mesa qualquer.
+   É o que as miniaturas usam quando a aula ainda não começou: elas
+   precisam mostrar a tabela que aquele slide TERÁ, e não podem montar a
+   de verdade para isso — seria contar o fim da história antes dela. */
+function montaCartasEm(mesa){
+  for (let z = 1; z <= 118; z++){
+    const c = criaCarta(z), a = alvoDe(z, 'junta'), miolo = c.firstElementChild;
+    c.style.left = a.x.toFixed(1) + 'px';
+    c.style.top  = a.y.toFixed(1) + 'px';
+    c.classList.add('na-tabela', 'encaixada');
+    miolo.style.background = fundoFamilia;
+    const faixa = PILHAS[z];
+    if (faixa){
+      miolo.classList.add('pilha');
+      miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+      c.style.zIndex = '12';
+    } else if (naPilha(z)){
+      c.style.visibility = 'hidden';     /* as catorze de baixo da pilha */
+    }
+    mesa.appendChild(c);
+  }
+}
+
 /* a cara das cartas, sem o giro — para quando não há transição */
 function aplicaFace(mesa, face){
   mesa.querySelectorAll('.pc').forEach(c => {
@@ -1490,19 +1513,26 @@ function montaMiniaturas(){
        miniatura mostrar o que CADA slide tem, ela é copiada para os
        três que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 3 && !copia.querySelector('.mesa')){
-      let cena = copia.querySelector('.cena');
-      if (!cena){
-        cena = document.createElement('div');
-        cena.className = 'cena';
-        cena.style.setProperty('--cw', CARTA_W + 'px');
-        cena.style.setProperty('--ch', CARTA_H + 'px');
-        copia.appendChild(cena);
+    if (mesaViva && i >= 1 && i <= 3){
+      let m = copia.querySelector('.mesa');
+      if (!m){
+        /* a tabela mora noutro slide: esta cópia recebe a sua */
+        let cena = copia.querySelector('.cena');
+        if (!cena){
+          cena = document.createElement('div');
+          cena.className = 'cena';
+          cena.style.setProperty('--cw', CARTA_W + 'px');
+          cena.style.setProperty('--ch', CARTA_H + 'px');
+          copia.appendChild(cena);
+        }
+        cena.style.opacity = '1';
+        m = mesaViva.cloneNode(true);
+        cena.insertBefore(m, cena.firstChild);
       }
-      cena.style.opacity = '1';
-      const m = mesaViva.cloneNode(true);
+      /* a aula pode nem ter começado: a tabela viva ainda não tem
+         cartas, e a miniatura monta as suas para poder mostrá-la */
+      if (!m.querySelector('.pc')) montaCartasEm(m);
       m.classList.toggle('numerada', i === 2);
-      cena.insertBefore(m, cena.firstChild);
       aplicaFace(m, i === 2 ? 'face2' : 'familia');
     }
     /* na miniatura nada é clicável: ela inteira é um alvo só */
