@@ -1177,7 +1177,7 @@ function go(i, dir){
        Só aqui, com a animação terminada: medir um slide em movimento
        daria posições do meio do caminho. */
     if (naMontagem()) soltaSlide(entra);
-    poeNumero(entra);
+    poeNumero(i);
   }, dur);
 
   atual = i;
@@ -1299,7 +1299,11 @@ function giraCabecalhos(de, para){
 /* O número do tópico cola-se à esquerda do título, seja onde ele
    estiver: no fluxo normal ou no lugar em que a montagem o deixou.
    Por isso ele é medido a partir do título, e não posto num x fixo. */
-function poeNumero(sl){
+function poeNumero(i){
+  /* o slide que dá lugar próprio ao número no layout manda nele */
+  if (LAYOUTS[i] && LAYOUTS[i].numero) return;
+  const sl = slides[i];
+  if (!sl) return;
   const t = sl.querySelector('.title'), n = sl.querySelector('.num');
   if (!t || !n) return;
   const rt = t.getBoundingClientRect(), rs = sl.getBoundingClientRect();
@@ -1762,14 +1766,7 @@ function reiniciaCena2(){
     t.innerHTML = '<span class="regra-in"><b>2 -</b> Dentro de uma mesma coluna,' +
                   ' os elementos são quimicamente semelhantes</span>';
     cena.appendChild(t);
-    soltaSlide(slides[1]);
-    const m = MEDIDAS.get(t);
-    if (m){
-      m.esc = 1.11;
-      m.cy  = 168;
-      m.cx  = 107 + (m.w*m.esc)/2;      /* a esquerda dela na esquerda da 1ª */
-      aplicaEl(t);
-    }
+    aplicaLayout(1);                    /* o lugar dela está no layout */
     requestAnimationFrame(() => t.classList.add('posta'));
 
     /* desfazer: sai pela esquerda, por onde veio */
@@ -1974,14 +1971,7 @@ function montaRoteiro3(){
     t.innerHTML = '<span class="regra-in">Cada elemento tem sua localização' +
                   ' baseada na linha e coluna dele</span>';
     cena.appendChild(t);
-    soltaSlide(sl);
-    const m = MEDIDAS.get(t);
-    if (m){
-      m.esc = 1.11;
-      m.cy  = 122;                       /* a altura do "critério 1" */
-      m.cx  = 107 + (m.w*m.esc)/2;       /* e a mesma margem esquerda */
-      aplicaEl(t);
-    }
+    aplicaLayout(2);                     /* o lugar dela está no layout */
     requestAnimationFrame(() => t.classList.add('posta'));
 
     r.desfazer.push(() => {
@@ -2004,17 +1994,7 @@ function montaRoteiro3(){
     t.innerHTML = '<span class="regra-in">Linhas chamam séries ou <em>Períodos</em>' +
                   ' e colunas chamam Grupos ou <em>Famílias</em></span>';
     cena.appendChild(t);
-    soltaSlide(sl);
-    const m = MEDIDAS.get(t);
-    if (m){
-      m.esc = 1.11;
-      m.cy  = 168;                       /* logo abaixo da primeira */
-      /* Sem o traço, ela precisa começar 22px adiante — a largura do
-         traço mais o respiro dele. Assim as duas LETRAS se alinham, e
-         não a letra de uma com o traço da outra. */
-      m.cx  = 129 + (m.w*m.esc)/2;
-      aplicaEl(t);
-    }
+    aplicaLayout(2);                     /* o lugar dela está no layout */
     requestAnimationFrame(() => t.classList.add('posta'));
 
     r.desfazer.push(() => {
@@ -2430,23 +2410,32 @@ function aplicaEl(el){
    normal o põe.
    ------------------------------------------------------------ */
 const LAYOUTS = {
-  /* slide 2 · Os critérios de Organização */
+  /* slide 2 · Os critérios de Organização — o cabeçalho todo numa
+     tira só, no alto: régua, número, título e subtítulo lado a lado,
+     e as duas frases logo abaixo. */
   1: {
-    titulo:    {x:300, y: 23, esc:0.76},
-    regua:     {x:191, y: 62, esc:1.00},
-    subtitulo: {x:411, y: 64, esc:1.08},
+    numero:    {x:259, y: 34, esc:1.00},
+    regua:     {x:120, y: 32, esc:1.00},
+    titulo:    {x:503, y: 30, esc:0.76},
+    subtitulo: {x:833, y: 31, esc:1.08},
     area:      {x:683, y:417, esc:0.68},
-    regra:     {x:597, y:122, esc:1.11}
+    regra:     {x:593, y: 82, esc:1.11},
+    regra2:    {x:616, y:123, esc:1.11}
   },
-  /* slide 3 · As Coordenadas Periódicas — o mesmo cabeçalho do 2.
-     Aqui as peças são alinhadas pela MARGEM ESQUERDA, e não pelo
-     centro: os títulos têm larguras diferentes, e alinhar os centros
-     deixaria as duas margens desencontradas ao passar de um para o
-     outro — justamente o que o giro faz reparar. */
+  /* slide 3 · As Coordenadas Periódicas — a mesma tira do 2.
+     O título e o subtítulo são alinhados pela MARGEM ESQUERDA, e não
+     pelo centro: as frases têm larguras diferentes, e alinhar os
+     centros deixaria as margens desencontradas ao passar de um slide
+     para o outro — justamente o que o giro faz o olho reparar. */
   2: {
-    titulo:    {esq: 78, y: 23, esc:0.76},
-    regua:     {x:191,  y: 62, esc:1.00},
-    subtitulo: {esq:322, y: 64, esc:1.08}
+    numero:    {x:259,  y: 34, esc:1.00},
+    regua:     {x:120,  y: 32, esc:1.00},
+    titulo:    {esq:281, y: 30, esc:0.76},
+    subtitulo: {esq:744, y: 31, esc:1.08},
+    regra3:    {esq:104, y: 82, esc:1.11},
+    /* sem traço, ela começa 22px adiante para a LETRA cair sob a letra
+       da de cima, e não sob o traço dela */
+    regra3b:   {esq:126, y:123, esc:1.11}
   }
 };
 
@@ -2573,8 +2562,13 @@ function poeModo(mesa, modo){
     e.style.left = xDaColuna(+e.dataset.col,   modo).toFixed(1) + 'px';
     e.style.top  = yDaLinha (+e.dataset.linha, modo).toFixed(1) + 'px';
   });
-  mesa.querySelectorAll('.ln').forEach(n =>
-    n.style.top = yDaLinha(+n.dataset.linha, modo).toFixed(1) + 'px');
+  /* Os números das linhas acompanham a primeira coluna: separando os
+     grupos, a tabela se alarga e a coluna 1 caminha para a esquerda —
+     os números têm de ir junto, senão ficariam pousados no meio dela. */
+  mesa.querySelectorAll('.ln').forEach(n => {
+    n.style.top  = yDaLinha(+n.dataset.linha, modo).toFixed(1) + 'px';
+    n.style.left = (xDaColuna(1, modo) - CARTA_W/2 - 32).toFixed(1) + 'px';
+  });
   mesa.querySelectorAll('.cn').forEach(n => {
     n.style.left = xDaColuna(+n.dataset.col, modo).toFixed(1) + 'px';
     n.style.top  = (yDaLinha(1, modo) - CARTA_H/2 - 26).toFixed(1) + 'px';
@@ -3122,7 +3116,7 @@ seguraTela();
   .then(() => {
     Object.keys(LAYOUTS).forEach(i => aplicaLayout(+i));
     /* e o número do tópico se encosta no título já no lugar dele */
-    slides.forEach(sl => poeNumero(sl));
+    slides.forEach((sl,i) => poeNumero(i));
   });
 </script>
 </body>
