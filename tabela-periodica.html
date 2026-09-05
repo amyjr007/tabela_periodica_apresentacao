@@ -462,6 +462,50 @@ body{
 }
 .rot-tipo.on{opacity:1}
 
+/* ---------- as famílias do slide 5 ----------
+   Aqui o tabuleiro é de uma cor só, e a cor tem outro trabalho: ela é
+   o que marca a família escolhida. Antes de qualquer toque, as cinco
+   principais respiram — sobem e descem uns poucos pixels, com um halo
+   discreto — para dizer onde o dedo tem o que fazer. O balanço mora no
+   miolo e a subida na carta, em propriedades diferentes, senão um
+   apagaria o outro no instante em que a família se levanta. */
+@keyframes respira{
+  0%,100%{translate:0 0}
+  50%    {translate:0 -4px}
+}
+.mesa.familias .pc{cursor:pointer;
+  transition:translate .42s cubic-bezier(.26,1.1,.4,1)}
+.mesa.familias .pc.principal .pc-in{
+  animation:respira 2.8s var(--fase,0ms) ease-in-out infinite;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22),
+             0 0 0 1.5px rgba(226,162,43,.42), 0 0 13px rgba(226,162,43,.36);
+}
+/* levantada, ela para de respirar: já foi chamada, e agora está dita */
+.mesa.familias .pc.no-alto{translate:0 -24px;z-index:18}
+.mesa.familias .pc.no-alto .pc-in{animation:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
+/* o número do grupo sobe com ela: ele é o nome de chamada da coluna, e
+   ficar para trás seria deixá-lo debaixo dos gases nobres, que são a
+   única família que começa na primeira linha */
+.mesa.familias .cn.no-alto{translate:0 -24px;
+  color:var(--ouro);border-color:var(--ouro-luz);background:rgba(226,162,43,.18)}
+
+/* O NOME DA FAMÍLIA
+   Ele entra deslizando na horizontal, e o sentido é o do lado em que a
+   família mora: as da esquerda vêm da direita para a esquerda, as da
+   direita fazem o caminho contrário. Sai pelo mesmo lado por onde
+   entrou. */
+.rot-fam{
+  position:absolute;z-index:10;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:27px;letter-spacing:-.01em;
+  color:var(--ouro);opacity:0;
+  transition:opacity .42s ease, translate .55s cubic-bezier(.2,.86,.26,1);
+}
+.rot-fam.de-dir{translate: 56px 0}
+.rot-fam.de-esq{translate:-56px 0}
+.rot-fam.on{opacity:1;translate:0 0}
+
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
   0 8px 20px rgba(80,40,0,.34), 0 0 0 2px rgba(226,162,43,.85)}
@@ -473,7 +517,8 @@ body{
   font-family:var(--display);font-weight:600;font-size:16px;line-height:1;
   color:var(--indigo);background:rgba(76,63,191,.12);border:1.5px solid var(--indigo);
   transition:top .55s cubic-bezier(.3,.85,.3,1),left .55s cubic-bezier(.3,.85,.3,1),
-             background .25s,color .25s,border-color .25s,transform .25s;
+             background .25s,color .25s,border-color .25s,transform .25s,
+             translate .42s cubic-bezier(.26,1.1,.4,1);
 }
 .cn{width:27px;height:27px;font-size:14px}
 /* Os números entram em cascata, cada um logo atrás do anterior: as
@@ -1096,7 +1141,7 @@ const SLIDES = [
     subtitle:'Metais, Ametais e Gases Nobres' },
 
   { title:'As principais famílias',
-    subtitle:'Alcalinos, Alcalinos-terrosos, Calcogênios e Halogênios' },
+    subtitle:'Alcalinos, Alcalinos-terrosos, Calcogênios, Halogênios e Gases Nobres' },
 
   { title:'Os Grupos A e B',
     subtitle:'Os elementos principais' },
@@ -1241,9 +1286,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2, 3 e 4 sem sair de cena: entre eles
-     a passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 3 && i >= 1 && i <= 3;
+  /* a tabela atravessa os slides 2, 3, 4 e 5 sem sair de cena: entre
+     eles a passagem é o giro, e não o empurrão */
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 4 && i >= 1 && i <= 4;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1396,10 +1441,20 @@ function aplicaFace(mesa, face){
 function estadoMesaPara(mesa, i){
   limpaRealce(mesa);
   poeModo(mesa, 'junta');
-  mesa.classList.toggle('numerada', i === 2);
+  /* o que foi arrancado no slide dos blocos volta para a estrutura: os
+     outros slides falam da tabela inteira, e não de pedaços dela */
+  if (i !== 3 && descolados.size) refazBlocos(mesa);
+  /* o tabuleiro de uma cor só, numerado nos dois eixos: é assim que a
+     tabela se apresenta no slide das coordenadas e no das famílias */
+  const tabuleiro = i === 2 || i === 4;
+  mesa.classList.toggle('numerada', tabuleiro);
   /* os blocos só se soltam depois que a frase do slide 4 os anunciou */
   mesa.classList.toggle('blocos', i === 3 && !!slides[3].querySelector('.regra'));
-  if (i === 2) mesa.querySelectorAll('.ln, .cn').forEach(n => {
+  /* e as famílias só respondem depois que a frase do slide 5 as contou */
+  if (i !== 4){ apagaFamilia(mesa); familiaNoAlto = null; }
+  marcaPrincipais(mesa, i === 4);
+  mesa.classList.toggle('familias', i === 4 && !!slides[4].querySelector('.regra'));
+  if (tabuleiro) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
                  : (xDaColuna(1,'junta') - CARTA_W/2 - 32).toFixed(0)+'px';
@@ -1415,8 +1470,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 3) return mesa;
-  /* os slides 3 e 4 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 4) return mesa;
+  /* os slides 3, 4 e 5 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -1432,9 +1487,10 @@ function levaMesaPara(i, comGiro){
     cenaVelha.style.opacity = '0';
   }
   estadoMesaPara(mesa, i);
-  /* a face é do slide de DESTINO, e não do sentido da viagem: só no
-     slide das coordenadas a tabela é um tabuleiro de uma cor só */
-  const face = i === 2 ? 'face2' : 'familia';
+  /* a face é do slide de DESTINO, e não do sentido da viagem: nos
+     slides das coordenadas e das famílias a tabela é um tabuleiro de
+     uma cor só — lá a cor tem outro trabalho a fazer */
+  const face = (i === 2 || i === 4) ? 'face2' : 'familia';
   if (comGiro) viraCartas(mesa, face); else aplicaFace(mesa, face);
   return mesa;
 }
@@ -1514,9 +1570,9 @@ function montaMiniaturas(){
     copia.classList.add('is-active');
     /* A tabela é uma só e mora no slide em que a aula está. Para a
        miniatura mostrar o que CADA slide tem, ela é copiada para os
-       três que a usam, cada cópia na cara daquele slide. */
+       quatro que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 3){
+    if (mesaViva && i >= 1 && i <= 4){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -1535,8 +1591,12 @@ function montaMiniaturas(){
       /* a aula pode nem ter começado: a tabela viva ainda não tem
          cartas, e a miniatura monta as suas para poder mostrá-la */
       if (!m.querySelector('.pc')) montaCartasEm(m);
-      m.classList.toggle('numerada', i === 2);
-      aplicaFace(m, i === 2 ? 'face2' : 'familia');
+      m.classList.toggle('numerada', i === 2 || i === 4);
+      aplicaFace(m, (i === 2 || i === 4) ? 'face2' : 'familia');
+      /* a família levantada é do slide 5, e só dele */
+      marcaPrincipais(m, i === 4);
+      m.classList.toggle('familias', i === 4 && mesaViva.classList.contains('familias'));
+      if (i === 4) vesteFamilia(m); else apagaFamilia(m);
     }
     /* na miniatura nada é clicável: ela inteira é um alvo só */
     copia.querySelectorAll('button').forEach(b => { b.tabIndex = -1; b.disabled = true; });
@@ -1811,12 +1871,13 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 3; i++){
+  for (let i = 1; i <= 4; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
   if (typeof montaRoteiro3 === 'function') montaRoteiro3();
   if (typeof montaRoteiro4 === 'function') montaRoteiro4();
+  if (typeof montaRoteiro5 === 'function') montaRoteiro5();
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -2346,6 +2407,149 @@ function montaRoteiro4(){
         m.classList.remove('blocos');
         m.querySelectorAll('.rot-tipo').forEach(e => e.remove());
       }
+    });
+  });
+}
+
+/* ============================================================
+   SLIDE 5 · AS PRINCIPAIS FAMÍLIAS
+   A tabela chega como estava no slide das coordenadas: um tabuleiro de
+   uma cor só, numerado nos dois eixos. É de propósito — aqui a cor não
+   pode estar dizendo outra coisa, porque é ela que vai marcar a
+   família escolhida.
+
+   Uma família é uma coluna. Cinco delas têm nome próprio; as outras se
+   chamam pelo primeiro elemento que as encabeça, e o hidrogênio, que
+   mora em cima dos alcalinos sem ser um deles, responde sozinho.
+   ============================================================ */
+const FAMILIAS = {
+  1:'Alcalinos', 2:'Alcalinos-terrosos',
+  16:'Calcogênios', 17:'Halogênios', 18:'Gases Nobres'
+};
+/* as cinco não balançam em uníssono: cada uma entra no seu tempo */
+const FASE_FAM = {1:0, 2:240, 16:480, 17:720, 18:960};
+/* quem encabeça as colunas sem nome próprio */
+const CABECA_GRUPO = {
+  3:'Escândio', 4:'Titânio', 5:'Vanádio', 6:'Cromo', 7:'Manganês',
+  8:'Ferro', 9:'Cobalto', 10:'Níquel', 11:'Cobre', 12:'Zinco',
+  13:'Boro', 14:'Carbono', 15:'Nitrogênio'
+};
+/* o âmbar é, em toda a apresentação, a cor do que está em foco — e uma
+   família levantada é exatamente isso. Claro em cima e escuro embaixo,
+   como as outras cartas, para o tijolo não perder o volume. */
+const FUNDO_FAM = 'linear-gradient(145deg,#F5D089,#E0A63A)';
+
+let familiaNoAlto = null;
+
+function nomeDaFamilia(col){
+  return FAMILIAS[col] || ('Família do ' + CABECA_GRUPO[col]);
+}
+/* o hidrogênio está na coluna 1 mas não é alcalino: a família é a
+   coluna menos ele */
+function cartasDaFamilia(mesa, col){
+  return [...mesa.querySelectorAll('.pc')]
+    .filter(c => +c.dataset.col === col && +c.dataset.z !== 1);
+}
+function marcaPrincipais(mesa, on){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const eh = on && !!FAMILIAS[+c.dataset.col] && +c.dataset.z !== 1;
+    c.classList.toggle('principal', eh);
+    if (eh) c.style.setProperty('--fase', FASE_FAM[+c.dataset.col] + 'ms');
+    else    c.style.removeProperty('--fase');
+  });
+}
+/* veste de âmbar o que estiver levantado — usado quando a tabela é
+   copiada para a miniatura, que chega sem as cores inline */
+function vesteFamilia(mesa){
+  mesa.querySelectorAll('.pc.no-alto').forEach(c =>
+    c.firstElementChild.style.background = FUNDO_FAM);
+}
+/* sem encenação: para a troca de slide e para as cópias */
+function apagaFamilia(mesa){
+  mesa.querySelectorAll('.pc.no-alto').forEach(c => {
+    c.classList.remove('no-alto');
+    c.firstElementChild.style.background = FUNDO_FACE2;
+  });
+  mesa.querySelectorAll('.cn.no-alto').forEach(n => n.classList.remove('no-alto'));
+  mesa.querySelectorAll('.rot-fam').forEach(e => e.remove());
+}
+function baixaFamilia(mesa){
+  mesa.querySelectorAll('.pc.no-alto').forEach(c => {
+    c.classList.remove('no-alto');
+    c.firstElementChild.style.background = FUNDO_FACE2;
+  });
+  mesa.querySelectorAll('.cn.no-alto').forEach(n => n.classList.remove('no-alto'));
+  /* o nome que sai fica no ar mais meio segundo, desaparecendo: fica
+     marcado como de saída para não ser confundido com o que entra */
+  const rot = mesa.querySelector('.rot-fam:not(.saindo)');
+  if (rot){
+    rot.classList.add('saindo');
+    rot.classList.remove('on');
+    setTimeout(() => rot.remove(), 640);
+  }
+  familiaNoAlto = null;
+}
+/* Só uma família de cada vez: a nova sobe e a anterior desce, e tocar
+   de novo na que está no alto é o que a faz descer. */
+function alternaFamilia(mesa, carta){
+  const z = +carta.dataset.z;
+  const col = z === 1 ? 1 : +carta.dataset.col;
+  const chave = z === 1 ? 'h' : String(col);
+  const jaEstava = familiaNoAlto === chave;
+  baixaFamilia(mesa);
+  if (jaEstava) return;
+
+  const cartas = z === 1 ? [carta] : cartasDaFamilia(mesa, col);
+  if (!cartas.length) return;
+  cartas.forEach(c => {
+    c.classList.add('no-alto');
+    c.firstElementChild.style.background = FUNDO_FAM;
+  });
+  /* o hidrogênio sobe sozinho e não leva o número: ele mora na coluna 1
+     sem ser da família dela */
+  const num = z === 1 ? null : mesa.querySelector('.cn[data-col="'+col+'"]');
+  if (num) num.classList.add('no-alto');
+
+  const rot = document.createElement('div');
+  /* da metade da tabela para a esquerda o nome vem da direita; da
+     metade para a direita, ao contrário — ele sempre entra vindo de
+     dentro da tabela e sai para fora dela */
+  rot.className = 'rot-fam ' + (col <= 9 ? 'de-dir' : 'de-esq');
+  rot.textContent = z === 1 ? 'Hidrogênio' : nomeDaFamilia(col);
+  /* acima da coluna, na faixa livre entre a frase e os números dos
+     grupos; nas pontas ele se encolhe para não sair pela borda */
+  rot.style.left = Math.max(150, Math.min(1130, xDaColuna(col, 'junta'))).toFixed(0) + 'px';
+  rot.style.top  = '160px';
+  mesa.appendChild(rot);
+  requestAnimationFrame(() => rot.classList.add('on'));
+  familiaNoAlto = chave;
+}
+
+function montaRoteiro5(){
+  const sl = slides[4];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[4] = r;
+
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra5';
+    t.innerHTML = '<span class="regra-in">A tabela tem 5 famílias principais</span>';
+    cena.appendChild(t);
+    aplicaLayout(4);                     /* o lugar dela está no layout */
+    requestAnimationFrame(() => t.classList.add('posta'));
+
+    /* dita a frase, a tabela passa a responder ao dedo */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('familias');
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){ baixaFamilia(m); m.classList.remove('familias'); }
     });
   });
 }
@@ -3063,6 +3267,16 @@ const LAYOUTS = {
     subtitulo: {esq:744, y: 31, esc:1.08},
     /* a frase é a mais longa da aula: em 1,11 ela encostaria na borda */
     regra4:    {esq:104, y: 82, esc:1.00}
+  },
+  /* slide 5 · As principais famílias — a mesma tira do 4. O subtítulo
+     é uma lista de cinco nomes, a mais longa da apresentação: no 1,08
+     dos outros ela sairia pela borda, e por isso vem menor. */
+  4: {
+    numero:    {x:259,  y: 34, esc:1.00},
+    regua:     {x:120,  y: 32, esc:1.00},
+    titulo:    {esq:281, y: 30, esc:0.76},
+    subtitulo: {esq:744, y: 31, esc:0.62},
+    regra5:    {esq:104, y: 82, esc:1.11}
   }
 };
 
@@ -3470,6 +3684,17 @@ function largaMesa(ev){
                    toqueMesa.alvo.closest('.mesa.batizada.tem-realce .ln, .mesa.batizada.tem-realce .cn');
     if (numero){ rotulaCoordenada(m, numero); toqueMesa = null; return; }
 
+    /* No slide das famílias o toque não escolhe um elemento: levanta a
+       coluna inteira. Antes da frase a tabela ainda não responde, e o
+       toque só adianta a aula. */
+    if (atual === 4){
+      const fam = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
+      if (fam && m.classList.contains('familias')) alternaFamilia(m, fam);
+      else passoAdiante();
+      toqueMesa = null;
+      return;
+    }
+
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
       escolheCarta(m, carta);
@@ -3797,6 +4022,7 @@ ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
 montaRoteiro3();
 montaRoteiro4();
+montaRoteiro5();
 pinta();
 seguraTela();
 
