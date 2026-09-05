@@ -689,16 +689,16 @@ body{
 /* a cerca que junta as duas séries numa coisa só */
 .cerca{
   position:absolute;z-index:5;pointer-events:none;border-radius:12px;
-  border:2px dashed var(--indigo);
-  background:color-mix(in srgb,var(--indigo) 7%,transparent);
+  border:2px dashed var(--cc,var(--indigo));
+  background:color-mix(in srgb,var(--cc,var(--indigo)) 8%,transparent);
   opacity:0;transition:opacity .4s ease;
 }
 .cerca.on{opacity:1}
 .rot-cerca{
   position:absolute;z-index:10;transform:translate(-50%,-50%);
-  pointer-events:none;text-align:center;line-height:1.15;
-  font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;
-  color:var(--indigo);opacity:0;transition:opacity .4s ease .15s;
+  pointer-events:none;text-align:center;line-height:1.15;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:-.01em;
+  color:var(--cc,var(--indigo));opacity:0;transition:opacity .4s ease .15s;
 }
 .rot-cerca.on{opacity:1}
 
@@ -3527,38 +3527,92 @@ function fechaSerie(mesa, chave, animada){
   }
 }
 
-/* ---- a cerca: as duas séries são uma coisa só ---- */
-function mostraCerca(mesa){
-  if (seriesAbertas.size < 2) return;      /* só faz sentido com as duas fora */
-  let cerca = mesa.querySelector('.cerca');
-  if (!cerca){
-    cerca = document.createElement('div');
-    cerca.className = 'cerca';
-    const x1 = xDaColuna(3,'junta') - CARTA_W/2 - 10;
-    const x2 = xDaColuna(3,'junta') + 14*PASSO_X + CARTA_W/2 + 10;
-    const y1 = yDaLinha(8,'junta') - CARTA_H/2 - 10;
-    const y2 = yDaLinha(9,'junta') + CARTA_H/2 + 10;
-    cerca.style.left   = x1.toFixed(0) + 'px';
-    cerca.style.top    = y1.toFixed(0) + 'px';
-    cerca.style.width  = (x2 - x1).toFixed(0) + 'px';
-    cerca.style.height = (y2 - y1).toFixed(0) + 'px';
-    mesa.appendChild(cerca);
+/* ---- os três blocos, com a tabela toda aberta ----
+   Aberta a tabela, ela mostra de uma vez os três tipos de elemento que
+   a aula veio separando. Um toque cerca o bloco a que a carta pertence
+   e o nomeia; outro toque no mesmo bloco desfaz.
 
-    /* o nome vai ao lado, na faixa livre à direita da fila: em cima
-       está a tabela e embaixo a borda do palco */
-    const r = document.createElement('div');
-    r.className = 'rot-cerca';
-    r.innerHTML = 'Transição<br>interna';
-    r.style.left = (x2 + 58).toFixed(0) + 'px';
-    r.style.top  = ((y1 + y2)/2).toFixed(0) + 'px';
-    mesa.appendChild(r);
+   Quem manda é a COR da carta, e não o lugar dela: o lantânio e o
+   actínio estão nas filas das séries mas saíram vermelhos, porque são
+   do grupo 3B — e por isso respondem com a transição externa, junto
+   com o bloco do meio. É o que a cor deles vem dizendo desde que
+   saíram da pilha. */
+const BLOCOS7 = {
+  externa: {
+    nome: 'Elem. de Transição externa', cor: 'var(--bloco-b)',
+    rot: {x:518, y:370}
+  },
+  representativos: {
+    nome: 'Elem. Representativos', cor: 'var(--bloco-a)',
+    rot: {x:1030, y:196}
+  },
+  interna: {
+    /* As duas séries têm cada uma a sua cor: o nome que fala das duas
+       não pode tomar nenhuma delas, e fica no índigo da estrutura.
+       Vai embaixo da cerca, centrado: à direita dela não cabe — o nome
+       é comprido e sairia pela borda —, e em cima está a tabela. */
+    nome: 'Elem. de Transição Interna', cor: 'var(--indigo)',
+    rot: {x:710, y:757}
   }
-  revela(cerca, 'on');
-  const r = mesa.querySelector('.rot-cerca');
-  if (r) revela(r, 'on');
+};
+function blocoDaCarta7(c){
+  const z = +c.dataset.z, chave = serieDe(z);
+  if (chave) return z === SERIES[chave].de ? 'externa' : 'interna';
+  return REPRESENTATIVOS.has(+c.dataset.col) ? 'representativos' : 'externa';
+}
+/* onde cada bloco mora, em retângulos: o dos representativos são duas
+   asas, e o da transição externa é o miolo da tabela mais as duas
+   cartas que ficaram na cabeça das filas */
+function cercasDoBloco(chave){
+  const cx = c => xDaColuna(c, 'junta'), cy = r => yDaLinha(r, 'junta');
+  const vaga = i => xDaColuna(3, 'junta') + i*PASSO_X;
+  const cx8 = yDaLinha(8, 'junta'), cx9 = yDaLinha(9, 'junta');
+  const caixa = (x1, y1, x2, y2) => ({
+    x: x1 - CARTA_W/2 - 9, y: y1 - CARTA_H/2 - 9,
+    w: (x2 - x1) + CARTA_W + 18, h: (y2 - y1) + CARTA_H + 18
+  });
+  if (chave === 'externa')
+    return [caixa(cx(3), cy(4), cx(12), cy(7)),
+            caixa(vaga(0), cx8, vaga(0), cx9)];
+  if (chave === 'representativos')
+    return [caixa(cx(1), cy(1), cx(2), cy(7)),
+            caixa(cx(13), cy(1), cx(18), cy(7))];
+  return [caixa(vaga(1), cx8, vaga(14), cx9)];
+}
+let blocoRealcado = null;
+
+function mostraBloco7(mesa, chave){
+  if (seriesAbertas.size < 2) return;   /* só com a tabela toda aberta */
+  if (blocoRealcado === chave){ escondeCerca(mesa); return; }
+  escondeCerca(mesa);
+  const d = BLOCOS7[chave];
+  cercasDoBloco(chave).forEach(r => {
+    const cerca = document.createElement('div');
+    cerca.className = 'cerca';
+    cerca.style.setProperty('--cc', d.cor);
+    cerca.style.left   = r.x.toFixed(0) + 'px';
+    cerca.style.top    = r.y.toFixed(0) + 'px';
+    cerca.style.width  = r.w.toFixed(0) + 'px';
+    cerca.style.height = r.h.toFixed(0) + 'px';
+    mesa.appendChild(cerca);
+    revela(cerca, 'on');
+  });
+  const rot = document.createElement('div');
+  rot.className = 'rot-cerca';
+  rot.style.setProperty('--cc', d.cor);
+  rot.textContent = d.nome;
+  rot.style.left = d.rot.x + 'px';
+  rot.style.top  = d.rot.y + 'px';
+  mesa.appendChild(rot);
+  revela(rot, 'on');
+  blocoRealcado = chave;
 }
 function escondeCerca(mesa){
-  mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => e.classList.remove('on'));
+  blocoRealcado = null;
+  mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => {
+    e.classList.remove('on');
+    setTimeout(() => e.remove(), 420);
+  });
 }
 
 /* o estado das séries quando a tabela chega a um slide, ou quando é
@@ -4943,9 +4997,10 @@ function largaMesa(ev){
       if (bur) fechaSerie(m, bur.dataset.serie, true);
       else if (c && m.classList.contains('series')){
         const z = +c.dataset.z, chave = serieDe(z);
-        if (chave && seriesAbertas.has(chave))    mostraCerca(m);
-        else if (chave && PILHAS[z])              abreSerie(m, chave);
-        else                                      escondeCerca(m);
+        /* a carta que ainda está na pilha manda a série sair; as outras,
+           com a tabela toda aberta, cercam o bloco a que pertencem */
+        if (chave && !seriesAbertas.has(chave) && PILHAS[z]) abreSerie(m, chave);
+        else mostraBloco7(m, blocoDaCarta7(c));
       }
       else if (!c) passoAdiante();
       toqueMesa = null;
