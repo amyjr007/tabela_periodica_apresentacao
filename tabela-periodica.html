@@ -915,7 +915,10 @@ body{
    elemento de cada vez: tocado, ele cresce, fica verde, e a
    distribuição dele se escreve em cima da tabela. */
 .botao-pauling{
-  position:absolute;right:26px;bottom:18px;z-index:12;
+  /* A cena inteira não pega o dedo; quem pega diz que pega. Faltava
+     esta linha, e o botão era um desenho: clicar nele não fazia nada,
+     ainda que o código dele estivesse certo. */
+  position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
   display:flex;align-items:center;justify-content:center;
   width:64px;height:64px;border-radius:50%;
   border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
@@ -928,8 +931,27 @@ body{
 .botao-pauling.aceso{background:var(--indigo);color:#fff}
 
 /* no modo Pauling a coluna não sobe: quem responde é a carta */
-.mesa.valencia.pauling .rot-a{opacity:.4}
+.mesa.valencia.pauling .rot-a{opacity:.55}
 .mesa.valencia .pc.aceso{z-index:22}
+
+/* O BREU DO MODO PAULING
+   Da altura das frases para baixo o palco escurece, e o elemento aceso
+   e a distribuição dele ficam sozinhos na luz. Só dali para baixo: o
+   título e a régua continuam onde sempre estiveram, na claridade, e
+   não precisam trocar de cor por causa de um modo. */
+.breu{
+  position:absolute;left:0;right:0;top:96px;bottom:0;z-index:0;
+  pointer-events:none;
+  /* a borda de cima não é um corte: o escuro entra em vinte pixels,
+     para o palco parecer que escureceu e não que ganhou uma tarja */
+  background:linear-gradient(180deg,
+    rgba(21,18,46,0) 0, rgba(21,18,46,.9) 20px, rgba(13,11,33,.97));
+  opacity:0;transition:opacity .5s ease;
+}
+.breu.on{opacity:1}
+/* no escuro, a letra da distribuição clareia */
+.mesa.pauling .dist-val{color:#EFECF9}
+.mesa.pauling .dist-val .lb{color:#AFA3EC}
 
 /* A DISTRIBUIÇÃO, EM CIMA DA TABELA
    O desenho é o do app de ligações químicas: os subníveis de cada
@@ -2104,7 +2126,19 @@ function estadoMesaPara(mesa, i){
   if (i !== 8) apagaValencia(mesa);
   mesa.classList.toggle('valencia', i === 8);
   marcaRepresentativos(mesa, i === 8);
-  if (i === 8){ poeLetrasA(mesa); poeBotaoPauling(cenaDe(slides[8]), slides[8]); }
+  if (i === 8){
+    const cena = cenaDe(slides[8]);
+    poeLetrasA(mesa);
+    poeBotaoPauling(cena, slides[8]);
+    /* O canto tem de dizer o que a tabela é agora. Ao trocar de slide a
+       mesa já mudou de dono, e quem apaga o modo não alcança mais o
+       breu nem o botão, que ficaram no slide de trás — é aqui, na
+       chegada, que os três voltam a concordar. */
+    mesa.classList.toggle('pauling', modoPauling);
+    poeBreu(cena).classList.toggle('on', modoPauling);
+    const b = cena.querySelector('.botao-pauling');
+    if (b) b.classList.toggle('aceso', modoPauling);
+  }
   if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
@@ -4292,7 +4326,19 @@ function acendeElemento(mesa, carta){
 }
 
 /* ---- o botão que troca de leitura ---- */
+function poeBreu(cena){
+  let breu = cena.querySelector('.breu');
+  if (!breu){
+    breu = document.createElement('div');
+    breu.className = 'breu';
+    /* antes da mesa no DOM: assim fica atrás das cartas, e não por
+       cima delas */
+    cena.insertBefore(breu, cena.firstChild);
+  }
+  return breu;
+}
 function poeBotaoPauling(cena, sl){
+  poeBreu(cena);
   if (cena.querySelector('.botao-pauling')) return;
   const b = document.createElement('button');
   b.className = 'botao-pauling';
@@ -4305,6 +4351,7 @@ function poeBotaoPauling(cena, sl){
     modoPauling = !modoPauling;
     m.classList.toggle('pauling', modoPauling);
     b.classList.toggle('aceso', modoPauling);
+    poeBreu(cena).classList.toggle('on', modoPauling);
     /* cada leitura recomeça limpa: o que a outra deixou sai de cena */
     baixaColuna(m);
     apagaElemento(m);
@@ -4318,6 +4365,13 @@ function apagaValencia(mesa){
   apagaElemento(mesa);
   modoPauling = false;
   mesa.classList.remove('pauling');
+  const cena = mesa.parentNode;
+  if (cena){
+    const breu = cena.querySelector('.breu');
+    if (breu) breu.classList.remove('on');
+    const b = cena.querySelector('.botao-pauling');
+    if (b) b.classList.remove('aceso');
+  }
   mesa.querySelectorAll('.rot-a, .rot-val, .dist-val').forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => c.classList.remove('repr', 'aceso'));
 }
