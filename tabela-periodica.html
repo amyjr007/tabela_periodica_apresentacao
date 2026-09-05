@@ -466,6 +466,27 @@ body{
 .ficha-sel span{font-family:var(--mono);font-size:22px;color:var(--tinta-dim);margin-bottom:6px}
 .ficha-sel b{font-size:72px;font-weight:600;color:var(--indigo);letter-spacing:-.02em}
 
+/* os nomes das duas coordenadas, ao lado do símbolo: eles chegam um a
+   um, quando se toca no número da linha e no da coluna */
+.rotulos{
+  position:absolute;z-index:7;transform:translateY(-50%);pointer-events:none;
+  display:flex;flex-direction:column;gap:10px;
+}
+.rotulos span{
+  opacity:0;transition:opacity .3s ease;white-space:nowrap;
+  font-family:var(--display);font-weight:500;font-size:26px;color:var(--tinta);
+}
+.rotulos span.on{opacity:1}
+.rotulos b{color:var(--ouro);font-weight:700}
+
+/* Os números só pegam o dedo depois que a frase os batizou — e com um
+   elemento escolhido. Antes disso não haveria o que nomear: é a frase
+   que ensina que linha se chama período e coluna se chama grupo. */
+.mesa.numerada.batizada.tem-realce .ln,
+.mesa.numerada.batizada.tem-realce .cn{pointer-events:auto;cursor:pointer}
+.mesa.numerada.batizada.tem-realce .ln:hover,
+.mesa.numerada.batizada.tem-realce .cn:hover{border-color:var(--ouro);color:var(--ouro)}
+
 /* a faixa que acende a linha (ou a coluna) inteira, número junto */
 .banda,.banda2{
   position:absolute;opacity:0;pointer-events:none;z-index:0;border-radius:10px;
@@ -607,6 +628,21 @@ body.montagem .cena .regra{pointer-events:auto}
 .q-board.on.levando{cursor:grabbing}
 #stage.escrevendo .q-board{pointer-events:none}   /* com a caneta armada, escreve-se nele */
 .q-board svg{width:100%;height:100%;display:block}
+
+/* ---------- a pista ----------
+   Um ponto discreto que pulsa enquanto houver algo para o próximo
+   clique soltar — a mesma ideia do app de ligações químicas, onde ele
+   fica grudado na palavra que ainda guarda alguma coisa. Aqui quem
+   solta o passo é o clique na tela, e não uma peça em especial, então
+   o ponto mora num canto. Ele só acende quando o passo pode mesmo
+   acontecer: o que está esperando a sua hora não o acende. */
+#pista{
+  position:absolute;left:26px;bottom:22px;z-index:12;
+  width:9px;height:9px;border-radius:50%;background:var(--indigo);
+  opacity:0;pointer-events:none;
+}
+#pista.on{animation:pistaPulsa 2.4s ease-in-out infinite}
+@keyframes pistaPulsa{0%,100%{opacity:.28}50%{opacity:.9}}
 
 /* carimbo de versão, discreto no canto */
 #ver{position:fixed;left:14px;bottom:11px;z-index:60;pointer-events:none;user-select:none;
@@ -855,6 +891,7 @@ body.montagem .slide.is-active .solto.pego{
     <div id="coord" aria-hidden="true"></div>
     <canvas id="tinta" width="1280" height="720" aria-hidden="true"></canvas>
     <canvas id="festa" width="1280" height="720" aria-hidden="true"></canvas>
+    <i id="pista" aria-hidden="true"></i>
   </div>
 </div>
 
@@ -1200,6 +1237,7 @@ function pinta(){
   repintaTinta();                     /* cada slide tem a sua tinta */
   marcaNota();
   sincronizaQuadro();
+  atualizaPista();
   if (!overview.hidden) montaMiniaturas();
 }
 
@@ -1399,7 +1437,29 @@ function passoAtras(){
   const r = ROTEIROS[atual];
   if (!r || !r.desfazer || !r.desfazer.length) return false;
   r.desfazer.pop()();
+  atualizaPista();
   return true;
+}
+
+/* O passo que o próximo clique vai soltar, se houver um pronto.
+   Um passo pode ter hora certa: enquanto ela não chega ele fica ali,
+   sem acontecer — e sem deixar o clique virar a página, porque no meio
+   de uma cena que ainda está correndo isso seria um acidente. */
+function passoPronto(){
+  const r = ROTEIROS[atual];
+  if (!r || r.i >= r.passos.length) return null;
+  const p = r.passos[r.i];
+  if (typeof p === 'function') return p;
+  return (p.so && !p.so()) ? null : p.faz;
+}
+function haPasso(){
+  const r = ROTEIROS[atual];
+  return !!(r && (r.espera || passoPronto()));
+}
+/* o ponto do canto acende quando o clique tem o que soltar */
+function atualizaPista(){
+  const p = document.getElementById('pista');
+  if (p) p.classList.toggle('on', haPasso());
 }
 
 function passoAdiante(){
@@ -1407,19 +1467,17 @@ function passoAdiante(){
   if (!r) return false;
   /* a cena está à espera de um toque numa peça: a seta faz por ele —
      é o caminho de quem conduz a aula pelo controle remoto */
-  if (r.espera){ const faz = r.espera; r.espera = null; faz(); return true; }
+  if (r.espera){
+    const faz = r.espera; r.espera = null; faz();
+    atualizaPista();
+    return true;
+  }
   if (r.i >= r.passos.length) return false;
-
-  /* Um passo pode ter hora certa. Enquanto ela não chega, o clique não
-     faz nada — e, sobretudo, não passa de slide: no meio de uma cena
-     que ainda está correndo, virar a página seria um acidente. */
-  const p = r.passos[r.i];
-  const faz = typeof p === 'function' ? p : p.faz;
-  const so  = typeof p === 'function' ? null : p.so;
-  if (so && !so()) return true;
-
+  const faz = passoPronto();
+  if (!faz){ atualizaPista(); return true; }   /* ainda não é a hora dele */
   r.i++;
   faz();
+  atualizaPista();
   return true;
 }
 
@@ -1592,6 +1650,8 @@ function reiniciaCena2(){
   cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
                      '<div class="banda"></div><div class="banda2"></div>' +
                      '<div class="ficha-sel"><span></span><b></b></div>' +
+                     '<div class="rotulos"><span class="per"></span>' +
+                       '<span class="grp"></span></div>' +
                      '<div class="aviso"></div>' +
                    '</div><div class="clarao"></div>' +
                    '<button id="botao-todos" type="button">todos</button>' +
@@ -1784,6 +1844,7 @@ function reiniciaCena2(){
       c.onclick = null;
     });
     r.espera = null;
+    atualizaPista();
   }
 
   /* o convite: vermelho lento, e a carta passa a pegar o dedo */
@@ -1795,6 +1856,7 @@ function reiniciaCena2(){
     c.classList.add('chama');
     r.espera = () => leva(z);
     c.onclick = (ev) => { ev.stopPropagation(); leva(z); };
+    atualizaPista();          /* há um convite aceso: o clique tem o que fazer */
   }
   /* o salto até o lugar de verdade */
   function leva(z){
@@ -1943,6 +2005,7 @@ function reiniciaCena2(){
     /* pronta a tabela, o botão do canto entra junto com o brilho verde */
     mesa.classList.add('pronta');
     cena.classList.add('tem-botao');
+    atualizaPista();          /* a regra 2 passa a poder entrar */
   }
 }
 
@@ -1996,11 +2059,19 @@ function montaRoteiro3(){
     cena.appendChild(t);
     aplicaLayout(2);                     /* o lugar dela está no layout */
     requestAnimationFrame(() => t.classList.add('posta'));
+    /* dito o nome das coordenadas, os números passam a poder ser tocados */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('batizada');
 
     r.desfazer.push(() => {
       r.i = 1;
       t.classList.remove('posta');
       setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){
+        m.classList.remove('batizada');
+        limpaRotulos(m);
+      }
     });
   }});
 }
@@ -2641,6 +2712,7 @@ function escolheCarta(mesa, c){
   c.classList.add('escolhida');
   c.firstElementChild.style.setProperty('--sc', '1.42');
   c.style.zIndex = '20';
+  atualizaPista();            /* escolhido um elemento, a 2ª frase libera */
 }
 
 /* ---- e a faixa dele se acende inteira ----
@@ -2689,11 +2761,37 @@ function realceFaixa(mesa, c){
   mostraFicha(mesa, +c.dataset.z);
 }
 
+/* ---- os nomes das coordenadas ----
+   Tocado o número da linha, escreve-se o período ao lado do símbolo;
+   tocado o da coluna, o grupo. Os dois convivem: é o par que localiza
+   o elemento, e vê-los juntos é o ponto da aula. */
+function rotulaCoordenada(mesa, n){
+  const r = mesa.querySelector('.rotulos');
+  if (!r) return;
+  const linha = n.classList.contains('ln');
+  const alvo = r.querySelector(linha ? '.per' : '.grp');
+  alvo.innerHTML = linha ? '<b>'+n.textContent+'</b>º período'
+                         : 'Grupo <b>'+n.textContent+'</b>';
+  alvo.classList.add('on');
+  poeRotulos(mesa);
+}
+function poeRotulos(mesa){
+  const r = mesa.querySelector('.rotulos');
+  if (!r) return;
+  r.style.left = (xDaColuna(6, modoMesa) + 62).toFixed(0) + 'px';
+  r.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+}
+function limpaRotulos(mesa){
+  mesa.querySelectorAll('.rotulos span').forEach(s => s.classList.remove('on'));
+}
+
 /* A ficha do escolhido, uma linha e meia acima do cromo — no vazio que
    a tabela tem ali. Ela troca em fade: a antiga sai, a nova entra. */
 function mostraFicha(mesa, z){
   const f = mesa.querySelector('.ficha-sel');
   if (!f || !mesa.classList.contains('numerada')) return;
+  /* outro elemento, outras coordenadas: os nomes antigos saem */
+  limpaRotulos(mesa);
   const troca = () => {
     f.querySelector('span').textContent = z;
     f.querySelector('b').textContent = SIMBOLOS[z-1];
@@ -2712,6 +2810,7 @@ function limpaRealce(mesa){
   mesa.querySelectorAll('.banda, .banda2').forEach(b => b.classList.remove('on'));
   const f = mesa.querySelector('.ficha-sel');
   if (f) f.classList.remove('on');
+  limpaRotulos(mesa);
 }
 
 function mesaPronta(){
@@ -2780,6 +2879,11 @@ function largaMesa(ev){
     /* Quem abre e fecha a tabela agora é o botão do canto. Aqui sobra
        o que sempre foi do dedo: o elemento que se acende, e o vazio,
        que adianta a aula. */
+    /* o toque num número nomeia a coordenada — e não adianta a aula */
+    const numero = toqueMesa.alvo.closest &&
+                   toqueMesa.alvo.closest('.mesa.batizada.tem-realce .ln, .mesa.batizada.tem-realce .cn');
+    if (numero){ rotulaCoordenada(m, numero); toqueMesa = null; return; }
+
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
       escolheCarta(m, carta);
