@@ -87,6 +87,9 @@ body{
   box-shadow:0 26px 70px rgba(32,28,66,.28);
   overflow:hidden;
   touch-action:none;
+  /* o toque demorado aqui dentro é gesto de aula, não pedido de menu:
+     sem seleção de texto e sem o balão de atalhos do sistema */
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
   /* a profundidade em que o cubo da capa gira */
   perspective:1500px;perspective-origin:50% 50%;
 }
@@ -3499,11 +3502,11 @@ stage.addEventListener('wheel', (ev) => {
    se abra sozinha com um gesto: durante a aula, um toque demorado
    em cima do título não pode virar um arrasto. */
 
-/* no tablet, o dedo parado chama o menu do navegador, e o menu
-   engoliria o arrasto justamente quando ele está começando */
-stage.addEventListener('contextmenu', (ev) => {
-  if (naMontagem()) ev.preventDefault();
-});
+/* No tablet, o dedo parado chama o menu do navegador — e o dedo parado
+   é gesto nosso: é assim que se arranca um bloco no slide 4. O menu
+   abria bem em cima do bloco, no segundo em que ele ia sair. Dentro do
+   palco não há o que copiar nem pesquisar: ele não faz falta. */
+stage.addEventListener('contextmenu', (ev) => ev.preventDefault());
 
 document.addEventListener('pointermove', (ev) => {
   gestos.forEach((g, el) => {
