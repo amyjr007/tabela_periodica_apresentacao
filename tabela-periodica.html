@@ -273,7 +273,10 @@ body{
   box-shadow:0 0 0 3px rgba(226,162,43,.24);
 }
 
-.subtitle{font-size:26px;font-weight:300;color:var(--ouro);letter-spacing:.005em;min-height:34px}
+/* o subtítulo é uma frase curta e fica numa linha só: quebrado em duas
+   ele briga com a régua e com o título que estão logo acima */
+.subtitle{font-size:26px;font-weight:300;color:var(--ouro);letter-spacing:.005em;
+  min-height:34px;white-space:nowrap}
 
 /* área de conteúdo — palco livre para o que formos montando */
 .body-area{flex:1;position:relative;margin-top:24px;min-height:0}
@@ -433,12 +436,17 @@ body{
   from{opacity:0;transform:translate(-50%,calc(-50% - 24px)) scale(.5)}
   to  {opacity:1;transform:translate(-50%,-50%) scale(1)}
 }
+/* Uma vez mostrados, os números ficam: a tabela pode voltar a se juntar
+   e eles continuam ali, agora como referência. Por isso .viu-linhas e
+   .viu-colunas, que entram na primeira abertura e não saem mais. */
 .mesa.modo-linhas .ln,
+.mesa.viu-linhas .ln,
 .mesa.numerada .ln{
   display:flex;
   animation:numLinha .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
 }
 .mesa.modo-colunas .cn,
+.mesa.viu-colunas .cn,
 .mesa.numerada .cn{
   display:flex;
   animation:numColuna .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
@@ -561,6 +569,10 @@ body{
 }
 .regra.posta .regra-in{opacity:1;transform:none;filter:blur(0)}
 .regra b{color:var(--ouro);font-weight:600}
+/* a frase que não é critério não leva o traço: ela explica, não numera */
+.regra.sem-traco .regra-in{border-left:0;padding-left:0}
+/* e as palavras que estão sendo batizadas ganham a cor do destaque */
+.regra em{font-style:normal;font-weight:600;color:var(--ouro)}
 /* a cena inteira não pega o dedo, mas a regra é peça de montagem:
    sem isto, o toque atravessaria por cima dela e nada se moveria */
 body.montagem .cena .regra{pointer-events:auto}
@@ -1978,6 +1990,39 @@ function montaRoteiro3(){
       setTimeout(() => t.remove(), 950);
     });
   });
+
+  /* ---- e o batismo das duas coordenadas ----
+     Só depois que um elemento tiver sido escolhido: a frase nomeia o
+     que a cruz acabou de mostrar, e antes disso não teria a que se
+     referir. Esta não é um critério numerado, então vem sem o traço. */
+  r.passos.push({ so: () => !!sl.querySelector('.pc.escolhida'), faz: () => {
+    const cena = sl.querySelector('.cena');
+    if (!cena) return;
+    const t = document.createElement('div');
+    t.className = 'regra sem-traco';
+    t.dataset.mont = 'regra3b';
+    t.innerHTML = '<span class="regra-in">Linhas chamam séries ou <em>Períodos</em>' +
+                  ' e colunas chamam Grupos ou <em>Famílias</em></span>';
+    cena.appendChild(t);
+    soltaSlide(sl);
+    const m = MEDIDAS.get(t);
+    if (m){
+      m.esc = 1.11;
+      m.cy  = 168;                       /* logo abaixo da primeira */
+      /* Sem o traço, ela precisa começar 22px adiante — a largura do
+         traço mais o respiro dele. Assim as duas LETRAS se alinham, e
+         não a letra de uma com o traço da outra. */
+      m.cx  = 129 + (m.w*m.esc)/2;
+      aplicaEl(t);
+    }
+    requestAnimationFrame(() => t.classList.add('posta'));
+
+    r.desfazer.push(() => {
+      r.i = 1;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+    });
+  }});
 }
 
 /* os confetes: papel picado com gravidade, na paleta das famílias */
@@ -2513,6 +2558,9 @@ function poeModo(mesa, modo){
   mesa.classList.toggle('aberta', modo !== 'junta');
   mesa.classList.toggle('modo-linhas',  modo === 'linhas');
   mesa.classList.toggle('modo-colunas', modo === 'colunas');
+  /* o que já foi mostrado uma vez continua na tela daí em diante */
+  if (modo === 'linhas')  mesa.classList.add('viu-linhas');
+  if (modo === 'colunas') mesa.classList.add('viu-colunas');
 
   mesa.querySelectorAll('.pc').forEach(c => {
     const a = alvoDe(+c.dataset.z, modo);
