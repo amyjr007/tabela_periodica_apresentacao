@@ -64,6 +64,11 @@
   --bloco-a: #D9A21B;
   --bloco-b: #C0332B;
 
+  /* ---- o que a natureza fez, e o que fizemos nós ----
+     O verde é o dos naturais; o âmbar aceso, das duas exceções que
+     moram no meio deles. */
+  --natural: #1F9D55;
+
   /* tempos e curvas das transições */
   --t-capa: .82s;
   --e-capa: cubic-bezier(.42,.02,.24,1);
@@ -676,6 +681,46 @@ body{
 }
 .buraco.on{opacity:1}
 .buraco:hover{background:color-mix(in srgb,var(--indigo) 16%,transparent)}
+
+/* ---------- a natureza dos elementos, no slide 8 ----------
+   A carta acende ao ser alcançada pela varredura: um salto curto, o
+   bastante para o olho seguir a onda subindo pelos números. É a
+   propriedade scale, que se multiplica com o transform do miolo em vez
+   de apagá-lo. */
+@keyframes acendeNat{
+  0%  {scale:1}
+  38% {scale:1.3}
+  100%{scale:1}
+}
+.pc.acende-nat .pc-in{animation:acendeNat .44s ease-out}
+
+/* Dos transurânicos não fica cor nenhuma: passa um brilho âmbar em
+   volta da carta e vai-se embora. O que eles são fica dito no nome,
+   não na tabela — nenhum deles se acha na natureza. */
+@keyframes brilhaArt{
+  0%  {box-shadow:0 2px 6px rgba(80,40,0,.22)}
+  30% {box-shadow:0 0 0 3px var(--ouro-luz), 0 0 22px 4px rgba(226,162,43,.75)}
+  100%{box-shadow:0 2px 6px rgba(80,40,0,.22)}
+}
+.pc.brilha-art{z-index:24}
+.pc.brilha-art .pc-in{animation:brilhaArt .9s ease-out}
+
+/* os dois nomes, no vazio acima dos metais de transição */
+.rot-nat{
+  position:absolute;z-index:12;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:29px;letter-spacing:-.01em;
+  color:var(--cn);opacity:0;scale:.86;
+  transition:opacity .45s ease, scale .55s cubic-bezier(.2,1.3,.4,1);
+}
+.rot-nat.on{opacity:1;scale:1}
+/* o parêntese vem menor: é o nome de escola, e o de todo o dia é o
+   que está antes dele */
+.rot-nat i{font-style:normal;font-weight:600;font-size:.72em;opacity:.82}
+
+/* no slide da natureza só o urânio e os transurânicos pegam o dedo */
+.mesa.natureza .pc{cursor:default}
+.mesa.natureza .pc.chamando{cursor:pointer}
 
 /* O CONVITE DAS DUAS PILHAS
    Dita a frase, as duas cartas de intervalo passam a piscar: são elas
@@ -1538,9 +1583,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2 a 7 sem sair de cena: entre eles a
+  /* a tabela atravessa os slides 2 a 8 sem sair de cena: entre eles a
      passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 6 && i >= 1 && i <= 6;
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 7 && i >= 1 && i <= 7;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1698,7 +1743,9 @@ function corDoBloco(col){
    tabuleiro liso de uma cor só, e os dois blocos. Uma função só decide
    o fundo, para o giro e a troca sem giro nunca discordarem. */
 function faceDe(i){
-  if (i === 2 || i === 4) return 'face2';   /* coordenadas e famílias */
+  /* o tabuleiro liso serve a três cenas: as coordenadas, as famílias e
+     a natureza dos elementos — nas três a cor tem outro trabalho */
+  if (i === 2 || i === 4 || i === 7) return 'face2';
   if (i === 5 || i === 6) return 'ab';      /* os grupos A e B, e as séries */
   return 'familia';
 }
@@ -1711,6 +1758,11 @@ function corExtraDe(c, i){
   if (i === 6){
     const chave = serieDe(+c.dataset.z);
     return (chave && seriesAbertas.has(chave)) ? corDaSerie(+c.dataset.z) : null;
+  }
+  if (i === 7){
+    const z = +c.dataset.z;
+    if (naturaisVarridos && z <= Z_NATURAL) return corNatural(z);
+    if (naturaisDitos && z === Z_NATURAL)   return 'var(--natural)';
   }
   return null;
 }
@@ -1772,9 +1824,14 @@ function estadoMesaPara(mesa, i){
   if (i === 5) poeGrupos(mesa);
   /* o slide das séries: a tabela sobe uma casa para caber a fila que
      vai nascer embaixo dela, e fora dali as séries voltam para a pilha */
-  mesa.classList.toggle('subida', i === 6);
-  mesa.classList.toggle('series', i === 6 && !!slides[6].querySelector('.regra7b, [data-mont="regra7b"]'));
-  arrumaSeries(mesa, i === 6);
+  mesa.classList.toggle('subida', i === 6 || i === 7);
+  mesa.classList.toggle('series', i === 6 && !!slides[6].querySelector('[data-mont="regra7b"]'));
+  arrumaSeries(mesa, i === 6, i === 7);
+  /* e no slide da natureza a tabela não responde ao dedo a não ser
+     no urânio, que é quem dá a partida */
+  mesa.classList.toggle('natureza', i === 7);
+  apagaNaturais(mesa);
+  if (i === 7) poeNaturais(mesa);
   if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
@@ -1791,8 +1848,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 6) return mesa;
-  /* os slides 3 a 7 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 7) return mesa;
+  /* os slides 3 a 8 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -1892,9 +1949,9 @@ function montaMiniaturas(){
     copia.classList.add('is-active');
     /* A tabela é uma só e mora no slide em que a aula está. Para a
        miniatura mostrar o que CADA slide tem, ela é copiada para os
-       seis que a usam, cada cópia na cara daquele slide. */
+       sete que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 6){
+    if (mesaViva && i >= 1 && i <= 7){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -2209,7 +2266,7 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 6; i++){
+  for (let i = 1; i <= 7; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
@@ -2218,6 +2275,7 @@ function reiniciaCena2(){
   if (typeof montaRoteiro5 === 'function') montaRoteiro5();
   if (typeof montaRoteiro6 === 'function') montaRoteiro6();
   if (typeof montaRoteiro7 === 'function') montaRoteiro7();
+  if (typeof montaRoteiro8 === 'function') montaRoteiro8();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   gruposDitos.clear();               /* e sem nome de grupo dito */
   blocosNomeados = false;
@@ -2225,6 +2283,7 @@ function reiniciaCena2(){
   seriesAbertas.clear();             /* e com as séries de volta na casa delas */
   modoFull = false;
   mesaAntesDoFull = null;
+  naturaisDitos = naturaisVarridos = false;
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -3763,12 +3822,16 @@ function escondeCerca(mesa){
 
 /* o estado das séries quando a tabela chega a um slide, ou quando é
    copiada para uma miniatura: fora do slide 7 elas moram na pilha */
-function arrumaSeries(mesa, comoEstao){
+function arrumaSeries(mesa, comoEstao, todasFora){
   /* a tabela sai do slide sempre na forma curta: os outros slides
      falam dela como ela é no dia a dia */
   if (modoFull && !comoEstao) poeFull(mesa, false, false);
   Object.keys(SERIES).forEach(chave => {
-    const s = SERIES[chave], aberta = comoEstao && seriesAbertas.has(chave);
+    const s = SERIES[chave];
+    /* No slide da natureza as duas séries estão sempre à vista: elas
+       fazem parte da tabela que a cena vai varrer, e ali não há o que
+       abrir nem fechar. */
+    const aberta = todasFora || (comoEstao && seriesAbertas.has(chave));
     for (let z = s.de; z <= s.ate; z++){
       const c = mesa.querySelector('.pc[data-z="'+z+'"]');
       if (!c) continue;
@@ -3787,21 +3850,182 @@ function arrumaSeries(mesa, comoEstao){
         poeNaPilha(c, z);
       }
     }
-    if (aberta){
+    if (aberta && !todasFora){
       /* a série que já estava fora volta ao slide como estava: com o
          buraco por onde se recolhe e com o nome dito */
       poeBuraco(mesa, chave);
       nomeiaSerie(mesa, chave);
-    } else {
+    } else if (!aberta){
       mesa.querySelectorAll('.buraco[data-serie="'+chave+'"], ' +
                             '.rot-serie[data-serie="'+chave+'"]').forEach(e => e.remove());
     }
   });
+  if (todasFora) mesa.querySelectorAll('.buraco, .rot-serie').forEach(e => e.remove());
   if (!comoEstao) mesa.querySelectorAll('.cerca, .rot-cerca').forEach(e => e.remove());
   atualizaBotaoFull(mesa);
   /* na forma longa as cartas ficam onde a forma longa as põe */
   if (comoEstao && modoFull) poeFull(mesa, true, false);
   atualizaPisca(mesa);
+}
+
+/* ============================================================
+   SLIDE 8 · A NATUREZA DOS ELEMENTOS
+   A mesma tabela do slide anterior, com as duas séries à vista
+   embaixo, mas de volta ao tabuleiro liso: aqui a cor vai contar outra
+   coisa, e não pode chegar já falando.
+
+   Dita a frase, o urânio fica verde — é ele o fim da conta, e é nele
+   que se toca. Tocado, a cor sobe pelos números, um a um, do 1 ao 92.
+   O tecnécio e o promécio não ficam verdes: são as duas casas vazias
+   que a natureza deixou no meio dos naturais, e ficam em âmbar.
+
+   Do 93 em diante não fica cor nenhuma: passa só um brilho, porque
+   nenhum deles se acha na natureza — o que eles são fica dito no nome.
+   ============================================================ */
+const Z_NATURAL = 92;
+/* O tecnécio (43) e o promécio (61) são as duas exceções abaixo do
+   urânio: nenhum dos dois tem isótopo estável, e na prática só
+   existem feitos em laboratório. */
+const ARTIFICIAIS_ATE_92 = new Set([43, 61]);
+const corNatural = z => ARTIFICIAIS_ATE_92.has(z) ? 'var(--ouro-luz)' : 'var(--natural)';
+
+let naturaisDitos = false;      /* a frase entrou: o urânio está verde */
+let naturaisVarridos = false;   /* a onda verde já subiu até ele */
+let artificiaisVarridos = false;
+
+const NOMES_NATUREZA = {
+  naturais:    {texto:'Naturais <i>(cisurânicos)</i>',      cor:'var(--natural)',  y:306},
+  artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)', y:356}
+};
+function diNatureza(mesa, chave){
+  if (mesa.querySelector('.rot-nat[data-nat="'+chave+'"]')) return;
+  const d = NOMES_NATUREZA[chave];
+  const r = document.createElement('div');
+  r.className = 'rot-nat';
+  r.dataset.nat = chave;
+  r.innerHTML = d.texto;
+  r.style.setProperty('--cn', d.cor);
+  r.style.left = '518px';
+  r.style.top  = d.y + 'px';
+  mesa.appendChild(r);
+  revela(r, 'on');
+}
+
+/* quem pega o dedo nesta cena: o urânio, enquanto a onda não subiu, e
+   os transurânicos, enquanto o brilho não passou */
+function marcaChamando(mesa){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const z = +c.dataset.z;
+    const chama = naturaisDitos &&
+      ((z === Z_NATURAL && !naturaisVarridos) || (z > Z_NATURAL && !artificiaisVarridos));
+    c.classList.toggle('chamando', chama);
+    c.classList.toggle('pisca', naturaisDitos && z === Z_NATURAL && !naturaisVarridos);
+  });
+}
+function pintaNatural(mesa, z){
+  const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+  if (!c) return;
+  c.classList.remove('face2');
+  c.firstElementChild.style.background = fundoDe(corNatural(z));
+}
+/* ---- a onda verde sobe pelos números ---- */
+function varreNaturais(mesa){
+  if (naturaisVarridos) return;
+  naturaisVarridos = true;
+  marcaChamando(mesa);
+  for (let z = 1; z <= Z_NATURAL; z++){
+    setTimeout(() => {
+      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+      if (!c) return;
+      pintaNatural(mesa, z);
+      c.classList.add('acende-nat');
+      setTimeout(() => c.classList.remove('acende-nat'), 500);
+      if (z !== Z_NATURAL) return;
+      /* o urânio já estava verde: a ele cabe só crescer e dizer o nome */
+      c.firstElementChild.style.setProperty('--sc', '1.5');
+      c.style.zIndex = '26';
+      diNatureza(mesa, 'naturais');
+    }, (z - 1) * 38);
+  }
+}
+/* ---- e o brilho âmbar passa pelos transurânicos ---- */
+function varreArtificiais(mesa){
+  if (artificiaisVarridos) return;
+  artificiaisVarridos = true;
+  marcaChamando(mesa);
+  for (let z = Z_NATURAL + 1; z <= 118; z++){
+    setTimeout(() => {
+      const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+      if (!c) return;
+      c.classList.add('brilha-art');
+      setTimeout(() => { c.classList.remove('brilha-art'); c.style.zIndex = ''; }, 950);
+      if (z === 118) setTimeout(() => diNatureza(mesa, 'artificiais'), 300);
+    }, (z - Z_NATURAL - 1) * 55);
+  }
+}
+/* Fora do slide 8 a tabela não leva nada desta cena consigo — mas o
+   que ela contou fica contado: as cores voltam por corExtraDe e os
+   nomes por poeNaturais, como as famílias do slide 5. Só o clique de
+   voltar é que desfaz de verdade. */
+function apagaNaturais(mesa){
+  mesa.querySelectorAll('.rot-nat').forEach(e => e.remove());
+  mesa.querySelectorAll('.pc').forEach(c => {
+    c.classList.remove('acende-nat', 'brilha-art', 'chamando', 'pisca');
+    c.firstElementChild.style.removeProperty('--sc');
+    c.style.removeProperty('z-index');
+  });
+}
+function poeNaturais(mesa){
+  marcaChamando(mesa);
+  if (naturaisVarridos){
+    const u = mesa.querySelector('.pc[data-z="' + Z_NATURAL + '"]');
+    if (u){
+      u.firstElementChild.style.setProperty('--sc', '1.5');
+      u.style.zIndex = '26';
+    }
+    diNatureza(mesa, 'naturais');
+  }
+  if (artificiaisVarridos) diNatureza(mesa, 'artificiais');
+}
+/* e o clique de voltar zera a conta */
+function zeraNaturais(mesa){
+  naturaisDitos = naturaisVarridos = artificiaisVarridos = false;
+  apagaNaturais(mesa);
+}
+
+function montaRoteiro8(){
+  const sl = slides[7];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[7] = r;
+
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra8';
+    t.innerHTML = '<span class="regra-in">Do elemento 1 ao 92 todos são ' +
+      '<em style="color:var(--natural)">naturais</em>*</span>';
+    cena.appendChild(t);
+    aplicaLayout(7);
+    revela(t, 'posta');
+
+    /* dita a frase, o urânio se acende: é o fim da conta, e é nele que
+       se toca para a conta acontecer */
+    const mesa = sl.querySelector('.mesa');
+    naturaisDitos = true;
+    if (mesa){
+      pintaExtras(mesa, 7);
+      marcaChamando(mesa);
+    }
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){ zeraNaturais(m); aplicaFace(m, 'face2'); }
+    });
+  });
 }
 
 function montaRoteiro7(){
@@ -4709,6 +4933,14 @@ const LAYOUTS = {
     titulo:  {esq:281, y: 30, esc:0.76},
     regra7:  {esq:104, y: 82, esc:1.06},
     regra7b: {esq:104, y:123, esc:1.06}
+  },
+  /* slide 8 · A Natureza dos Elementos — a mesma tira. Também sem
+     subtítulo no esqueleto. */
+  7: {
+    numero: {x:259,  y: 34, esc:1.00},
+    regua:  {x:120,  y: 32, esc:1.00},
+    titulo: {esq:281, y: 30, esc:0.76},
+    regra8: {esq:104, y: 82, esc:1.06}
   }
 };
 
@@ -5160,6 +5392,19 @@ function largaMesa(ev){
       return;
     }
 
+    /* No slide da natureza só duas coisas pegam o dedo: o urânio, que
+       dá a partida na conta, e qualquer transurânico, que faz passar o
+       brilho pelos vinte e seis. O resto da tabela é para se olhar. */
+    if (atual === 7){
+      const c = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
+      const z = c ? +c.dataset.z : 0;
+      if (naturaisDitos && z === Z_NATURAL)      varreNaturais(m);
+      else if (naturaisDitos && z > Z_NATURAL)   varreArtificiais(m);
+      else if (!c)                               passoAdiante();
+      toqueMesa = null;
+      return;
+    }
+
     /* No slide das séries: o buraco as chama de volta, o intervalo as
        manda sair, e uma carta de série já fora pede a cerca. */
     if (atual === 6){
@@ -5537,6 +5782,7 @@ montaRoteiro4();
 montaRoteiro5();
 montaRoteiro6();
 montaRoteiro7();
+montaRoteiro8();
 pinta();
 seguraTela();
 
