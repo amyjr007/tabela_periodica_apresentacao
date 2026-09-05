@@ -943,7 +943,11 @@ body.montagem .cena .rotulos{pointer-events:auto}
   width:9px;height:9px;border-radius:50%;background:var(--indigo);
   opacity:0;pointer-events:none;
 }
-#pista.on{animation:pistaPulsa 2.4s ease-in-out infinite}
+/* Aceso, o ponto tem opacidade própria: a pulsação é enfeite, e não o
+   que o faz existir. Estava só na animação, e bastava o sistema estar
+   com movimento reduzido — ou qualquer coisa suspender animações — para
+   ele nunca aparecer. */
+#pista.on{opacity:.9;animation:pistaPulsa 2.4s ease-in-out infinite}
 @keyframes pistaPulsa{0%,100%{opacity:.28}50%{opacity:.9}}
 
 /* carimbo de versão, discreto no canto */
@@ -3126,6 +3130,7 @@ function parteMesa(mesa){
   poeBlocos(mesa);
   const cena = mesa.parentNode;
   if (cena) cena.classList.add('tem-refaz');
+  atualizaPista();       /* abrir a tabela adia a frase que espera por ela */
 }
 /* Juntar devolve as cartas ao lugar e o tamanho ao normal — mas os
    nomes ficam. Eles são o que a aula já disse sobre a tabela, e o
@@ -3139,6 +3144,9 @@ function juntaMesa(mesa){
   poeBlocos(mesa);                 /* volta tudo a zero, com transição */
   const cena = mesa.parentNode;
   if (cena) cena.classList.remove('tem-refaz');
+  /* juntada a tabela, chegou a hora da frase que faltava: o ponto do
+     canto acende para dizer que o clique tem o que soltar */
+  atualizaPista();
 }
 /* sem encenação, para a troca de slide: a tabela sai daqui sempre
    inteira, porque os outros slides falam de uma tabela só */
@@ -3322,6 +3330,31 @@ function montaRoteiro6(){
       }
     });
   });
+
+  /* ---- e o nome das letras, depois de a tabela se juntar ----
+     Esta frase só chega quando a tabela já foi aberta e fechada outra
+     vez: ela fala dos dois blocos como quem já os viu separados, e
+     dita antes disso não teria a que se referir. Enquanto a hora não
+     chega, o clique fica parado aqui — como o segundo critério do
+     slide 2, que também espera a cena que o justifica. */
+  r.passos.push({ so: () => blocosNomeados && !mesaPartida, faz: () => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra sem-traco';
+    t.dataset.mont = 'regra6b';
+    t.innerHTML = '<span class="regra-in">Os grupos podem ser renomeados usando ' +
+      '<em style="color:var(--bloco-a)">A</em> ou ' +
+      '<em style="color:var(--bloco-b)">B</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(5);
+    revela(t, 'posta');
+
+    r.desfazer.push(() => {
+      r.i = 1;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+    });
+  }});
 }
 
 /* ============================================================
@@ -4419,7 +4452,8 @@ const LAYOUTS = {
     regua:     {x:120,  y: 32, esc:1.00},
     titulo:    {esq:281, y: 30, esc:0.76},
     subtitulo: {esq:744, y: 31, esc:1.08},
-    regra6:    {esq:104, y: 82, esc:1.00}
+    regra6:    {esq:104, y: 82, esc:1.00},
+    regra6b:   {esq:104, y:123, esc:1.00}
   },
   /* slide 7 · Os Lantanídeos e os Actinídeos — a mesma tira. Este slide
      não tem subtítulo no esqueleto, e por isso ele não aparece aqui. */
