@@ -3435,11 +3435,18 @@ const SERIES = {
 const serieDe = z => (z >= 57 && z <= 71) ? 'la' : ((z >= 89 && z <= 103) ? 'ac' : null);
 const seriesAbertas = new Set();
 
-/* a fila que a série forma, começando debaixo do grupo 3 */
+/* A fila que a série forma, começando debaixo do grupo 3.
+
+   Ela não fica colada na tabela: desce três quartos de linha, e é esse
+   vão que diz que aquilo ali embaixo não é a continuação das sete
+   linhas — é uma coisa à parte, que foi tirada de dentro. */
+const DESCE_SERIE = 0.75 * PASSO_Y;
+const ySerie = linha => yDaLinha(linha, 'junta') + DESCE_SERIE;
+
 function vagaDaSerie(z){
   const s = SERIES[serieDe(z)];
   return { x: xDaColuna(3, 'junta') + (z - s.de)*PASSO_X,
-           y: yDaLinha(s.linha, 'junta') };
+           y: ySerie(s.linha) };
 }
 /* a cor de cada carta da série: o primeiro é transição externa */
 function corDaSerie(z){
@@ -3502,7 +3509,7 @@ function nomeiaSerie(mesa, chave){
   r.textContent = s.nome;
   r.style.setProperty('--cs', s.cor);
   r.style.left = '116px';
-  r.style.top  = yDaLinha(s.linha, 'junta').toFixed(0) + 'px';
+  r.style.top  = ySerie(s.linha).toFixed(0) + 'px';
   mesa.appendChild(r);
   revela(r, 'on');
 }
@@ -3684,10 +3691,11 @@ const BLOCOS7 = {
   interna: {
     /* As duas séries têm cada uma a sua cor: o nome que fala das duas
        não pode tomar nenhuma delas, e fica no índigo da estrutura.
-       Vai embaixo da cerca, centrado: à direita dela não cabe — o nome
-       é comprido e sairia pela borda —, e em cima está a tabela. */
+       Vai no vão que a descida das filas abriu, centrado por cima da
+       cerca: à direita dela não cabe — o nome é comprido e sairia pela
+       borda — e embaixo já não sobra palco. */
     nome: 'Elem. de Transição Interna', cor: 'var(--indigo)',
-    rot: {x:710, y:757}
+    rot: {x:710, y:645}
   }
 };
 function blocoDaCarta7(c){
@@ -3701,7 +3709,7 @@ function blocoDaCarta7(c){
 function cercasDoBloco(chave){
   const cx = c => xDaColuna(c, 'junta'), cy = r => yDaLinha(r, 'junta');
   const vaga = i => xDaColuna(3, 'junta') + i*PASSO_X;
-  const cx8 = yDaLinha(8, 'junta'), cx9 = yDaLinha(9, 'junta');
+  const cx8 = ySerie(8), cx9 = ySerie(9);
   const caixa = (x1, y1, x2, y2) => ({
     x: x1 - CARTA_W/2 - 9, y: y1 - CARTA_H/2 - 9,
     w: (x2 - x1) + CARTA_W + 18, h: (y2 - y1) + CARTA_H + 18
