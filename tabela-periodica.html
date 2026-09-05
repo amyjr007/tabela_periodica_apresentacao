@@ -278,37 +278,45 @@ body{
    deslocamento — um arco, calculado em voa(). */
 .pc{position:absolute;width:var(--cw,63px);height:var(--ch,52px);
   transform:translate(-50%,-50%)}
-/* Solto, o elemento é anônimo: papel branco e tinta cinzenta. A cor da
-   família é o que ele ganha ao achar o lugar dele — antes disso, um
-   monte colorido já contaria a história que a aula ainda vai contar. */
-.pc-in{
-  position:relative;width:100%;height:100%;border-radius:5px;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;
-  background:#fff;border:1.5px solid rgba(32,28,66,.3);
-  box-shadow:0 2px 7px rgba(32,28,66,.16);
-  font-family:var(--mono);
-  transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
-  transition:transform .34s ease-out, border-color .5s ease,
-             color .5s ease, box-shadow .5s ease;
-}
-.pc-in::before{content:'';position:absolute;inset:0;
-  background:var(--cor,var(--indigo));opacity:0;transition:opacity .5s ease}
-.pc i{position:absolute;top:2px;left:6px;font-style:normal;font-size:11px;color:var(--tinta-dim)}
-.pc b{position:relative;font-size:21px;font-weight:500;line-height:1;color:var(--tinta)}
+/* O TIJOLO — o desenho vem do app de tabela anterior:
+   canto vivo, fio branco em volta, um brilho no alto como o de vidro,
+   e a sombra caída embaixo. Dentro, três linhas: o número em cima à
+   esquerda, o símbolo grande no meio, a massa embaixo.
 
-/* encaixado: a cor da família chega junto com o lugar */
-.pc.encaixada .pc-in{border-color:var(--cor)}
-.pc.encaixada .pc-in::before{opacity:.13}
-.pc.encaixada b{color:var(--cor)}
+   Solto, o elemento é anônimo — um cinza morno que só escurece com o
+   número atômico. A cor da família é o que ele ganha ao achar o lugar
+   dele; antes disso, um monte colorido já contaria a história que a
+   aula ainda vai contar. */
+.pc-in{
+  position:relative;width:100%;height:100%;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:3px 6px 4px;border-radius:0;
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22);
+  transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
+  transition:transform .34s ease-out, background .55s ease, box-shadow .5s ease;
+}
+/* o vidro por cima: claro no alto, some antes da metade */
+.pc-in::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.13),transparent 40%)}
+.pc i,.pc b,.pc u{position:relative;z-index:3;font-style:normal;text-decoration:none}
+.pc i{font-family:var(--mono);font-size:11px;line-height:1;letter-spacing:.04em;
+  color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+.pc b{font-family:var(--display);font-weight:500;font-size:22px;line-height:1;
+  text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.pc u{font-family:var(--mono);font-size:10px;line-height:1;text-align:center;
+  color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.55)}
 
 /* a carta da frente de uma pilha — lantanídeos e actinídeos moram
    quinze numa casa só, e quem aparece diz o intervalo que guarda */
 .pc-in.pilha{
-  box-shadow:0 2px 7px rgba(32,28,66,.16),
-             3px 3px 0 -1px #fff, 3px 3px 0 0 rgba(32,28,66,.24),
-             6px 6px 0 -2px #fff, 6px 6px 0 -1px rgba(32,28,66,.17);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22),
+             3px 3px 0 -1px rgba(255,255,255,.5), 3px 3px 0 0 rgba(80,40,0,.28),
+             6px 6px 0 -2px rgba(255,255,255,.45), 6px 6px 0 -1px rgba(80,40,0,.2);
 }
-.pc b.faixa{font-size:15px;letter-spacing:-.03em}
+/* na carta da frente de uma pilha, o intervalo ocupa o lugar do símbolo */
+.pc-in.pilha{justify-content:center}
+.pc b.faixa{font-family:var(--mono);font-size:13px;letter-spacing:-.04em;white-space:nowrap}
 
 /* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
 @keyframes surge{
@@ -1076,6 +1084,17 @@ const SIMBOLOS = (
   'Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl ' +
   'Mc Lv Ts Og').split(' ');
 
+/* As massas, arredondadas — as mesmas do app anterior de tabela, para
+   os dois falarem os mesmos números diante da turma. */
+const MASSAS = [
+  1,4,7,9,11,12,14,16,19,20,23,24,27,28,31,32,35,40,39,40,
+  45,48,51,52,55,56,59,59,64,65,70,73,75,79,80,84,85,88,89,91,
+  93,96,98,101,103,106,108,112,115,119,122,128,127,131,133,137,139,140,141,144,
+  145,150,152,157,159,163,165,167,169,173,175,178,181,184,186,190,192,195,197,201,
+  204,207,209,209,210,222,223,226,227,232,231,238,237,244,243,247,247,251,252,257,
+  258,259,266,267,268,269,270,269,278,281,282,285,286,289,290,293,294,294
+];
+
 /* O tamanho das cartas é o que o professor achou na pinça: a tabela
    ocupando a largura da tela, que é o que a turma do fundo enxerga.
    Não é um zoom por cima — a carta tem mesmo este tamanho, e por isso
@@ -1158,13 +1177,28 @@ function foraDaTela(){
   return                 {x: Math.random()*1460 - 90, y: 810 + Math.random()*220};
 }
 
+/* o cinza de quem ainda não tem lugar: morno, e escurecendo devagar
+   com o número atômico — mesmo anônimo, o monte tem uma ordem escondida */
+function fundoCinza(z){
+  const t = (z-1)/117;
+  return 'linear-gradient(145deg,hsl(30,18%,'+(54 - t*22).toFixed(0)+'%),' +
+                          'hsl(30,18%,'+(44 - t*20).toFixed(0)+'%))';
+}
+/* e o da família, quando ele se encaixa: a mesma cor, clara no alto e
+   escura embaixo, que é o que dá volume ao tijolo */
+const fundoFamilia =
+  'linear-gradient(145deg,color-mix(in srgb,var(--cor) 84%,#fff),' +
+                         'color-mix(in srgb,var(--cor) 86%,#000))';
+
 function criaCarta(z){
   const c = document.createElement('div');
   c.className = 'pc';
   c.dataset.z = z;
   /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
   c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
-  c.innerHTML = '<div class="pc-in"><i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b></div>';
+  c.innerHTML = '<div class="pc-in" style="background:'+fundoCinza(z)+'">' +
+                  '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>' +
+                '</div>';
   return c;
 }
 function poe(c, x, y, rot){
@@ -1329,10 +1363,11 @@ function reiniciaCena2(){
      uma série, o intervalo que ela passa a representar */
   function encaixa(c, z){
     c.classList.add('encaixada');
+    const miolo = c.firstElementChild;
+    miolo.style.background = fundoFamilia;   /* a cor chega com o lugar */
     const faixa = PILHAS[z];
     if (naPilha(z)) c.style.zIndex = faixa ? '12' : '1';
     if (!faixa) return;
-    const miolo = c.firstElementChild;
     miolo.classList.add('pilha');
     miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
   }
