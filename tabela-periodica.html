@@ -594,9 +594,11 @@ body{
 .regra.sem-traco .regra-in{border-left:0;padding-left:0}
 /* e as palavras que estão sendo batizadas ganham a cor do destaque */
 .regra em{font-style:normal;font-weight:600;color:var(--ouro)}
-/* a cena inteira não pega o dedo, mas a regra é peça de montagem:
-   sem isto, o toque atravessaria por cima dela e nada se moveria */
-body.montagem .cena .regra{pointer-events:auto}
+/* A cena inteira não pega o dedo, mas na montagem estas peças pegam:
+   sem isto o toque atravessaria por cima delas e nada se moveria. */
+body.montagem .cena .regra,
+body.montagem .cena .ficha-sel,
+body.montagem .cena .rotulos{pointer-events:auto}
 
 /* o clarão que abre a cena */
 .clarao{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;
@@ -1649,9 +1651,10 @@ function reiniciaCena2(){
   cena.className = 'cena';
   cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
                      '<div class="banda"></div><div class="banda2"></div>' +
-                     '<div class="ficha-sel"><span></span><b></b></div>' +
-                     '<div class="rotulos"><span class="per"></span>' +
-                       '<span class="grp"></span></div>' +
+                     '<div class="ficha-sel" data-mont="simbolo">' +
+                       '<span></span><b></b></div>' +
+                     '<div class="rotulos" data-mont="coordenadas">' +
+                       '<span class="per"></span><span class="grp"></span></div>' +
                      '<div class="aviso"></div>' +
                    '</div><div class="clarao"></div>' +
                    '<button id="botao-todos" type="button">todos</button>' +
@@ -2431,7 +2434,8 @@ const MOVEIS = '.title, .regua, .subtitle, .body-area, .q-board, .regra,' +
 const COM_ALTURA = '.body-area, .q-board, .risco, .regua, .capa .foto';
 /* quem encolhe até o conteúdo antes de ser medido — o texto e a régua.
    A área, o risco e o quadro já têm a caixa que têm. */
-const ENCOLHE = '.title, .subtitle, .regua, .regra, .capa .marca, .capa .autor, .capa h1';
+const ENCOLHE = '.title, .subtitle, .regua, .regra, .ficha-sel, .rotulos,' +
+                ' .capa .marca, .capa .autor, .capa h1';
 /* quem tem letra que interessa medir */
 const COM_LETRA = '.title, .subtitle, .regra, .capa .marca, .capa .autor, .capa h1';
 
@@ -2457,7 +2461,11 @@ function soltaSlide(sl){
       h: r.height/fitScale, esc:1 };
   });
   alvos.forEach(el => el.classList.remove('medindo', 'encolhe'));
-  medidas.forEach(m => {
+  /* Peça sem caixa não se solta. A ficha do elemento e os nomes das
+     coordenadas nascem vazios e só ganham tamanho quando alguém toca
+     num elemento; congelá-los antes disso os prenderia em largura
+     zero, no canto — e lá ficariam para sempre. */
+  medidas.filter(m => m.w > 0.5 && m.h > 0.5).forEach(m => {
     MEDIDAS.set(m.el, m);
     m.el.classList.add('solto');
     m.el.style.right = m.el.style.bottom = 'auto';
@@ -2777,7 +2785,9 @@ function rotulaCoordenada(mesa, n){
 }
 function poeRotulos(mesa){
   const r = mesa.querySelector('.rotulos');
-  if (!r) return;
+  /* solto na montagem, o lugar dele é o que o professor escolheu: a
+     cena não o arrasta de volta a cada elemento tocado */
+  if (!r || r.classList.contains('solto')) return;
   r.style.left = (xDaColuna(6, modoMesa) + 62).toFixed(0) + 'px';
   r.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
 }
@@ -2795,8 +2805,11 @@ function mostraFicha(mesa, z){
   const troca = () => {
     f.querySelector('span').textContent = z;
     f.querySelector('b').textContent = SIMBOLOS[z-1];
-    f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
-    f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+    /* solta na montagem, ela fica onde o professor a deixou */
+    if (!f.classList.contains('solto')){
+      f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
+      f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+    }
     f.classList.add('on');
   };
   if (f.classList.contains('on')){ f.classList.remove('on'); setTimeout(troca, 300); }
