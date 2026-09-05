@@ -879,11 +879,15 @@ body{
    conta dos elétrons de valência é simples nos representativos, e é só
    deles que esta cena fala. Sem números de linha, e no lugar dos
    números dos grupos as letras que eles têm quando são A. */
-.mesa.valencia .pc{transition:translate .42s cubic-bezier(.26,1.1,.4,1),
-                              opacity .45s ease}
+/* A subida aqui é a do app de tabela anterior: meio segundo de ease,
+   sem excesso no fim, e uma casa inteira de altura — a coluna sobe uma
+   linha, e o vão que ela deixa embaixo é o que faz a família saltar
+   aos olhos. Nos outros slides a subida continua curta, de vinte e
+   quatro: lá ela só destaca, aqui ela separa. */
+.mesa.valencia .pc{transition:translate .5s ease, opacity .45s ease}
 .mesa.valencia .pc:not(.repr){opacity:.26;pointer-events:none}
 .mesa.valencia .pc.repr{cursor:pointer}
-.mesa.valencia .pc.no-alto{translate:0 -24px;z-index:18}
+.mesa.valencia .pc.no-alto{translate:0 -54px;z-index:18}
 .mesa.valencia .pc.no-alto .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
 
@@ -893,10 +897,10 @@ body{
   pointer-events:none;white-space:nowrap;
   font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:-.01em;
   color:var(--bloco-a);opacity:0;
-  transition:opacity .4s ease, translate .42s cubic-bezier(.26,1.1,.4,1);
+  transition:opacity .4s ease, translate .5s ease;
 }
 .mesa.valencia .rot-a{opacity:1}
-.rot-a.no-alto{translate:0 -24px}
+.rot-a.no-alto{translate:0 -54px}
 
 /* a conta dos elétrons, que entra deslizando como o nome da família
    entrava no slide das famílias */
@@ -4276,12 +4280,12 @@ function sobeColuna(mesa, col){
   r.className = 'rot-val';
   r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons') +
                 ' de valência';
-  /* Acima da letra do grupo, e com folga: a letra sobe vinte e quatro
-     quando a coluna sobe, e as duas escritas ficariam encostadas se a
-     conta estivesse logo acima do lugar de repouso dela. Nas pontas a
-     frase se encolhe para dentro, para não sair pela borda. */
+  /* Acima da letra do grupo, e com folga: a letra sobe uma casa
+     inteira junto com a coluna, e as duas escritas ficariam encostadas
+     se a conta estivesse logo acima do lugar de repouso dela. Nas
+     pontas a frase se encolhe para dentro, para não sair pela borda. */
   r.style.left = Math.max(180, Math.min(1100, xDaColuna(col, 'junta'))).toFixed(0) + 'px';
-  r.style.top  = '132px';
+  r.style.top  = '104px';
   mesa.appendChild(r);
   revela(r, 'on');
 }
