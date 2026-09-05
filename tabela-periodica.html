@@ -452,8 +452,11 @@ body{
 @keyframes segura{from{scale:1} to{scale:1.07}}
 .pc.segurando{z-index:21}
 .pc.segurando .pc-in{animation:segura 1s ease-in both}
-/* o botão de refazer: aparece quando o primeiro bloco sai do lugar */
-#botao-refaz{
+/* O BOTÃO DE REFAZER
+   Nasceu no slide dos tipos e serve agora também ao dos grupos: por
+   isso é classe, e não identidade — dois slides podem ter o seu ao
+   mesmo tempo, cada um desfazendo o que é dele. */
+.botao-refaz{
   position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
   display:none;align-items:center;justify-content:center;
   width:54px;height:54px;border-radius:50%;
@@ -461,12 +464,12 @@ body{
   box-shadow:0 7px 20px rgba(32,28,66,.2);
   transition:background .2s,color .2s,transform .16s,box-shadow .2s;
 }
-.cena.tem-refaz #botao-refaz{
+.cena.tem-refaz .botao-refaz{
   display:flex;
   animation:botaoEntra .5s cubic-bezier(.2,1.35,.4,1) backwards;
 }
-#botao-refaz:hover{background:var(--indigo);color:#fff}
-#botao-refaz:active{transform:scale(.94)}
+.botao-refaz:hover{background:var(--indigo);color:#fff}
+.botao-refaz:active{transform:scale(.94)}
 
 /* o nome do tipo, que aparece quando o bloco pousa */
 .rot-tipo{
@@ -572,7 +575,51 @@ body{
 /* as palavras de origem, que são o assunto da caixa */
 .cx-fam i{font-style:italic;font-weight:600;color:var(--cf)}
 
-/* o elemento escolhido: cresce e passa por cima dos vizinhos */
+/* ---------- os grupos A e B, no slide 6 ----------
+   A tabela chega pintada nos dois blocos. Tocada, uma coluna sobe e
+   diz como se chama — 1A, 3B — e a identificação fica quando ela
+   desce, de modo que a tabela vai se nomeando à medida que a aula
+   passa. Com o dedo parado um segundo ela se abre em três: os dois
+   pedaços representativos, que andam juntos, e o de transição no
+   meio, que fica sozinho no lugar onde sempre esteve. */
+.mesa.grupos .pc{cursor:pointer;transition:translate .5s cubic-bezier(.3,.9,.3,1)}
+.mesa.grupos .pc.no-alto{translate:0 -24px;z-index:18}
+.mesa.grupos .pc.no-alto .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
+
+/* o aviso do dedo parado: os lados já começam a ceder antes de soltar,
+   e é esse começo que diz o que vai acontecer se a mão ficar */
+@keyframes cedeEsq{from{translate:0 0} to{translate:-9px 0}}
+@keyframes cedeDir{from{translate:0 0} to{translate: 9px 0}}
+.pc.cede-e .pc-in{animation:cedeEsq 1s ease-in both}
+.pc.cede-d .pc-in{animation:cedeDir 1s ease-in both}
+
+/* aberta, a tabela deixa de responder ao toque e passa a andar em
+   blocos — e sem transição, senão o bloco chegaria atrasado ao dedo */
+.mesa.grupos.partida .pc{cursor:grab}
+.mesa.grupos.partida.puxando .pc{transition:none}
+.mesa.grupos.partida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.24),
+  0 6px 16px rgba(80,40,0,.28)}
+
+/* o nome de cada bloco, que anda com ele */
+.rot-bloco{
+  position:absolute;z-index:11;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;opacity:0;
+  font-family:var(--display);font-weight:700;font-size:25px;letter-spacing:-.01em;
+  color:var(--cb);transition:opacity .45s ease .3s}
+.rot-bloco.on{opacity:1}
+
+/* e a identificação da coluna, que fica dita para sempre */
+.rot-grupo{
+  position:absolute;z-index:10;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:700;font-size:23px;letter-spacing:-.01em;
+  color:var(--cb);opacity:0;translate:0 10px;
+  transition:opacity .38s ease, translate .46s cubic-bezier(.2,.86,.26,1)}
+.rot-grupo.on{opacity:1;translate:0 0}
+/* aberta a tabela, as identificações somem: elas são da tabela
+   inteira, e a tabela inteira deixou de existir por um momento */
+.mesa.partida .rot-grupo{opacity:0}
 
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
@@ -1546,6 +1593,11 @@ function estadoMesaPara(mesa, i){
   if (i !== 4){ apagaFamilia(mesa); familiaNoAlto = null; }
   marcaPrincipais(mesa, i === 4);
   mesa.classList.toggle('familias', i === 4 && !!slides[4].querySelector('.regra'));
+  /* e o slide dos grupos: a tabela sai dele sempre inteira, e volta a
+     ele com as identificações que já foram ditas */
+  if (i !== 5) apagaGrupos(mesa);
+  mesa.classList.toggle('grupos', i === 5 && !!slides[5].querySelector('.regra'));
+  if (i === 5) poeGrupos(mesa);
   if (i === 2) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
@@ -1986,6 +2038,7 @@ function reiniciaCena2(){
   if (typeof montaRoteiro5 === 'function') montaRoteiro5();
   if (typeof montaRoteiro6 === 'function') montaRoteiro6();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
+  gruposDitos.clear();               /* e sem nome de grupo dito */
   const marca = sl.querySelector('.body-area .vazio');
   if (marca) marca.remove();              /* este slide já tem conteúdo */
 
@@ -2491,9 +2544,9 @@ function montaRoteiro4(){
 
     /* o botão de refazer nasce com a cena e só aparece quando algum
        bloco tiver saído do lugar */
-    if (!cena.querySelector('#botao-refaz')){
+    if (!cena.querySelector('.botao-refaz')){
       const b = document.createElement('button');
-      b.id = 'botao-refaz';
+      b.className = 'botao-refaz';
       b.type = 'button';
       b.title = 'Refazer a tabela';
       b.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"' +
@@ -2762,12 +2815,285 @@ function alternaFamilia(mesa, carta){
 
 /* ============================================================
    SLIDE 6 · OS GRUPOS A E B
-   Por enquanto ele é só a chegada: o giro traz a tabela pintada nos
-   dois blocos — âmbar nos representativos, vermelho nos de transição —
-   e a aula fica aí, esperando as cenas que ainda vamos montar juntos.
+   O giro traz a tabela já pintada nos dois blocos. Dita a frase, ela
+   passa a responder de duas maneiras: um toque numa coluna a levanta e
+   diz como ela se chama — 1A, 3B —, e a identificação fica dita para
+   sempre, de modo que a tabela vai se nomeando à medida que a aula
+   passa; o dedo parado um segundo abre a tabela em três, e aí os
+   pedaços andam com a mão.
    ============================================================ */
+
+/* A notação A/B, a dos livros da escola: os grupos A são os
+   representativos, os B os de transição, e as três colunas do ferro,
+   cobalto e níquel dividem o mesmo 8B. */
+const GRUPO_AB = {
+  1:'1A',  2:'2A',  3:'3B',  4:'4B',  5:'5B',  6:'6B',
+  7:'7B',  8:'8B',  9:'8B', 10:'8B', 11:'1B', 12:'2B',
+  13:'3A', 14:'4A', 15:'5A', 16:'6A', 17:'7A', 18:'8A'
+};
+
+/* Os três pedaços em que a tabela se abre. Os dois representativos são
+   um bloco só, ainda que a tabela os mostre separados pelo meio: é a
+   mesma coisa que eles são, e andam juntos. */
+function ladoDaColuna(col){
+  if (col <= 2)  return 'esq';
+  if (col >= 13) return 'dir';
+  return 'meio';
+}
+const SEPARA = 42;                 /* o quanto cada lado se afasta ao abrir */
+const OFFSET_BLOCO = {a:{x:0,y:0}, b:{x:0,y:0}};
+const gruposDitos = new Set();     /* as colunas que já disseram o nome */
+let mesaPartida = false;
+let grupoNoAlto = null;
+
+/* Onde cada carta está agora: o afastamento da abertura mais o que a
+   mão levou. Uma função só põe tudo no lugar — cartas e nomes —, para
+   nunca haver dois cálculos discordando sobre onde o bloco está. */
+function poeBlocos(mesa){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    if (!mesaPartida){ c.style.removeProperty('translate'); return; }
+    const lado = ladoDaColuna(+c.dataset.col);
+    const g = lado === 'meio' ? OFFSET_BLOCO.b : OFFSET_BLOCO.a;
+    const base = lado === 'esq' ? -SEPARA : lado === 'dir' ? SEPARA : 0;
+    c.style.translate = (base + g.x).toFixed(1) + 'px ' + g.y.toFixed(1) + 'px';
+  });
+  mesa.querySelectorAll('.rot-bloco').forEach(r => {
+    const g = OFFSET_BLOCO[r.dataset.bloco];
+    const base = r.dataset.bloco === 'a' ? SEPARA : 0;
+    r.style.translate = (base + g.x).toFixed(1) + 'px ' + g.y.toFixed(1) + 'px';
+  });
+}
+
+/* ---- a identificação da coluna ----
+   Ela nasce quando a coluna sobe e não sai mais: descida a coluna, o
+   nome fica, e ao fim da conversa a tabela está inteira nomeada. */
+function diGrupo(mesa, col){
+  gruposDitos.add(col);
+  if (mesa.querySelector('.rot-grupo[data-col="'+col+'"]')) return;
+  const r = document.createElement('div');
+  r.className = 'rot-grupo';
+  r.dataset.col = col;
+  r.textContent = GRUPO_AB[col];
+  r.style.setProperty('--cb', corDoBloco(col));
+  r.style.left = xDaColuna(col, 'junta').toFixed(0) + 'px';
+  r.style.top  = '200px';
+  mesa.appendChild(r);
+  revela(r, 'on');
+}
+function poeGrupos(mesa){
+  gruposDitos.forEach(col => diGrupo(mesa, col));
+}
+function baixaGrupo(mesa){
+  mesa.querySelectorAll('.pc.no-alto').forEach(c => c.classList.remove('no-alto'));
+  grupoNoAlto = null;
+}
+/* uma coluna de cada vez, e tocar na que está no alto é o que a desce */
+function alternaGrupo(mesa, carta){
+  const col = +carta.dataset.col;
+  const jaEstava = grupoNoAlto === col;
+  baixaGrupo(mesa);
+  if (jaEstava) return;
+  mesa.querySelectorAll('.pc').forEach(c => {
+    if (+c.dataset.col === col) c.classList.add('no-alto');
+  });
+  grupoNoAlto = col;
+  diGrupo(mesa, col);
+}
+
+/* ---- abrir e fechar a tabela ---- */
+const ROTULOS_BLOCO = {
+  /* o nome do bloco de transição cabe no vazio em cima dos metais de
+     transição; o dos representativos, acima do hélio, que é a carta
+     mais alta daquele lado */
+  b: {texto:'Transição - B',       x:518,  y:360, cor:'var(--bloco-b)'},
+  a: {texto:'Representativos - A', x:1030, y:212, cor:'var(--bloco-a)'}
+};
+function parteMesa(mesa){
+  if (mesaPartida) return;
+  mesaPartida = true;
+  baixaGrupo(mesa);                /* nada fica no alto com a tabela aberta */
+  mesa.classList.add('partida');
+  Object.keys(ROTULOS_BLOCO).forEach(k => {
+    if (mesa.querySelector('.rot-bloco[data-bloco="'+k+'"]')) return;
+    const d = ROTULOS_BLOCO[k];
+    const r = document.createElement('div');
+    r.className = 'rot-bloco';
+    r.dataset.bloco = k;
+    r.textContent = d.texto;
+    r.style.setProperty('--cb', d.cor);
+    r.style.left = d.x + 'px';
+    r.style.top  = d.y + 'px';
+    mesa.appendChild(r);
+    revela(r, 'on');
+  });
+  poeBlocos(mesa);
+  const cena = mesa.parentNode;
+  if (cena) cena.classList.add('tem-refaz');
+}
+function juntaMesa(mesa){
+  mesaPartida = false;
+  OFFSET_BLOCO.a = {x:0, y:0};
+  OFFSET_BLOCO.b = {x:0, y:0};
+  mesa.classList.remove('partida', 'puxando');
+  poeBlocos(mesa);                 /* volta tudo a zero, com transição */
+  mesa.querySelectorAll('.rot-bloco').forEach(r => {
+    r.classList.remove('on');
+    setTimeout(() => r.remove(), 520);
+  });
+  const cena = mesa.parentNode;
+  if (cena) cena.classList.remove('tem-refaz');
+}
+/* sem encenação, para a troca de slide: a tabela sai daqui sempre
+   inteira, porque os outros slides falam de uma tabela só */
+function apagaGrupos(mesa){
+  mesaPartida = false;
+  grupoNoAlto = null;
+  OFFSET_BLOCO.a = {x:0, y:0};
+  OFFSET_BLOCO.b = {x:0, y:0};
+  mesa.classList.remove('partida', 'puxando');
+  mesa.querySelectorAll('.pc').forEach(c => {
+    c.classList.remove('no-alto', 'cede-e', 'cede-d');
+    c.style.removeProperty('translate');
+  });
+  mesa.querySelectorAll('.rot-bloco, .rot-grupo').forEach(r => r.remove());
+  const cena = mesa.parentNode;
+  if (cena) cena.classList.remove('tem-refaz');
+}
+
+/* ---- o dedo parado abre a tabela ----
+   Um segundo é o tempo de dizer que aquilo não foi um toque. Enquanto
+   ele corre, os dois lados já vão cedendo para fora: é esse começo de
+   movimento que diz o que vai acontecer se a mão ficar. */
+let esperaGrupos = null;
+function limpaCede(mesa){
+  mesa.querySelectorAll('.cede-e, .cede-d').forEach(c =>
+    c.classList.remove('cede-e', 'cede-d'));
+}
+function agendaPartir(mesa, carta, ev){
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const lado = ladoDaColuna(+c.dataset.col);
+    if (lado === 'esq') c.classList.add('cede-e');
+    if (lado === 'dir') c.classList.add('cede-d');
+  });
+  esperaGrupos = {
+    id: ev.pointerId, mesa, carta, x: ev.clientX, y: ev.clientY, t0: Date.now(),
+    t: setTimeout(() => {
+      const e = esperaGrupos;
+      esperaGrupos = null;
+      if (!e) return;
+      limpaCede(e.mesa);
+      parteMesa(e.mesa);
+    }, 1000)
+  };
+}
+function desisteGrupos(){
+  if (!esperaGrupos) return;
+  clearTimeout(esperaGrupos.t);
+  limpaCede(esperaGrupos.mesa);
+  esperaGrupos = null;
+}
+
+/* ---- e a tabela aberta anda em blocos ----
+   Um dedo por vez, e o que ele pega é o bloco inteiro: pegar o sódio é
+   pegar todos os representativos, os da esquerda e os da direita, que
+   são a mesma coisa e por isso andam juntos. */
+let blocoAB = null;
+function comecaBlocoAB(mesa, carta, ev){
+  const chave = ladoDaColuna(+carta.dataset.col) === 'meio' ? 'b' : 'a';
+  blocoAB = {
+    id: ev.pointerId, mesa, chave,
+    x0: OFFSET_BLOCO[chave].x, y0: OFFSET_BLOCO[chave].y,
+    px: ev.clientX, py: ev.clientY,
+    k: 1 / (fitScale * (leMesa(mesa).zoom || 1))
+  };
+  mesa.classList.add('puxando');
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+document.addEventListener('pointermove', (ev) => {
+  /* o dedo que se mexe não é mais dedo parado: desiste a abertura */
+  if (esperaGrupos && ev.pointerId === esperaGrupos.id &&
+      Math.hypot(ev.clientX - esperaGrupos.x, ev.clientY - esperaGrupos.y) > 8)
+    desisteGrupos();
+
+  const b = blocoAB;
+  if (!b || ev.pointerId !== b.id) return;
+  /* solto, o bloco pode sair pela borda: os dois representativos juntos
+     medem a tabela toda, e prendê-los pela caixa seria não os deixar
+     andar */
+  OFFSET_BLOCO[b.chave] = {
+    x: Math.max(-620, Math.min(620, b.x0 + (ev.clientX - b.px) * b.k)),
+    y: Math.max(-300, Math.min(300, b.y0 + (ev.clientY - b.py) * b.k))
+  };
+  poeBlocos(b.mesa);
+});
+function soltaBlocoAB(ev){
+  if (esperaGrupos && ev.pointerId === esperaGrupos.id){
+    const e = esperaGrupos;
+    const foiToque = Math.hypot(ev.clientX - e.x, ev.clientY - e.y) < 8 &&
+                     Date.now() - e.t0 < 600;
+    desisteGrupos();
+    /* dedo que sobe depressa e onde desceu é toque, e toque levanta a
+       coluna: aqui a tabela não passa pelo ouvinte da mesa */
+    if (foiToque) alternaGrupo(e.mesa, e.carta);
+  }
+  const b = blocoAB;
+  if (!b || ev.pointerId !== b.id) return;
+  b.mesa.classList.remove('puxando');
+  blocoAB = null;
+}
+document.addEventListener('pointerup', soltaBlocoAB);
+document.addEventListener('pointercancel', soltaBlocoAB);
+
 function montaRoteiro6(){
-  ROTEIROS[5] = { i:0, espera:null, passos:[], desfazer:[] };
+  const sl = slides[5];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[5] = r;
+
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra6';
+    t.innerHTML = '<span class="regra-in">Há dois grupos de elementos: os ' +
+      '<em style="color:var(--bloco-a)">previsíveis</em> (grupos A) e os ' +
+      '<em style="color:var(--bloco-b)">complexos</em> (grupos B)</span>';
+    cena.appendChild(t);
+    aplicaLayout(5);                     /* o lugar dela está no layout */
+    revela(t, 'posta');
+
+    /* dita a frase, a tabela responde ao dedo */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('grupos');
+
+    /* e o botão que fecha a tabela outra vez nasce com a cena, escondido
+       até haver o que refazer */
+    if (!cena.querySelector('.botao-refaz')){
+      const b = document.createElement('button');
+      b.className = 'botao-refaz';
+      b.type = 'button';
+      b.title = 'Juntar a tabela';
+      b.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"' +
+        ' stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4.5V11h-6.4"/></svg>';
+      b.addEventListener('click', () => {
+        const m = sl.querySelector('.mesa');
+        if (m) juntaMesa(m);
+      });
+      cena.appendChild(b);
+    }
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){
+        apagaGrupos(m);
+        m.classList.remove('grupos');
+        gruposDitos.clear();          /* voltar apaga também o que já foi dito */
+      }
+    });
+  });
 }
 
 /* ---- a caixa anda com o dedo ----
@@ -3577,7 +3903,8 @@ const LAYOUTS = {
     numero:    {x:259,  y: 34, esc:1.00},
     regua:     {x:120,  y: 32, esc:1.00},
     titulo:    {esq:281, y: 30, esc:0.76},
-    subtitulo: {esq:744, y: 31, esc:1.08}
+    subtitulo: {esq:744, y: 31, esc:1.08},
+    regra6:    {esq:104, y: 82, esc:1.00}
   }
 };
 
@@ -3926,6 +4253,17 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
+  /* no slide dos grupos, o dedo na tabela é dela: parado, abre a
+     tabela; aberta ela, arrasta o bloco. Em nenhum dos casos é gesto
+     da mesa, e por isso ele não chega ao ouvinte de baixo. */
+  if (atual === 5 && m.classList.contains('grupos')){
+    const c = ev.target.closest && ev.target.closest('.pc');
+    if (c){
+      if (mesaPartida){ if (!blocoAB) comecaBlocoAB(m, c, ev); }
+      else if (!esperaGrupos) agendaPartir(m, c, ev);
+      return;
+    }
+  }
   /* no slide dos tipos, pegar uma carta é pegar o bloco dela — e aí o
      gesto não é da mesa, é do bloco */
   if (m.classList.contains('blocos')){
@@ -3995,6 +4333,14 @@ function largaMesa(ev){
     /* No slide das famílias o toque não escolhe um elemento: levanta a
        coluna inteira. Antes da frase a tabela ainda não responde, e o
        toque só adianta a aula. */
+    /* no slide dos grupos o toque na carta já foi tratado lá em cima:
+       aqui sobra o vazio, que adianta a aula */
+    if (atual === 5){
+      if (!(toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc'))) passoAdiante();
+      toqueMesa = null;
+      return;
+    }
+
     if (atual === 4){
       const perto = s => toqueMesa.alvo.closest && toqueMesa.alvo.closest(s);
       const nome = perto('.rot-fam:not(.saindo)');
