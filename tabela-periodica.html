@@ -736,6 +736,20 @@ body{
 .pc.art .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),
   0 0 0 2px var(--ouro-luz), 0 0 14px 2px rgba(226,162,43,.55)}
 
+/* AS DUAS PULSADAS
+   Quando o clique pede o passo seguinte e o passo ainda não pode
+   acontecer, a carta que falta tocar dá dois saltos com um clarão em
+   volta. É a cena dizendo onde está o que falta, em vez de não fazer
+   nada — que é o que ela fazia, e não se distingue de estar quebrada. */
+@keyframes puxaOlho{
+  0%  {scale:1;    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22)}
+  40% {scale:1.34; box-shadow:0 0 0 4px var(--puxa,var(--indigo)),
+                              0 0 28px 8px color-mix(in srgb,var(--puxa,var(--indigo)) 70%,transparent)}
+  100%{scale:1;    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22)}
+}
+.pc.puxa-olho{z-index:28}
+.pc.puxa-olho .pc-in{animation:puxaOlho .44s ease-out 2}
+
 /* os dois nomes, no vazio acima dos metais de transição */
 .rot-nat{
   position:absolute;z-index:12;transform:translate(-50%,-50%);
@@ -2118,7 +2132,13 @@ function passoAdiante(){
   }
   if (r.i >= r.passos.length) return false;
   const faz = passoPronto();
-  if (!faz){ atualizaPista(); return true; }   /* ainda não é a hora dele */
+  if (!faz){
+    /* ainda não é a hora dele — e a cena que souber dizer o que falta
+       diz agora, em vez de o clique não fazer nada */
+    if (r.aoBloquear) r.aoBloquear();
+    atualizaPista();
+    return true;
+  }
   r.i++;
   faz();
   atualizaPista();
@@ -3959,6 +3979,20 @@ const NOMES_NATUREZA = {
   artificiais: {texto:'Artificiais <i>(transurânicos)</i>', cor:'var(--ouro-luz)',
                 x:838, y:649}
 };
+/* dois saltos na carta que falta tocar */
+function chamaAtencao(mesa, z, cor){
+  const c = mesa.querySelector('.pc[data-z="'+z+'"]');
+  if (!c) return;
+  c.style.setProperty('--puxa', cor);
+  c.classList.remove('puxa-olho');
+  void c.offsetWidth;                /* recomeça do zero se já estava a saltar */
+  c.classList.add('puxa-olho');
+  setTimeout(() => {
+    c.classList.remove('puxa-olho');
+    c.style.removeProperty('--puxa');
+  }, 950);
+}
+
 /* a carta que dá a partida se acende devagar, por cima: a folha de cor
    entra em fade e sai quando o fundo de verdade já está debaixo dela */
 function acendeCarta(mesa, z, cor){
@@ -4038,6 +4072,7 @@ function varreNaturais(mesa){
     /* o urânio já estava verde: a ele cabe só crescer e dizer o nome */
     ergueCarta(c);
     diNatureza(mesa, 'naturais');
+    atualizaPista();          /* e a segunda frase passa a poder entrar */
   });
 }
 /* ---- a segunda leitura: o que é estável e o que é radioativo ---- */
@@ -4167,7 +4202,16 @@ function montaRoteiro8(){
      toma o lugar do urânio: é nele que a conta acaba, e é nele que se
      toca. Os nomes da primeira leitura saem de cena — a tabela vai
      dizer outra coisa, e não pode ficar com duas legendas. */
-  r.passos.push(() => {
+  /* A segunda frase só entra depois de a onda verde ter subido: ela
+     fala da mesma tabela lida de outro jeito, e ler de outro jeito uma
+     tabela que ainda não foi lida da primeira vez não é ler duas
+     vezes, é pular a primeira. Enquanto isso, o clique faz o urânio
+     saltar: é ele que falta. */
+  r.aoBloquear = () => {
+    const m = sl.querySelector('.mesa');
+    if (m && naturaisDitos) chamaAtencao(m, Z_NATURAL, 'var(--natural)');
+  };
+  r.passos.push({ so: () => naturaisVarridos, faz: () => {
     const cena = cenaDe(sl);
     const t = document.createElement('div');
     t.className = 'regra sem-traco';
@@ -4200,7 +4244,7 @@ function montaRoteiro8(){
       const m = sl.querySelector('.mesa');
       if (m) zeraEstaveis(m);
     });
-  });
+  }});
 }
 
 function montaRoteiro7(){
