@@ -549,10 +549,13 @@ body{
   border-left:5px solid var(--cf);
   box-shadow:0 16px 38px rgba(32,28,66,.2);
   font-size:18px;line-height:1.5;color:var(--tinta);
+  cursor:grab;touch-action:none;
   opacity:0;translate:0 -12px;
   transition:opacity .34s ease, translate .34s cubic-bezier(.2,.9,.3,1);
 }
 .cx-fam.on{opacity:1;translate:0 0}
+/* na mão ela se ergue um pouco do palco */
+.cx-fam.na-mao{cursor:grabbing;box-shadow:0 24px 50px rgba(32,28,66,.3)}
 .cx-fam h4{display:flex;align-items:center;gap:10px;margin-bottom:9px;
   font-family:var(--display);font-weight:700;font-size:21px;color:var(--cf)}
 .cx-fam p{margin-bottom:8px}
@@ -2665,12 +2668,22 @@ function fechaCaixa(mesa){
   const rot = mesa.querySelector('.rot-fam');
   if (rot) rot.classList.remove('aberta');
 }
+/* Onde o professor deixou a caixa da última vez. A seguinte nasce ali:
+   ele a põe uma vez no lugar que a sala enxerga e as outras o seguem —
+   ficar voltando ao vazio da tabela a cada nome seria desfazer, a cada
+   clique, o que ele acabou de arrumar. */
+let ondeACaixa = null;
+
 function alternaCaixa(mesa, rot){
   if (rot.classList.contains('aberta')){ fechaCaixa(mesa); return; }
   fechaCaixa(mesa);
   const cx = document.createElement('div');
   cx.className = 'cx-fam';
   cx.style.setProperty('--cf', rot.style.getPropertyValue('--cf'));
+  if (ondeACaixa){
+    cx.style.left = ondeACaixa.x.toFixed(0) + 'px';
+    cx.style.top  = ondeACaixa.y.toFixed(0) + 'px';
+  }
   cx.innerHTML = '<h4><span class="anel"></span>' + rot.dataset.nome + '</h4>' +
                  textoDaFamilia(+rot.dataset.col, +rot.dataset.z);
   mesa.appendChild(cx);
@@ -2719,6 +2732,47 @@ function alternaFamilia(mesa, carta){
   acende(rot, 'on');
   familiaNoAlto = chave;
 }
+
+/* ---- a caixa anda com o dedo ----
+   Ela nasce no vazio da tabela, que é o lugar que não atrapalha
+   ninguém — mas o lugar que não atrapalha nem sempre é o que a sala
+   enxerga, e daí em diante ela é solta: vai para onde a mão a levar,
+   inclusive para fora da tabela. */
+let caixaNaMao = null;
+
+function comecaCaixa(mesa, cx, ev){
+  const zoom = leMesa(mesa).zoom || 1;
+  caixaNaMao = {
+    id: ev.pointerId, cx, mesa,
+    x0: parseFloat(cx.style.left) || 518,
+    y0: parseFloat(cx.style.top)  || 256,
+    px: ev.clientX, py: ev.clientY,
+    k: 1 / (fitScale * zoom)          /* da tela para dentro da mesa */
+  };
+  cx.classList.add('na-mao');
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+document.addEventListener('pointermove', (ev) => {
+  const b = caixaNaMao;
+  if (!b || ev.pointerId !== b.id) return;
+  /* ela pode sair pela borda, mas nunca de todo: fica sempre uma faixa
+     dela à vista, senão não haveria por onde trazê-la de volta */
+  const r = b.cx.getBoundingClientRect();
+  const larg = r.width * b.k, alt = r.height * b.k;
+  const x = b.x0 + (ev.clientX - b.px) * b.k;
+  const y = b.y0 + (ev.clientY - b.py) * b.k;
+  b.cx.style.left = Math.max(140 - larg/2, Math.min(1140 + larg/2, x)).toFixed(0) + 'px';
+  b.cx.style.top  = Math.max(60 - alt, Math.min(660, y)).toFixed(0) + 'px';
+});
+function soltaCaixa(ev){
+  const b = caixaNaMao;
+  if (!b || ev.pointerId !== b.id) return;
+  b.cx.classList.remove('na-mao');
+  ondeACaixa = {x: parseFloat(b.cx.style.left), y: parseFloat(b.cx.style.top)};
+  caixaNaMao = null;
+}
+document.addEventListener('pointerup', soltaCaixa);
+document.addEventListener('pointercancel', soltaCaixa);
 
 function montaRoteiro5(){
   const sl = slides[4];
@@ -3820,6 +3874,13 @@ function ancoraMesa(m){
 stage.addEventListener('pointerdown', (ev) => {
   const m = mesaPronta();
   if (!m || ev.target.closest('button, a, input')) return;
+  /* a caixa do slide das famílias é solta: o dedo que desce nela é
+     dela, e não da mesa — senão arrastar o texto arrastaria a tabela */
+  const cxAlvo = ev.target.closest && ev.target.closest('.cx-fam');
+  if (cxAlvo){
+    if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
+    return;
+  }
   /* no slide dos tipos, pegar uma carta é pegar o bloco dela — e aí o
      gesto não é da mesa, é do bloco */
   if (m.classList.contains('blocos')){
