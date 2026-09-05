@@ -331,13 +331,16 @@ body{
 }
 .pc.surge .pc-in{animation:surge .66s cubic-bezier(.2,.9,.3,1) both}
 
-/* o chamado: vermelho, devagar, discreto — é um convite, não um alarme */
+/* o chamado: vermelho e forte, para achar a carta no meio do monte
+   mesmo do fundo da sala. Continua lento — é um convite, não um alarme */
 @keyframes chama{
-  0%,100%{box-shadow:0 0 0 1.5px rgba(206,40,62,.5),  0 0 10px rgba(206,40,62,.22)}
-  50%    {box-shadow:0 0 0 2.5px rgba(206,40,62,.95), 0 0 22px rgba(206,40,62,.5)}
+  0%,100%{box-shadow:0 0 0 2px rgba(214,32,56,.8), 0 0 18px 3px rgba(214,32,56,.5);
+          filter:brightness(1)}
+  50%    {box-shadow:0 0 0 4px rgba(214,32,56,1), 0 0 38px 8px rgba(214,32,56,.85);
+          filter:brightness(1.18)}
 }
 .pc.chama{pointer-events:auto;cursor:pointer;z-index:25}
-.pc.chama .pc-in{animation:chama 1.5s ease-in-out infinite}
+.pc.chama .pc-in{animation:chama 1.4s ease-in-out infinite}
 
 /* a comemoração: uma onda verde que atravessa a tabela montada */
 @keyframes verde{
@@ -354,7 +357,8 @@ body{
    colunas, que passam a ser as numeradas, em cima. Em qualquer um dos
    dois modos, tocar num elemento acende a faixa inteira dele — e o
    próprio elemento cresce. */
-.mesa.aberta .pc{pointer-events:auto;cursor:pointer}
+/* pronta a tabela, qualquer elemento pega o dedo — aberta ou junta */
+.mesa.pronta .pc{pointer-events:auto;cursor:pointer}
 .mesa.tem-realce .pc{transition:opacity .3s ease}
 .mesa.tem-realce .pc:not(.realce){opacity:.34}
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
@@ -393,6 +397,41 @@ body{
 }
 .aviso b{color:var(--ouro);font-weight:700}
 .aviso.on{opacity:1}
+
+/* ---------- o botão que abre e fecha a tabela ----------
+   Ele nasce junto com o brilho verde da tabela pronta, no canto de
+   baixo à direita, e diz sempre o que o próximo toque vai fazer:
+   separar as linhas, juntar, separar as colunas, juntar, e recomeça. */
+#botao-mesa{
+  position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
+  display:none;align-items:center;gap:9px;padding:9px 17px 9px 14px;
+  border-radius:22px;border:1.5px solid var(--indigo);background:#fff;
+  color:var(--indigo);cursor:pointer;
+  font-family:var(--display);font-weight:600;font-size:14px;
+  box-shadow:0 7px 20px rgba(32,28,66,.2);
+  transition:background .2s,color .2s,transform .16s,box-shadow .2s;
+}
+/* Ele entra depois do brilho verde, subindo com um pequeno excesso, e
+   pisca duas vezes em âmbar: nasce no meio da festa dos confetes, e sem
+   isso passaria despercebido justamente na hora em que aparece.
+   O preenchimento é 'backwards' de propósito — segura o estado inicial
+   durante o atraso, mas solta o final, senão o transform da animação
+   tomaria conta do botão e o afundar do toque não aconteceria. */
+.cena.tem-botao #botao-mesa{
+  display:flex;
+  animation:botaoEntra .62s cubic-bezier(.2,1.35,.4,1) .35s backwards,
+            botaoChama 1.5s ease-out 1.1s 2;
+}
+#botao-mesa:hover{background:var(--indigo);color:#fff;box-shadow:0 9px 24px rgba(32,28,66,.28)}
+#botao-mesa:active{transform:scale(.96)}
+#botao-mesa svg{flex:none}
+@keyframes botaoEntra{from{opacity:0;transform:translateY(36px) scale(.8)}
+                      to  {opacity:1;transform:none}}
+@keyframes botaoChama{
+  0%  {box-shadow:0 7px 20px rgba(32,28,66,.2), 0 0 0 0    rgba(226,162,43,.8)}
+  70% {box-shadow:0 7px 20px rgba(32,28,66,.2), 0 0 0 18px rgba(226,162,43,0)}
+  100%{box-shadow:0 7px 20px rgba(32,28,66,.2), 0 0 0 0    rgba(226,162,43,0)}
+}
 
 /* a sombra da tabela: onde cada elemento vai morar */
 .fantasma{position:absolute;inset:0;z-index:3;opacity:0;transition:opacity .9s ease}
@@ -1200,13 +1239,17 @@ function familiaDoZ(z){
    De lado sobra menos espaço que em cima: dezoito colunas não teriam
    onde se afastar sem a tabela encolher um pouco, e é o que ZOOM_COL
    faz. */
-const VAO_LINHA = 20, VAO_COL = 14, ZOOM_COL = 0.88;
+const VAO_LINHA = 14, VAO_COL = 14, ZOOM_COL = 0.88;
+/* Aberta em linhas, a tabela sobe um pouco: embaixo à direita mora o
+   botão, e as últimas cartas da sétima linha iriam parar debaixo dele. */
+const CY_ABERTA = 428;
 let modoMesa = 'junta';
 
 function yDaLinha(row, modo){
-  const passo = PASSO_Y + (modo === 'linhas' ? VAO_LINHA : 0);
+  const aberta = modo === 'linhas';
+  const passo = PASSO_Y + (aberta ? VAO_LINHA : 0);
   const altura = 6*passo + CARTA_H;
-  return (TAB_CY - altura/2) + (row-1)*passo + CARTA_H/2;
+  return ((aberta ? CY_ABERTA : TAB_CY) - altura/2) + (row-1)*passo + CARTA_H/2;
 }
 function xDaColuna(col, modo){
   const passo = PASSO_X + (modo === 'colunas' ? VAO_COL : 0);
@@ -1281,9 +1324,9 @@ function reiniciaCena2(){
   const cena = document.createElement('div');
   cena.className = 'cena';
   cena.innerHTML = '<div class="mesa"><div class="fantasma"></div>' +
-                     '<div class="banda"></div><div class="aviso">' +
-                       'São <b>7</b> linhas horizontais</div>' +
-                   '</div><div class="clarao"></div>';
+                     '<div class="banda"></div><div class="aviso"></div>' +
+                   '</div><div class="clarao"></div>' +
+                   '<button id="botao-mesa" type="button"></button>';
   sl.appendChild(cena);
 
   const mesa = cena.querySelector('.mesa');
@@ -1342,6 +1385,14 @@ function reiniciaCena2(){
   const r = { i:0, espera:null, passos:[] };
   ROTEIROS[1] = r;
   modoMesa = 'junta';                    /* a cena recomeça com a tabela junta */
+  cicloMesa = 0;
+  const botao = cena.querySelector('#botao-mesa');
+  botao.addEventListener('click', () => {
+    const modo = CICLO[cicloMesa];
+    cicloMesa = (cicloMesa + 1) % CICLO.length;
+    poeModo(mesa, modo);                 /* poeModo é quem reescreve o rótulo */
+  });
+  atualizaBotao(mesa);
 
   /* ---- 1º clique: os 118 entram, e só os 50 primeiros cabem na tela ----
      Na tela ficam os elementos de 1 a 50 — é um corte no número atômico,
@@ -1512,8 +1563,9 @@ function reiniciaCena2(){
     });
     confetes();
     setTimeout(() => cena.querySelectorAll('.pc').forEach(c => c.classList.remove('verde')), 2400);
-    /* pronta a tabela, ela fica: nada mais a move nem a redimensiona */
+    /* pronta a tabela, o botão do canto entra junto com o brilho verde */
     mesa.classList.add('pronta');
+    cena.classList.add('tem-botao');
   }
 }
 
@@ -2019,7 +2071,7 @@ stage.addEventListener('pointerdown', (ev) => {
    de uma pequena ampliada.
    ------------------------------------------------------------ */
 const dedosMesa = new Map();
-let baseMesa = null, toqueMesa = null, houvePinca = false, ultimoToque = 0, esperaToque = null;
+let baseMesa = null, toqueMesa = null, houvePinca = false;
 
 /* ---- a tabela troca de modo ----
    Um toque na tabela pronta a abre em linhas; dois toques rápidos a
@@ -2028,13 +2080,14 @@ let baseMesa = null, toqueMesa = null, houvePinca = false, ultimoToque = 0, espe
    casas, os números e o aviso. */
 const AVISOS = {
   linhas:  'São <b>7</b> linhas horizontais',
-  colunas: 'São <b>18</b> colunas'
+  colunas: 'São <b>18</b> colunas',
+  junta:   ''
 };
 function poeModo(mesa, modo){
   if (modoMesa === modo) return;
   modoMesa = modo;
   limpaRealce(mesa);
-  mesa.classList.add('aberta');
+  mesa.classList.toggle('aberta', modo !== 'junta');
   mesa.classList.toggle('modo-linhas',  modo === 'linhas');
   mesa.classList.toggle('modo-colunas', modo === 'colunas');
 
@@ -2060,16 +2113,51 @@ function poeModo(mesa, modo){
   mesa.classList.add('macia');
   poeMesa(mesa, modo === 'colunas' ? ZOOM_COL : 1, 0, 0);
 
-  /* o aviso sai por um instante e volta dizendo a outra coisa */
+  /* o aviso sai por um instante e volta dizendo a outra coisa — e com
+     a tabela junta ele não tem o que dizer */
   const aviso = mesa.querySelector('.aviso');
-  if (!aviso) return;
-  aviso.classList.remove('on');
-  setTimeout(() => {
-    aviso.innerHTML = AVISOS[modo];
-    aviso.style.left = xDaColuna(7, modo).toFixed(0) + 'px';
-    aviso.style.top  = yDaLinha(2, modo).toFixed(0) + 'px';
-    aviso.classList.add('on');
-  }, 380);
+  if (aviso){
+    aviso.classList.remove('on');
+    if (AVISOS[modo]) setTimeout(() => {
+      if (modoMesa !== modo) return;    /* trocou de novo antes de o aviso voltar */
+      aviso.innerHTML = AVISOS[modo];
+      aviso.style.left = xDaColuna(7, modo).toFixed(0) + 'px';
+      aviso.style.top  = yDaLinha(2, modo).toFixed(0) + 'px';
+      aviso.classList.add('on');
+    }, 380);
+  }
+  atualizaBotao(mesa);
+}
+
+/* ---- o botão do canto ----
+   Quatro toques dão a volta: separa as linhas, junta, separa as
+   colunas, junta. O rótulo diz sempre o que o PRÓXIMO toque faz, que
+   é o que o professor precisa saber antes de tocar. */
+const CICLO = ['linhas', 'junta', 'colunas', 'junta'];
+let cicloMesa = 0;
+
+const ICONES = {
+  linhas:  '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
+             '<rect x="3" y="3" width="18" height="4" rx="1.2"/>' +
+             '<rect x="3" y="10" width="18" height="4" rx="1.2"/>' +
+             '<rect x="3" y="17" width="18" height="4" rx="1.2"/></svg>',
+  colunas: '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
+             '<rect x="3" y="3" width="4" height="18" rx="1.2"/>' +
+             '<rect x="10" y="3" width="4" height="18" rx="1.2"/>' +
+             '<rect x="17" y="3" width="4" height="18" rx="1.2"/></svg>',
+  junta:   '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
+             '<rect x="4" y="7" width="16" height="10" rx="1.5"/></svg>'
+};
+const ROTULOS = {
+  linhas:  'Separar as linhas',
+  colunas: 'Separar as colunas',
+  junta:   'Juntar a tabela'
+};
+function atualizaBotao(mesa){
+  const b = mesa.parentNode && mesa.parentNode.querySelector('#botao-mesa');
+  if (!b) return;
+  const proximo = CICLO[cicloMesa];
+  b.innerHTML = ICONES[proximo] + '<span>' + ROTULOS[proximo] + '</span>';
 }
 
 /* ---- o elemento tocado cresce ----
@@ -2193,29 +2281,17 @@ function largaMesa(ev){
   if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
 
   if (foiToque){
-    const agora = Date.now();
-    /* dois toques seguidos trocam a leitura da tabela: linhas viram
-       colunas e vice-versa. O primeiro dos dois já acendeu alguma
-       coisa — a troca limpa tudo, então não fica rastro. */
-    if (agora - ultimoToque < 380){
-      clearTimeout(esperaToque);        /* era o começo de um toque duplo */
-      poeModo(m, modoMesa === 'colunas' ? 'linhas' : 'colunas');
-      ultimoToque = 0;
-    } else if (modoMesa === 'junta'){
-      poeModo(m, 'linhas');
-      ultimoToque = agora;
-    } else {
-      const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
-      if (carta){ escolheCarta(m, carta); realceFaixa(m, carta); }
-      else {
-        /* toque no vazio adianta a aula — mas só depois de passar a
-           janela do toque duplo, senão o primeiro dos dois já teria
-           virado a página antes de o segundo chegar */
-        clearTimeout(esperaToque);
-        esperaToque = setTimeout(() => passoAdiante(), 390);
-      }
-      ultimoToque = agora;
+    /* Quem abre e fecha a tabela agora é o botão do canto. Aqui sobra
+       o que sempre foi do dedo: o elemento que se acende, e o vazio,
+       que adianta a aula. */
+    const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
+    if (carta){
+      escolheCarta(m, carta);
+      /* a faixa só existe com a tabela aberta; junta, o elemento
+         cresce sozinho */
+      if (modoMesa !== 'junta') realceFaixa(m, carta);
     }
+    else passoAdiante();
     toqueMesa = null;
     return;
   }
@@ -2413,7 +2489,7 @@ stage.addEventListener('click', (ev) => {
   /* com a tabela aberta, os toques pertencem a ela: é ela que decide
      se aquele toque acende um elemento, troca a leitura ou adianta a
      aula — e a conta do toque duplo mora lá */
-  if (slides[atual].querySelector('.mesa.aberta')) return;
+  if (slides[atual].querySelector('.mesa.pronta')) return;
   passoAdiante();
 });
 
