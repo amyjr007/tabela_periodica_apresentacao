@@ -266,9 +266,14 @@ body{
 /* A MESA
    Tudo o que pertence à tabela mora aqui dentro — as sombras das casas
    e as 118 cartas —, separado do que apenas comenta a tabela, como a
-   regra escrita. O tamanho das cartas é fixo: foi escolhido na pinça e
-   está nas constantes do JS, não num zoom por cima. */
-.mesa{position:absolute;inset:0}
+   regra escrita. Pronta a tabela, a mesa é uma peça só: a pinça de dois
+   dedos a amplia inteira, e é assim que se procura o tamanho de carta
+   que a turma do fundo enxerga. */
+.mesa{
+  position:absolute;inset:0;
+  transform:translate(var(--px,0px),var(--py,0px)) scale(var(--zoom,1));
+}
+.mesa.macia{transition:transform .32s cubic-bezier(.3,.82,.3,1)}
 
 /* a carta: x,y são o centro dela; quem gira e cresce é o miolo, para
    o voo (left/top) e o salto (transform) não disputarem a mesma
@@ -1216,6 +1221,11 @@ function reiniciaCena2(){
      uma fonte só, para as duas nunca discordarem do tamanho */
   cena.style.setProperty('--cw', CARTA_W + 'px');
   cena.style.setProperty('--ch', CARTA_H + 'px');
+  /* a mesa cresce a partir do meio da própria tabela, e não do meio do
+     palco: assim ela abre para os dois lados por igual */
+  mesa.style.transformOrigin =
+    (TAB_ESQ  + (17*PASSO_X + CARTA_W)/2).toFixed(0) + 'px ' +
+    (TAB_TOPO + ( 6*PASSO_Y + CARTA_H)/2).toFixed(0) + 'px';
 
   /* A sombra de cada posição: o lugar vazio que espera o elemento. Uma
      casa por posição — as duas séries f dividem a sua, e desenhá-la
@@ -1860,9 +1870,91 @@ stage.addEventListener('pointerdown', (ev) => {
   ev.stopPropagation();               /* na montagem, o gesto é da peça */
 }, true);
 
-/* A tabela montada não se amplia mais com a pinça: o tamanho dela foi
-   escolhido assim e virou o tamanho de nascença das cartas. Durante a
-   aula ela fica quieta, que é o que se quer de uma tabela pronta. */
+/* ------------------------------------------------------------
+   A MESA PRONTA
+   Montada a tabela, ela deixa de ser 118 cartas e passa a ser uma
+   coisa só. Dois dedos em pinça a ampliam inteira — é assim que se
+   procura o tamanho bom das cartas. Com ela ampliada, um dedo a
+   passeia; no tamanho natural o arrasto não faz nada, para um toque
+   perdido não sair tirando a tabela do lugar. Voltando ao tamanho de
+   origem, ela volta sozinha para o centro.
+
+   O número achado aqui não fica na tela: ele sai no Ctrl+C e vira
+   constante no arquivo, para a carta ter mesmo aquele tamanho em vez
+   de uma pequena ampliada.
+   ------------------------------------------------------------ */
+const dedosMesa = new Map();
+let baseMesa = null;
+
+function mesaPronta(){
+  if (naMontagem() || stage.classList.contains('escrevendo')) return null;
+  const sl = slides[atual];
+  return sl ? sl.querySelector('.mesa.pronta') : null;
+}
+function leMesa(m){
+  return {
+    zoom: parseFloat(m.style.getPropertyValue('--zoom')) || 1,
+    px:   parseFloat(m.style.getPropertyValue('--px'))   || 0,
+    py:   parseFloat(m.style.getPropertyValue('--py'))   || 0
+  };
+}
+function poeMesa(m, zoom, px, py){
+  m.style.setProperty('--zoom', zoom.toFixed(3));
+  m.style.setProperty('--px', px.toFixed(1) + 'px');
+  m.style.setProperty('--py', py.toFixed(1) + 'px');
+}
+function ancoraMesa(m){
+  baseMesa = Object.assign(centroDe(dedosMesa), leMesa(m));
+}
+
+stage.addEventListener('pointerdown', (ev) => {
+  const m = mesaPronta();
+  if (!m || ev.target.closest('button, a, input')) return;
+  m.classList.remove('macia');            /* na mão, sem inércia */
+  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraMesa(m);
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+});
+document.addEventListener('pointermove', (ev) => {
+  if (!dedosMesa.has(ev.pointerId)) return;
+  const m = mesaPronta();
+  if (!m) return;
+  dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  const agora = centroDe(dedosMesa), b = baseMesa;
+  let zoom = b.zoom;
+  if (dedosMesa.size > 1 && b.d > 12)
+    zoom = Math.max(.5, Math.min(3.5, b.zoom * (agora.d / b.d)));
+  /* passear só faz sentido quando há mais tabela do que tela */
+  const passeia = dedosMesa.size > 1 || zoom > 1.02;
+  poeMesa(m, zoom,
+    passeia ? b.px + (agora.cx - b.cx)/fitScale : b.px,
+    passeia ? b.py + (agora.cy - b.cy)/fitScale : b.py);
+});
+function largaMesa(ev){
+  if (!dedosMesa.has(ev.pointerId)) return;
+  dedosMesa.delete(ev.pointerId);
+  const m = mesaPronta();
+  if (!m) return;
+  if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
+  const e = leMesa(m);
+  if (e.zoom <= 1.02){                            /* de volta ao tamanho: recentra */
+    m.classList.add('macia');
+    poeMesa(m, 1, 0, 0);
+  }
+}
+document.addEventListener('pointerup', largaMesa);
+document.addEventListener('pointercancel', largaMesa);
+
+/* a roda do mouse amplia a mesa como a pinça */
+stage.addEventListener('wheel', (ev) => {
+  const m = mesaPronta();
+  if (!m) return;
+  const e = leMesa(m);
+  const zoom = Math.max(.5, Math.min(3.5, e.zoom * (1 - ev.deltaY * 0.0015)));
+  m.classList.toggle('macia', zoom <= 1.02);
+  poeMesa(m, zoom, zoom <= 1.02 ? 0 : e.px, zoom <= 1.02 ? 0 : e.py);
+  ev.preventDefault();
+}, {passive:false});
 
 /* Quem abre a montagem é a tecla G — ou o ícone ✥ da barra, para
    quando o tablet estiver sem teclado. É de propósito que ela não
@@ -1982,6 +2074,18 @@ function textoDoSlide(i){
            (o.fonte === null ? ' '.repeat(13) : ', fonte:' + pad(o.fonte,5)) +
            ', esc:' + o.esc.toFixed(2) + ' },\n';
   });
+  /* a mesa entra com o tamanho a que ela foi pinçada, e já com a conta
+     feita: é a carta desse tamanho que eu fixo no arquivo */
+  const mesa = slides[i].querySelector('.mesa');
+  if (mesa){
+    const e = leMesa(mesa);
+    out += '  { ' + "el:'mesa',".padEnd(16, ' ') +
+           ' zoom:' + e.zoom.toFixed(2) +
+           ', px:' + pad(Math.round(e.px),4) +
+           ', py:' + pad(Math.round(e.py),4) + ' },' +
+           '   /* carta ' + Math.round(CARTA_W*e.zoom) + ' x ' + Math.round(CARTA_H*e.zoom) +
+           ', passo ' + Math.round(PASSO_X*e.zoom) + ' x ' + Math.round(PASSO_Y*e.zoom) + ' */\n';
+  }
   return out;
 }
 function copiaPosicoes(todos){
