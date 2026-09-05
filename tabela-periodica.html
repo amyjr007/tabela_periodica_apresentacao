@@ -902,15 +902,19 @@ body{
 .mesa.valencia .rot-a{opacity:1}
 .rot-a.no-alto{translate:0 -54px}
 
-/* a conta dos elétrons, que entra deslizando como o nome da família
-   entrava no slide das famílias */
+/* A conta dos elétrons entra como o nome da família entrava no slide
+   das famílias: deslizando na horizontal, vindo de dentro da tabela
+   para fora dela. Da metade para a esquerda vem da direita; da metade
+   para a direita, ao contrário. */
 .rot-val{
   position:absolute;z-index:11;transform:translate(-50%,-50%);
   pointer-events:none;white-space:nowrap;
   font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01em;
-  color:var(--bloco-a);opacity:0;translate:0 10px;
-  transition:opacity .4s ease, translate .46s cubic-bezier(.2,.86,.26,1);
+  color:var(--bloco-a);opacity:0;
+  transition:opacity .42s ease, translate .55s cubic-bezier(.2,.86,.26,1);
 }
+.rot-val.de-dir{translate: 56px 0}
+.rot-val.de-esq{translate:-56px 0}
 .rot-val.on{opacity:1;translate:0 0}
 .rot-val b{font-weight:700;font-size:1.24em}
 
@@ -964,11 +968,17 @@ body{
    cor do elemento aceso. */
 .dist-val{
   position:absolute;left:640px;top:152px;transform:translate(-50%,-50%);
-  z-index:13;pointer-events:none;white-space:nowrap;text-align:center;
-  font-family:var(--display);font-weight:500;font-size:19px;color:var(--tinta);
+  z-index:13;white-space:nowrap;text-align:center;
+  font-family:var(--display);font-weight:500;color:var(--tinta);
+  /* o tamanho mora numa variável: crescer é mudar a letra, e não
+     esticar a caixa — assim ela continua nítida e continua centrada no
+     próprio ponto */
+  font-size:calc(19px * var(--kd,1));
+  pointer-events:auto;cursor:grab;touch-action:none;
   opacity:0;translate:0 10px;
   transition:opacity .4s ease, translate .45s cubic-bezier(.2,.86,.26,1);
 }
+.dist-val.na-mao{cursor:grabbing}
 .dist-val.on{opacity:1;translate:0 0}
 .dist-val .cam{
   display:inline-block;position:relative;margin:0 11px;
@@ -979,9 +989,11 @@ body{
   border:1.5px solid currentColor;border-top:none;
   border-radius:0 0 4px 4px;opacity:.4;
 }
+/* embaixo da chave vai quantos elétrons aquela camada tem — que é a
+   conta que a aula faz, e não o nome da camada */
 .dist-val .lb{
   display:block;margin-top:3px;
-  font-family:var(--mono);font-weight:500;font-size:.72em;letter-spacing:.1em;
+  font-family:var(--mono);font-weight:600;font-size:.78em;
   color:var(--indigo);
 }
 .dist-val sup{font-size:.62em;vertical-align:.42em;font-weight:400}
@@ -4277,9 +4289,10 @@ function sobeColuna(mesa, col){
 
   const n = VALENCIA[col];
   const r = document.createElement('div');
-  r.className = 'rot-val';
-  r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons') +
-                ' de valência';
+  /* o mesmo sentido do nome da família no slide 5: a conta entra vindo
+     de dentro da tabela e sai para fora dela */
+  r.className = 'rot-val ' + (col <= 9 ? 'de-dir' : 'de-esq');
+  r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons');
   /* Acima da letra do grupo, e com folga: a letra sobe uma casa
      inteira junto com a coluna, e as duas escritas ficariam encostadas
      se a conta estivesse logo acima do lugar de repouso dela. Nas
@@ -4321,13 +4334,81 @@ function acendeElemento(mesa, carta){
 
   const d = document.createElement('div');
   d.className = 'dist-val';
+  /* quantos elétrons cabem naquela camada: a soma dos expoentes dos
+     subníveis dela */
+  const conta = sub => [...sub.matchAll(/<sup>(\d+)<\/sup>/g)]
+    .reduce((a, m) => a + (+m[1]), 0);
   d.innerHTML = '<span class="quem">' + SIMBOLOS[z-1] + '</span>' +
-    distDe(z).map(([cam, sub]) =>
+    distDe(z).map(([, sub]) =>
       '<span class="cam">' + sub +
-        '<span class="br"></span><span class="lb">' + cam + '</span></span>').join('');
+        '<span class="br"></span><span class="lb">' + conta(sub) + '</span></span>').join('');
+  /* onde e de que tamanho ele a deixou da última vez */
+  if (ondeADist){
+    d.style.left = ondeADist.x.toFixed(0) + 'px';
+    d.style.top  = ondeADist.y.toFixed(0) + 'px';
+    d.style.setProperty('--kd', ondeADist.k.toFixed(3));
+  }
   mesa.appendChild(d);
   revela(d, 'on');
 }
+
+/* ---- a distribuição anda e cresce com a mão ----
+   Ela nasce centrada em cima da tabela, mas cada elemento escreve uma
+   linha de tamanho diferente, e o lugar bom para uma não é o lugar bom
+   para outra. Um dedo a leva, dois em pinça mudam o tamanho da letra,
+   e a roda do mouse faz o mesmo no PC. Onde ela é largada fica
+   guardado: a próxima nasce ali. */
+let distNaMao = null;
+let ondeADist = null;
+
+function guardaDist(d){
+  ondeADist = {
+    x: parseFloat(d.style.left) || 640,
+    y: parseFloat(d.style.top)  || 152,
+    k: parseFloat(d.style.getPropertyValue('--kd')) || 1
+  };
+}
+function comecaDist(mesa, d, ev){
+  distNaMao = {
+    d, ptr: new Map(),
+    k: 1 / (fitScale * (leMesa(mesa).zoom || 1))
+  };
+  distNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraDist();
+  d.classList.add('na-mao');
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+function ancoraDist(){
+  const b = distNaMao;
+  b.base = centroDe(b.ptr);
+  b.x0 = parseFloat(b.d.style.left) || 640;
+  b.y0 = parseFloat(b.d.style.top)  || 152;
+  b.k0 = parseFloat(b.d.style.getPropertyValue('--kd')) || 1;
+}
+document.addEventListener('pointermove', (ev) => {
+  const b = distNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  const agora = centroDe(b.ptr);
+  if (b.ptr.size > 1 && b.base.d > 12)
+    b.d.style.setProperty('--kd',
+      Math.max(.5, Math.min(3, b.k0 * (agora.d / b.base.d))).toFixed(3));
+  b.d.style.left = Math.max(80, Math.min(1200,
+    b.x0 + (agora.cx - b.base.cx) * b.k)).toFixed(0) + 'px';
+  b.d.style.top  = Math.max(40, Math.min(690,
+    b.y0 + (agora.cy - b.base.cy) * b.k)).toFixed(0) + 'px';
+});
+function soltaDist(ev){
+  const b = distNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.delete(ev.pointerId);
+  if (b.ptr.size){ ancoraDist(); return; }   /* sobrou dedo: recomeça dali */
+  b.d.classList.remove('na-mao');
+  guardaDist(b.d);
+  distNaMao = null;
+}
+document.addEventListener('pointerup', soltaDist);
+document.addEventListener('pointercancel', soltaDist);
 
 /* ---- o botão que troca de leitura ---- */
 function poeBreu(cena){
@@ -6003,6 +6084,16 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
+  /* e a distribuição do slide da valência, pelo mesmo motivo */
+  const dAlvo = ev.target.closest && ev.target.closest('.dist-val');
+  if (dAlvo){
+    if (!distNaMao) comecaDist(m, dAlvo, ev);
+    else if (distNaMao.ptr.size < 2){
+      distNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+      ancoraDist();
+    }
+    return;
+  }
   /* no slide dos grupos, o dedo na tabela é dela: parado, abre a
      tabela; aberta ela, arrasta o bloco. Em nenhum dos casos é gesto
      da mesa, e por isso ele não chega ao ouvinte de baixo. */
@@ -6188,6 +6279,16 @@ document.addEventListener('pointercancel', largaMesa);
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
   if (!m) return;
+  /* a roda sobre a distribuição muda o tamanho da letra dela */
+  const dRoda = ev.target.closest && ev.target.closest('.dist-val');
+  if (dRoda){
+    const k0 = parseFloat(dRoda.style.getPropertyValue('--kd')) || 1;
+    dRoda.style.setProperty('--kd',
+      Math.max(.5, Math.min(3, k0 * (1 - ev.deltaY * 0.0015))).toFixed(3));
+    guardaDist(dRoda);
+    ev.preventDefault();
+    return;
+  }
   /* no slide dos grupos, com a tabela aberta, a roda faz sobre o bloco
      debaixo do cursor o que a pinça faz no tablete */
   if (atual === 5 && mesaPartida){
