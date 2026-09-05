@@ -305,11 +305,11 @@ body{
 .pc-in::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.13),transparent 40%)}
 .pc i,.pc b,.pc u{position:relative;z-index:3;font-style:normal;text-decoration:none}
-.pc i{font-family:var(--mono);font-size:11px;line-height:1;letter-spacing:.04em;
+.pc i{font-family:var(--mono);font-size:10px;line-height:1;letter-spacing:.04em;
   color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55)}
-.pc b{font-family:var(--display);font-weight:500;font-size:22px;line-height:1;
+.pc b{font-family:var(--display);font-weight:500;font-size:20px;line-height:1;
   text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.pc u{font-family:var(--mono);font-size:10px;line-height:1;text-align:center;
+.pc u{font-family:var(--mono);font-size:9px;line-height:1;text-align:center;
   color:rgba(255,255,255,.9);text-shadow:0 1px 3px rgba(0,0,0,.55)}
 
 /* a carta da frente de uma pilha — lantanídeos e actinídeos moram
@@ -321,7 +321,7 @@ body{
 }
 /* na carta da frente de uma pilha, o intervalo ocupa o lugar do símbolo */
 .pc-in.pilha{justify-content:center}
-.pc b.faixa{font-family:var(--mono);font-size:13px;letter-spacing:-.04em;white-space:nowrap}
+.pc b.faixa{font-family:var(--mono);font-size:12px;letter-spacing:-.04em;white-space:nowrap}
 
 /* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
 @keyframes surge{
@@ -1100,15 +1100,15 @@ const MASSAS = [
   258,259,266,267,268,269,270,269,278,281,282,285,286,289,290,293,294,294
 ];
 
-/* O tamanho das cartas é o que o professor achou na pinça: a tabela
-   ocupando a largura da tela, que é o que a turma do fundo enxerga.
-   Não é um zoom por cima — a carta tem mesmo este tamanho, e por isso
-   a letra dela sai nítida no projetor. */
-const CARTA_W = 63, CARTA_H = 52, PASSO_X = 69, PASSO_Y = 58;
-/* centrada na largura do palco, e na altura em torno de y=417, que é
-   onde a tabela ficou depois que as séries f entraram para dentro */
-const TAB_ESQ  = 640 - (17*PASSO_X + CARTA_W)/2;
-const TAB_TOPO = 417 - ( 6*PASSO_Y + CARTA_H)/2;
+/* O tamanho das cartas é o que o professor achou na pinça. Não é um
+   zoom por cima — a carta tem mesmo este tamanho, e por isso a letra
+   dela sai nítida no projetor em vez de ampliada. */
+const CARTA_W = 58, CARTA_H = 48, PASSO_X = 64, PASSO_Y = 54;
+/* e o centro da tabela é onde ele a deixou, um pouco à direita e
+   abaixo do meio do palco */
+const TAB_CX = 646, TAB_CY = 440;
+const TAB_ESQ  = TAB_CX - (17*PASSO_X + CARTA_W)/2;
+const TAB_TOPO = TAB_CY - ( 6*PASSO_Y + CARTA_H)/2;
 
 /* Onde cada número atômico mora na tabela.
    Lantanídeos e actinídeos ficam DENTRO dela, na casa do grupo 3 que é
@@ -1792,7 +1792,7 @@ const LAYOUTS = {
     titulo:    {x:300, y: 23, esc:0.76},
     regua:     {x:191, y: 62, esc:1.00},
     subtitulo: {x:411, y: 64, esc:1.08},
-    area:      {x:642, y:423, esc:1.11},
+    area:      {x:683, y:417, esc:0.68},
     regra:     {x:597, y:122, esc:1.11}
   }
 };
