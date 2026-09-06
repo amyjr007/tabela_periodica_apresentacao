@@ -68,6 +68,9 @@
      O verde é o dos naturais; o âmbar aceso, das duas exceções que
      moram no meio deles. */
   --natural: #1F9D55;
+  /* o vermelho neon: um vermelho quente com brilho em volta, para as
+     palavras que a aula quer que a turma leve daqui */
+  --neon: #FF2E4C;
   /* O bege dos estáveis: claro na carta, e escuro quando é letra —
      bege sobre lavanda não se lê. E puxado para o cinza de propósito:
      ao lado do âmbar dos radioativos, um bege dourado seria a mesma
@@ -986,6 +989,16 @@ body{
 }
 .diagrama-pauling.on{opacity:1}
 
+/* A frase deste slide é de pegar enquanto o professor a arruma: um
+   dedo a leva, dois em pinça mudam o tamanho. Ela já vive por left,
+   top e --esc, que são as mesmas três coisas que a montagem usa — e
+   por isso a folha do Ctrl+C sabe ler o que a mão fizer aqui. */
+#deck .slide.is-active [data-mont="regra9"]{
+  pointer-events:auto;cursor:grab;touch-action:none;
+  user-select:none;-webkit-user-select:none;
+}
+#deck .slide.is-active [data-mont="regra9"].na-mao{cursor:grabbing}
+
 /* o nome dele, logo acima — no escuro do modo Pauling, em letra clara */
 .rot-diagrama{
   position:absolute;left:387px;top:362px;transform:translate(-50%,-50%);
@@ -1240,6 +1253,13 @@ body{
 .regra.sem-traco .regra-in{border-left:0;padding-left:0}
 /* e as palavras que estão sendo batizadas ganham a cor do destaque */
 .regra em{font-style:normal;font-weight:600;color:var(--ouro)}
+/* o neon acende de verdade: a cor sozinha, num texto escuro sobre
+   papel claro, não passa de um vermelho — o que faz neon é a luz que
+   ele espalha em volta */
+.regra em.neon{
+  color:var(--neon);font-weight:700;
+  text-shadow:0 0 9px rgba(255,46,76,.55), 0 0 20px rgba(255,46,76,.32);
+}
 /* A cena inteira não pega o dedo, mas na montagem estas peças pegam:
    sem isto o toque atravessaria por cima delas e nada se moveria. */
 body.montagem .cena .regra,
@@ -4399,6 +4419,54 @@ function acendeElemento(mesa, carta){
   revela(d, 'on');
 }
 
+/* ---- a frase, e a mão que a arruma ----
+   Só enquanto ele procura o lugar dela: quando mandar a folha, isto
+   sai e ela fica onde ficou, como saiu a mão da distribuição e a do
+   diagrama. */
+let fraseNaMao = null;
+
+/* A conta é a mesma da montagem, e por isso mexe nas MEDIDAS e não nos
+   estilos: é de lá que a folha do Ctrl+C tira o que escreve. Mexendo
+   só no estilo, a peça andava na tela e a folha continuava dizendo o
+   lugar antigo. */
+function ancoraFrase(){
+  const b = fraseNaMao, m = MEDIDAS.get(b.f);
+  b.base = centroDe(b.ptr);
+  b.x0 = m ? m.cx  : parseFloat(b.f.style.left) || 0;
+  b.y0 = m ? m.cy  : parseFloat(b.f.style.top)  || 0;
+  b.k0 = m ? m.esc : 1;
+}
+function comecaFrase(mesa, f, ev){
+  fraseNaMao = { f, ptr: new Map(),
+                 k: 1 / (fitScale * (leMesa(mesa).zoom || 1)) };
+  fraseNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraFrase();
+  f.classList.add('na-mao');
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+document.addEventListener('pointermove', (ev) => {
+  const b = fraseNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  const agora = centroDe(b.ptr), m = MEDIDAS.get(b.f);
+  if (!m) return;
+  if (b.ptr.size > 1 && b.base.d > 12)
+    m.esc = Math.max(.4, Math.min(2.5, b.k0 * (agora.d / b.base.d)));
+  m.cx = b.x0 + (agora.cx - b.base.cx) * b.k;
+  m.cy = b.y0 + (agora.cy - b.base.cy) * b.k;
+  aplicaEl(b.f);
+});
+function soltaFrase(ev){
+  const b = fraseNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.delete(ev.pointerId);
+  if (b.ptr.size){ ancoraFrase(); return; }
+  b.f.classList.remove('na-mao');
+  fraseNaMao = null;
+}
+document.addEventListener('pointerup', soltaFrase);
+document.addEventListener('pointercancel', soltaFrase);
+
 /* ---- o diagrama, que entra e sai com o modo ---- */
 function poeDiagrama(mesa){
   let f = mesa.querySelector('.diagrama-pauling');
@@ -4507,8 +4575,9 @@ function montaRoteiro9(){
     const t = document.createElement('div');
     t.className = 'regra';
     t.dataset.mont = 'regra9';
-    t.innerHTML = '<span class="regra-in">O número de elétrons de valência ' +
-      'coincide com a família dos <em>elem. Representativos</em></span>';
+    t.innerHTML = '<span class="regra-in">O número de ' +
+      '<em class="neon">elétrons de valência</em> coincide com a família dos ' +
+      '<em>elem. Representativos</em></span>';
     cena.appendChild(t);
     aplicaLayout(8);
     revela(t, 'posta');
@@ -6146,6 +6215,16 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
+  /* a frase do slide da valência, enquanto ele a arruma */
+  const frAlvo = ev.target.closest && ev.target.closest('[data-mont="regra9"]');
+  if (frAlvo){
+    if (!fraseNaMao) comecaFrase(m, frAlvo, ev);
+    else if (fraseNaMao.ptr.size < 2){
+      fraseNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+      ancoraFrase();
+    }
+    return;
+  }
 
 
 
@@ -6335,6 +6414,17 @@ document.addEventListener('pointercancel', largaMesa);
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
   if (!m) return;
+  /* a roda sobre a frase muda o tamanho dela */
+  const frRoda = ev.target.closest && ev.target.closest('[data-mont="regra9"]');
+  if (frRoda){
+    const m = MEDIDAS.get(frRoda);
+    if (m){
+      m.esc = Math.max(.4, Math.min(2.5, m.esc * (1 - ev.deltaY * 0.0015)));
+      aplicaEl(frRoda);
+    }
+    ev.preventDefault();
+    return;
+  }
   /* no slide dos grupos, com a tabela aberta, a roda faz sobre o bloco
      debaixo do cursor o que a pinça faz no tablete */
   if (atual === 5 && mesaPartida){
