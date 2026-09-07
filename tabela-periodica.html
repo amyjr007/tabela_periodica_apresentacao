@@ -303,10 +303,27 @@ body{
    Vai em 'translate', e não em 'transform': estas peças usam o
    transform para se posicionar — o translateY(-50%) e a escala da
    montagem — e animar transform apagaria isso. */
-.desliza-sai  {animation:cabDeslizaSai   .5s  cubic-bezier(.5,0,.75,.4) both}
-.desliza-entra{animation:cabDeslizaEntra .58s cubic-bezier(.2,.72,.3,1) both}
-@keyframes cabDeslizaSai  {from{translate:0 0;      opacity:1} to{translate:360px 0; opacity:0}}
-@keyframes cabDeslizaEntra{from{translate:-360px 0; opacity:0} to{translate:0 0;     opacity:1}}
+/* O EMPURRÃO É DE TELA INTEIRA, E NINGUÉM SE APAGA NO CAMINHO.
+   O que sai atravessa o palco todo e desaparece na borda — o palco
+   corta o que passa dela —, e não se dissolve no meio do caminho: some
+   por ter saído, que é o que faz o olho ler aquilo como uma coisa
+   levada para fora, e não como uma coisa que evaporou.
+   Os dois lados andam com o MESMO tempo e a MESMA curva: é assim que a
+   distância entre o que sai e o que entra fica constante, e um parece
+   mesmo empurrar o outro.
+   Adiante empurra para a direita; voltando, a mesma animação ao
+   contrário — as frases voltam da direita para a esquerda.
+   Vai em 'translate', e não em 'transform': estas peças usam o
+   transform para se posicionar (o translateY(-50%) e a escala da
+   montagem), e animar transform apagaria isso. */
+.desliza-sai-next  {animation:deslizaSaiDir  .62s cubic-bezier(.42,.02,.24,1) both}
+.desliza-entra-next{animation:deslizaEntraEsq .62s cubic-bezier(.42,.02,.24,1) both}
+.desliza-sai-prev  {animation:deslizaSaiEsq  .62s cubic-bezier(.42,.02,.24,1) both}
+.desliza-entra-prev{animation:deslizaEntraDir .62s cubic-bezier(.42,.02,.24,1) both}
+@keyframes deslizaSaiDir   {from{translate:0 0}       to{translate:1280px 0}}
+@keyframes deslizaEntraEsq {from{translate:-1280px 0} to{translate:0 0}}
+@keyframes deslizaSaiEsq   {from{translate:0 0}       to{translate:-1280px 0}}
+@keyframes deslizaEntraDir {from{translate:1280px 0}  to{translate:0 0}}
 
 /* a carta vira a face: meia volta, troca de cara no fio, e completa */
 @keyframes viraCarta{
@@ -3140,7 +3157,7 @@ function go(i, dir){
     /* no giro os slides ficam parados: quem se mexe é o cabeçalho de
        cada um, e a tabela, que troca de dono e de face */
     sai.classList.add('is-leaving');
-    giraCabecalhos(de, i);
+    giraCabecalhos(de, i, dir);
   } else {
     sai.classList.add('is-leaving', 'fx-'+fx+'-out-'+dir);
     entra.classList.add('fx-'+fx+'-in-'+dir);
@@ -3530,8 +3547,9 @@ function levaMesaPara(i, comGiro){
   return mesa;
 }
 
-function giraCabecalhos(de, para){
+function giraCabecalhos(de, para, dir){
   levaMesaPara(para, true);
+  const lado = dir === 'prev' ? 'prev' : 'next';
 
   /* A CLASSE DE SAÍDA FICA ATÉ O SLIDE SAIR DE CENA.
      O slide que sai continua inteiro à vista enquanto tiver 'is-leaving'
@@ -3539,15 +3557,15 @@ function giraCabecalhos(de, para){
      tempo todo da passagem. Tirando a classe assim que a animação
      acaba, o cabeçalho velho voltava do nada e ficava por baixo do
      novo até o fim: era esse fantasma que estragava a troca. Com o
-     preenchimento 'both', ele fica onde a animação o deixou — fora da
-     tela e apagado — até o slide inteiro se recolher. */
+     preenchimento 'both', ele fica onde a animação o deixou — fora do
+     palco — até o slide inteiro se recolher. */
   slides[de].querySelectorAll(PECAS_PASSAGEM).forEach(el => {
-    el.classList.add('desliza-sai');
-    setTimeout(() => el.classList.remove('desliza-sai'), DUR_PASSAGEM + 60);
+    el.classList.add('desliza-sai-' + lado);
+    setTimeout(() => el.classList.remove('desliza-sai-' + lado), DUR_PASSAGEM + 60);
   });
   slides[para].querySelectorAll(PECAS_PASSAGEM).forEach(el => {
-    el.classList.add('desliza-entra');
-    setTimeout(() => el.classList.remove('desliza-entra'), 640);
+    el.classList.add('desliza-entra-' + lado);
+    setTimeout(() => el.classList.remove('desliza-entra-' + lado), 700);
   });
 }
 
