@@ -10428,7 +10428,13 @@ function fechaQuiz(){
     mesa.querySelectorAll('.pc.alvo-jogo, .pc.certo-jogo')
         .forEach(c => c.classList.remove('alvo-jogo', 'certo-jogo'));
     /* os blocos que o jogo separou voltam ao lugar */
-    if (QUIZ[quizSlide] && QUIZ[quizSlide].jogo) refazBlocos(mesa);
+    if (QUIZ[quizSlide] && QUIZ[quizSlide].jogo){
+      refazBlocos(mesa);
+      if (mesa.dataset.blocosDoJogo){
+        mesa.classList.remove('blocos', 'tipos');
+        delete mesa.dataset.blocosDoJogo;
+      }
+    }
     mesa.querySelectorAll('.pc.certa, .pc.errada').forEach(c => {
       c.classList.remove('certa', 'errada');
       c.firstElementChild.style.removeProperty('--sc');
@@ -10698,6 +10704,16 @@ let jogoUsados = [], jogoCarta = null, jogoAlvoAceso = null;
 
 /* ---- a tabela abre-se em três blocos ---- */
 function separaBlocos(mesa){
+  /* A MESA TEM DE ENTRAR EM MODO BLOCOS, e não basta mudar as cartas de
+     sítio. É a classe 'blocos' que autoriza o gesto do bloco lá no
+     ouvinte da mesa: sem ela os blocos ficavam separados na aparência
+     mas não se deixavam arrastar — e é o que acontecia quando se abria
+     o quiz sem antes ter dito a frase do slide, que era quem punha a
+     classe. A 'tipos' vai junto, que é ela que pinta por tipo.
+     Fica a marca de quem as pôs, para o fecho do quiz as tirar se
+     tiverem sido postas por ele. */
+  if (!mesa.classList.contains('blocos')) mesa.dataset.blocosDoJogo = '1';
+  mesa.classList.add('blocos', 'tipos');
   const grupos = { metais:[], ametais:[], nobres:[], hidrogenio:[] };
   mesa.querySelectorAll('.pc').forEach(c => {
     const t = tipoDe(+c.dataset.z);
