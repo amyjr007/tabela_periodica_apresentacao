@@ -4157,14 +4157,16 @@ function reiniciaCena2(){
   });
   atualizaBotao(mesa);
 
-  /* ---- 1º clique: os 118 entram, e só os 50 primeiros cabem na tela ----
-     Na tela ficam os elementos de 1 a 50 — é um corte no número atômico,
-     e não um sorteio. Como se vai tocar neles em ordem crescente, ter os
-     primeiros à mão é o que faz a interação funcionar sem remendo. Os
-     outros 68 esperam para lá da borda direita, e é de lá que virão
-     quando a tabela se montar. As POSIÇÕES é que são sorteadas: cada um
-     dos cinquenta cai numa vaga qualquer da grade. */
-  r.passos.push(() => {
+  /* ---- as 118 cartas, cada uma sabendo para onde volta ----
+     poe() guarda em x0/y0 a vaga do monte, e é para lá que a carta cai
+     quando a tabela se desmancha. Na tela cabem os cinquenta primeiros
+     — é um corte no número atômico, e não um sorteio: como se vai tocar
+     neles em ordem crescente, ter os primeiros à mão é o que faz a
+     interação funcionar sem remendo. Os outros 68 esperam para lá da
+     borda direita. As POSIÇÕES é que são sorteadas: cada um dos
+     cinquenta cai numa vaga qualquer da grade. */
+  function criaAsCartas(){
+    if (cartas.size) return;
     const vagas = embaralha(gradeVagas());
     for (let z = 1; z <= 118; z++){
       const c = criaCarta(z);
@@ -4173,37 +4175,59 @@ function reiniciaCena2(){
       if (z <= 50){
         const v = vagas[z-1];
         poe(c, v.x, v.y, Math.random()*34 - 17);
-        c.style.opacity = '0';
-        setTimeout(() => {
-          c.style.opacity = '1';
-          c.classList.add('surge');
-          setTimeout(() => {
-            c.classList.remove('surge');
-            /* a opacidade sai do estilo da carta: com ela presa em 1,
-               nenhuma regra conseguiria apagar as linhas de fora do
-               realce mais tarde */
-            c.style.removeProperty('opacity');
-          }, 700);
-        }, 130 + (z-1)*13);
       } else {
         poe(c, 1390 + Math.random()*250, 40 + Math.random()*640, Math.random()*60 - 30);
       }
     }
+  }
+  /* ---- e a tabela já de pé, que é como o slide abre ----
+     A ordem primeiro: a tabela como todo o mundo a conhece. Sem voo e
+     sem festa, que a história deste slide ainda não começou — ela
+     começa quando esta ordem se desmancha. */
+  function poeTabelaDePe(){
+    criaAsCartas();
+    cartas.forEach((c, z) => {
+      const a = alvoDe(z, 'junta');
+      c.style.left = a.x.toFixed(1) + 'px';
+      c.style.top  = a.y.toFixed(1) + 'px';
+      c.style.removeProperty('opacity');
+      const miolo = c.firstElementChild;
+      miolo.style.setProperty('--rot', '0deg');
+      miolo.style.setProperty('--sc', '1');
+      if (!c.classList.contains('na-tabela')){
+        c.classList.add('na-tabela');
+        encaixa(c, z);
+      }
+    });
+    mesa.classList.add('pronta');
+    atualizaMarca();
+  }
 
+  /* ---- 1º clique: a tabela se desmancha ----
+     De uma vez, e não em fila. Montar é uma história que se conta um
+     elemento por vez; desmontar não é história nenhuma, e ver 118
+     cartas saindo uma atrás da outra seria a espera pela espera. O que
+     fica é o monte — a desordem de que a aula vai falar a seguir. */
+  r.passos.push(() => {
+    criaAsCartas();
+    montandoTudo = false;
+    limpaRealce(mesa);
+    poeModo(mesa, 'junta');
+    cicloMesa = 0;
+    mesa.classList.remove('pronta');
+    cena.classList.remove('tem-botao');
+    cena.classList.add('tem-todos');       /* o atalho de montar de novo */
+    cartas.forEach(c => desvoa(c, 560));
     const cl = cena.querySelector('.clarao');
     cl.classList.add('on');
     setTimeout(() => cl.classList.remove('on'), 800);
-    atualizaMarca();                       /* a tabela do canto sai de cena */
-    cena.classList.add('tem-todos');       /* e o atalho aparece com as cartas */
+    atualizaMarca();
 
-    /* desfazer: as cartas simplesmente saem. A entrada delas é uma
-       chegada, e chegada não se assiste ao contrário */
+    /* desfazer: ela se levanta de novo, inteira e sem voo */
     r.desfazer.push(() => {
       r.i = 0;
-      cena.querySelectorAll('.pc').forEach(c => c.remove());
-      cartas.clear();
       cena.classList.remove('tem-todos');
-      atualizaMarca();                     /* e a tabela do canto volta */
+      poeTabelaDePe();
     });
   });
 
@@ -4422,7 +4446,7 @@ function reiniciaCena2(){
      ela é posta de pé de uma vez, sem voo nem festa, porque não houve
      história nenhuma para encenar. */
   r.garanteMontada = () => {
-    if (!cartas.size){ r.passos[0](); r.i = Math.max(r.i, 1); }
+    criaAsCartas();
     /* A marca sozinha não prova nada: desfeita a cena, as cartas são
        destruídas e nascem de novo no monte, e a marca pode ter ficado
        de uma montagem anterior. Só desiste quem vê carta na tabela. */
@@ -4483,6 +4507,15 @@ function reiniciaCena2(){
     cena.classList.add('tem-botao');
     atualizaPista();          /* a regra 2 passa a poder entrar */
   }
+
+  /* E O SLIDE ABRE COM A TABELA DE PÉ.
+     Este slide fala de desordem virando ordem, e por isso começa
+     mostrando a ordem: a tabela pronta, como todo o mundo já a viu. O
+     primeiro clique é que a desmancha, e daí em diante a história é a
+     de sempre — a regra, e a tabela sendo refeita um elemento por vez.
+     Botão nenhum aparece agora: cada um entra na hora em que a cena
+     precisa dele. */
+  poeTabelaDePe();
 }
 
 /* ============================================================
@@ -11002,17 +11035,41 @@ function sairDoQuiz(){
 function refazEstagio(volta){
   quizVoltaPara = null;
   if (!volta || volta.slide !== atual) return;
-  /* a tabela montada não é passo de roteiro nenhum: quem a põe de pé é
-     o botão "todos", e aqui é preciso dizê-lo à mão. Vem primeiro
-     porque as frases do slide 2 esperam por ela. */
-  if (volta.montada && atual === 1 && ROTEIROS[1] && ROTEIROS[1].garanteMontada)
-    ROTEIROS[1].garanteMontada();
   const r = ROTEIROS[atual];
-  let guarda = 0, antes = -1;
-  while (r && r.i < volta.i && r.i !== antes && ++guarda < 60){
+  /* Primeiro, o que sobrou de temporizador antigo. Um convite pendente
+     — a carta a piscar e o r.espera que ela deixou — não é passo
+     nenhum, e passoAdiante gasta uma volta a consumi-lo sem a cena
+     andar. O quiz já apagou a cena; o resto dela sai agora. */
+  if (r) r.espera = null;
+  slides[atual].querySelectorAll('.pc.chama').forEach(c => {
+    c.classList.remove('chama');
+    c.onclick = null;
+  });
+  /* A tabela de pé não é passo de roteiro nenhum: quem a levanta é o
+     botão "todos". E ela vem DEPOIS dos passos, não antes — o primeiro
+     passo do slide 2 é justamente o que a desmancha, e levantá-la
+     primeiro seria vê-la cair outra vez. */
+  const monta = () => {
+    if (!volta.montada) return;
+    if (atual === 1 && ROTEIROS[1] && ROTEIROS[1].garanteMontada) ROTEIROS[1].garanteMontada();
+  };
+  let guarda = 0, antes = -1, tentou = false;
+  while (r && r.i < volta.i && guarda++ < 60){
+    if (r.i === antes){
+      /* o passo não quis acontecer. Pode estar à espera da tabela de
+         pé — a segunda frase do slide 2 espera. Levanta-se uma vez e
+         tenta-se de novo; parando outra vez, para-se aqui: melhor
+         voltar até onde dá do que insistir contra a cena. */
+      if (tentou) break;
+      tentou = true;
+      monta();
+      antes = -1;
+      continue;
+    }
     antes = r.i;
     if (!passoAdiante()) break;
   }
+  monta();                  /* e a tabela fica como estava, no fim */
   atualizaPista();
 }
 
