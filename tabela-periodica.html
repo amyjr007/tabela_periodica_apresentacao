@@ -2087,6 +2087,8 @@ body{
              background .25s,color .25s,border-color .25s,transform .25s;
 }
 .cn{width:27px;height:27px;font-size:14px}
+/* com a letra do grupo cabem dois caracteres na mesma bolinha */
+.cn.ab{font-size:12px;letter-spacing:-.03em}
 /* Os números entram em cascata, cada um logo atrás do anterior: as
    linhas chegam pela esquerda, as colunas caem de cima — pelo lado de
    onde cada uma conta. É rápido de propósito; eles acompanham a
@@ -10444,131 +10446,297 @@ reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zer
    quiz do slide em que a aula está — e fica apagado nos três slides
    que não têm um.
    ============================================================ */
+/* ============================================================
+   AS PERGUNTAS NASCEM NA HORA
+   Cada quiz tem um gerador em vez de uma lista pronta: a lógica é
+   sempre a mesma — a que a aula acabou de ensinar —, e os números
+   mudam a cada vez que o quiz abre e a cada Refazer. Assim o que fica
+   do quiz é o caminho, e não a resposta decorada de tanto repetir.
+
+   As duas séries de baixo ficam de fora de todos os sorteios: quinze
+   elementos numa casa só não têm linha nem coluna para procurar, e o
+   slide 7 é que fala deles.
+   ============================================================ */
+const sorteia = a => a[(Math.random()*a.length)|0];
+const alguns  = (a, n) => embaralha(a.slice()).slice(0, n);
+const ordinal  = n => n + 'º';
+/* linha é palavra feminina: 5ª linha, e não 5º */
+const ordinalF = n => n + 'ª';
+
+/* a casa de cada elemento, ao contrário: da linha e da coluna para
+   quem mora nela */
+const NA_CASA = (() => {
+  const m = {};
+  for (let z = 1; z <= 118; z++){
+    if (naPilha(z)) continue;
+    const p = posDe(z);
+    m[p.row + ':' + p.col] = z;
+  }
+  return m;
+})();
+const zNaCasa = (linha, col) => NA_CASA[linha + ':' + col] || null;
+const TODOS_NA_GRADE = Object.keys(NA_CASA).map(k => NA_CASA[k]).sort((a,b) => a-b);
+const CASAS_BOAS = Object.keys(NA_CASA).map(k => {
+  const p = k.split(':');
+  return { linha:+p[0], col:+p[1], z:NA_CASA[k] };
+});
+function daLinha(linha){
+  const zs = [];
+  for (let c = 1; c <= 18; c++){ const z = zNaCasa(linha, c); if (z) zs.push(z); }
+  return zs.sort((a,b) => a-b);
+}
+function daColuna(col){
+  const zs = [];
+  for (let l = 1; l <= 7; l++){ const z = zNaCasa(l, col); if (z) zs.push(z); }
+  return zs;
+}
+/* as cinco com nome próprio, no singular e no plural — a pergunta
+   precisa das duas formas */
+const FAM_NOME = {
+  1: {p:'alcalinos',          s:'alcalino'},
+  2: {p:'alcalinos-terrosos', s:'alcalino-terroso'},
+  16:{p:'calcogênios',        s:'calcogênio'},
+  17:{p:'halogênios',         s:'halogênio'},
+  18:{p:'gases nobres',       s:'gás nobre'}
+};
+/* o hidrogênio senta em cima dos alcalinos sem ser um deles */
+const membrosDaFamilia = col => daColuna(col).filter(z => !(col === 1 && z === 1));
+
 const QUIZ = {
   /* slide 4 · Os Tipos de Elementos — aqui o quiz não pergunta: joga-se.
      A tabela abre-se em blocos e as cartas caem de cima. */
   3: { jogo:true, perguntas:[] },
 
   /* slide 2 · Os critérios de Organização */
-  1: {eixos:true, perguntas:[
-    {q:'Toque no elemento cujo número atômico é 17', ok:z => z === 17,
-     dica:'O número atômico é o número que fica em cima do símbolo.<br>Os elementos estão em ordem crescente, da esquerda para a direita.',
-     pista:{linha:3}},
-    {q:'Toque no elemento imediatamente posterior ao número atômico 10', ok:z => z === 11,
-     dica:'O elemento posterior ao 10 é o 11. É o primeiro elemento da terceira linha.',
-     pista:{linha:3}},
-    {q:'Toque no primeiro elemento da segunda linha', ok:z => z === 3,
-     dica:'As linhas são horizontais, da esquerda para a direita.<br>Ache a linha 2 e toque no primeiro elemento dela.',
-     pista:{linha:2}},
-    {q:'Toque no último elemento da quinta linha', ok:z => z === 54,
-     dica:'As linhas são horizontais, da esquerda para a direita.<br>Ache a quinta linha e toque no último elemento dela.',
-     pista:{linha:5}},
-    {q:'Qual elemento é semelhante ao chumbo, 82?', ok:z => [6,14,32,50,114].indexOf(z) >= 0,
-     dica:'Numa mesma coluna todos são quimicamente semelhantes.<br>Toque em qualquer elemento da coluna do chumbo, menos ele.',
-     pista:{coluna:14}}
-  ]},
+  1: {eixos:true, gera: () => {
+    const DICA_NUM = 'O número atômico é o número que fica em cima do símbolo.' +
+                     '<br>Os elementos estão em ordem crescente, da esquerda para a direita.';
+    const perg = [];
+    /* 1 · achar pelo número atômico */
+    const z1 = sorteia(TODOS_NA_GRADE.filter(z => z > 2));
+    perg.push({q:'Toque no elemento cujo número atômico é ' + z1, ok:z => z === z1,
+               dica:DICA_NUM, pista:{linha:posDe(z1).row}});
+    /* 2 · o vizinho de numeração, para um lado ou para o outro */
+    const z2 = sorteia(TODOS_NA_GRADE.filter(z =>
+                 z > 3 && z < 118 && !naPilha(z-1) && !naPilha(z+1)));
+    const adiante = Math.random() < .5;
+    const alvo2 = adiante ? z2 + 1 : z2 - 1;
+    perg.push({q:'Toque no elemento imediatamente ' + (adiante ? 'posterior' : 'anterior') +
+                 ' ao número atômico ' + z2,
+               ok:z => z === alvo2,
+               dica:'O elemento ' + (adiante ? 'posterior' : 'anterior') + ' ao ' + z2 +
+                    ' é o ' + alvo2 + '.<br>Os números crescem da esquerda para a direita, linha a linha.',
+               pista:{linha:posDe(alvo2).row}});
+    /* 3 e 4 · as duas pontas de duas linhas diferentes */
+    const duas = alguns([2,3,4,5,6,7], 2);
+    const zsA = daLinha(duas[0]), zsB = daLinha(duas[1]);
+    const alvo3 = zsA[0], alvo4 = zsB[zsB.length-1];
+    perg.push({q:'Toque no primeiro elemento da ' + ordinalF(duas[0]) + ' linha',
+               ok:z => z === alvo3,
+               dica:'As linhas são horizontais, da esquerda para a direita.' +
+                    '<br>Ache a linha ' + duas[0] + ' e toque no primeiro elemento dela.',
+               pista:{linha:duas[0]}});
+    perg.push({q:'Toque no último elemento da ' + ordinalF(duas[1]) + ' linha',
+               ok:z => z === alvo4,
+               dica:'As linhas são horizontais, da esquerda para a direita.' +
+                    '<br>Ache a linha ' + duas[1] + ' e toque no último elemento dela.',
+               pista:{linha:duas[1]}});
+    /* 5 · a semelhança, que mora na coluna */
+    const col5 = sorteia([1,2,13,14,15,16,17,18]);
+    const membros = membrosDaFamilia(col5);
+    const ref = sorteia(membros), outros = membros.filter(z => z !== ref);
+    perg.push({q:'Qual elemento é quimicamente semelhante ao ' + SIMBOLOS[ref-1] + ', ' + ref + '?',
+               ok:z => outros.indexOf(z) >= 0,
+               dica:'Numa mesma coluna todos são quimicamente semelhantes.' +
+                    '<br>Toque em qualquer elemento da coluna do ' + SIMBOLOS[ref-1] + ', menos ele.',
+               pista:{coluna:col5}});
+    return perg;
+  }},
 
   /* slide 3 · As Coordenadas Periódicas */
-  2: {eixos:true, perguntas:[
-    {q:'Toque no elemento do 4º período, grupo 8.', ok:z => z === 26,
-     dica:'O período é a linha e o grupo é a coluna. Ache o cruzamento da linha 4 com a coluna 8.',
-     pista:{linha:4}},
-    {q:'Toque no elemento do 3º período, grupo 17.', ok:z => z === 17,
-     dica:'Desça até a terceira linha e ande até a penúltima coluna.',
-     pista:{coluna:17}},
-    {q:'Toque no elemento do 7º período, grupo 2.', ok:z => z === 88,
-     dica:'A última linha da tabela, na segunda coluna.',
-     pista:{linha:7}}
-  ]},
+  2: {eixos:true, gera: () => alguns(CASAS_BOAS, 3).map(c => ({
+    q:'Toque no elemento do ' + ordinal(c.linha) + ' período, grupo ' + c.col + '.',
+    ok:z => z === c.z,
+    dica:'O período é a linha e o grupo é a coluna.<br>Ache o cruzamento da linha ' +
+         c.linha + ' com a coluna ' + c.col + '.',
+    pista: Math.random() < .5 ? {linha:c.linha} : {coluna:c.col}
+  }))},
 
   /* slide 5 · As principais famílias */
-  4: {perguntas:[
-    {q:'Qual o último elemento alcalino?', ok:z => z === 87,
-     dica:'Os alcalinos são a família 1 da tabela. O último deles fica no período 7.',
-     pista:{coluna:1}},
-    {q:'Toque no 3º elemento dos gases nobres.', ok:z => z === 18,
-     dica:'Os gases nobres são a família 18. Conte de cima para baixo na coluna.',
-     pista:{coluna:18}},
-    {q:'Toque na família dos alcalinos-terrosos.', tipo:'familia', ok:(z,col) => col === 2,
-     dica:'Os alcalinos-terrosos ocupam a família 2, ao lado dos alcalinos.',
-     pista:{coluna:2}},
-    {q:'Toque na família dos halogênios.', tipo:'familia', ok:(z,col) => col === 17,
-     dica:'Os halogênios são a família 17, logo ao lado dos gases nobres.',
-     pista:{coluna:17}},
-    {q:'Toque em qualquer elemento que antecede um calcogênio.', ok:(z,col) => col === 15,
-     dica:'Os calcogênios são a família 16. Os que os antecedem ficam na família 15.',
-     pista:{coluna:15}},
-    {q:'Toque em qualquer elemento posterior aos halogênios.', ok:(z,col) => col === 18,
-     dica:'Os halogênios são a família 17. Os elementos depois deles ficam na família 18.',
-     pista:{coluna:18}}
-  ]},
+  4: {gera: () => {
+    const perg = [];
+    /* 1 · a ponta de uma família */
+    const cA = sorteia([1,2,16,17,18]);
+    const msA = membrosDaFamilia(cA);
+    const ultimo = Math.random() < .5;
+    const alvoA = ultimo ? msA[msA.length-1] : msA[0];
+    perg.push({q:'Qual o ' + (ultimo ? 'último' : 'primeiro') + ' elemento dos ' +
+                 FAM_NOME[cA].p + '?',
+               ok:z => z === alvoA,
+               dica:'Os ' + FAM_NOME[cA].p + ' são a família ' + cA + ' da tabela.<br>O ' +
+                    (ultimo ? 'último' : 'primeiro') + ' deles fica no período ' +
+                    posDe(alvoA).row + '.',
+               pista:{coluna:cA}});
+    /* 2 · o enésimo de outra */
+    const cB = sorteia([1,2,16,17,18].filter(c => c !== cA));
+    const msB = membrosDaFamilia(cB);
+    const n = 2 + ((Math.random() * Math.min(4, msB.length - 2))|0);
+    perg.push({q:'Toque no ' + ordinal(n) + ' elemento dos ' + FAM_NOME[cB].p + '.',
+               ok:z => z === msB[n-1],
+               dica:'Os ' + FAM_NOME[cB].p + ' são a família ' + cB +
+                    '.<br>Conte de cima para baixo na coluna.',
+               pista:{coluna:cB}});
+    /* 3 e 4 · a família inteira, duas delas */
+    alguns([1,2,16,17,18], 2).forEach(c => perg.push({
+      q:'Toque na família dos ' + FAM_NOME[c].p + '.', tipo:'familia',
+      ok:(z, col) => col === c,
+      dica:'Os ' + FAM_NOME[c].p + ' ocupam a família ' + c + ' da tabela.',
+      pista:{coluna:c}}));
+    /* 5 · quem vem antes */
+    const cE = sorteia([16,17,18]);
+    perg.push({q:'Toque em qualquer elemento que antecede um ' + FAM_NOME[cE].s + '.',
+               ok:(z, col) => col === cE - 1,
+               dica:'Os ' + FAM_NOME[cE].p + ' são a família ' + cE +
+                    '.<br>Os que os antecedem ficam na família ' + (cE-1) + '.',
+               pista:{coluna:cE-1}});
+    /* 6 · e quem vem depois */
+    const cF = sorteia([1,16,17]);
+    perg.push({q:'Toque em qualquer elemento posterior aos ' + FAM_NOME[cF].p + '.',
+               ok:(z, col) => col === cF + 1,
+               dica:'Os ' + FAM_NOME[cF].p + ' são a família ' + cF +
+                    '.<br>Os elementos depois deles ficam na família ' + (cF+1) + '.',
+               pista:{coluna:cF+1}});
+    return perg;
+  }},
 
-  /* slide 6 · Os Grupos A e B */
-  5: {eixos:true, perguntas:[
-    {q:'Qual elemento está no 3º período, família 2A?', ok:z => z === 12,
-     dica:'A família 2A é a segunda coluna. Desça até a terceira linha.',
-     pista:{linha:3}},
-    {q:'Qual elemento está no 5º período, família 1B?', ok:z => z === 47,
-     dica:'A família 1B é o grupo 11, no meio dos elementos de transição.',
-     pista:{linha:5}},
-    {q:'Qual elemento está no 3º período, família 7A?', ok:z => z === 17,
-     dica:'A família 7A é a coluna 17, a penúltima da tabela.',
-     pista:{coluna:17}}
-  ]},
+  /* slide 6 · Os Grupos A e B — e aqui os números em cima da tabela
+     falam por letra, que é como a pergunta chama as famílias */
+  5: {eixos:true, ab:true, gera: () => alguns(CASAS_BOAS, 3).map(c => {
+    /* 8B é uma família de três colunas: qualquer uma delas responde */
+    const cols = GRUPO_AB[c.col] === '8B' ? [8,9,10] : [c.col];
+    return {
+      q:'Qual elemento está no ' + ordinal(c.linha) + ' período, família ' + GRUPO_AB[c.col] + '?',
+      ok:(z, col, linha) => linha === c.linha && cols.indexOf(col) >= 0,
+      dica:'A família ' + GRUPO_AB[c.col] + ' é ' +
+           (cols.length > 1 ? 'a faixa das colunas 8, 9 e 10' : 'a coluna ' + c.col) +
+           '.<br>Desça até a linha ' + c.linha + '.',
+      pista:{linha:c.linha}
+    };
+  })},
 
   /* slide 7 · Os Lantanídeos e os Actinídeos — com as duas séries
-     abertas, que é onde estão as respostas */
-  6: {prepara:(mesa) => { abreSerie(mesa, 'la'); abreSerie(mesa, 'ac'); },
-      perguntas:[
-    {q:'Toque em um elemento de transição interna.', ok:z => blocoSPDF(z) === 'f',
-     dica:'Os elementos de transição interna são os lantanídeos e os actinídeos, nas duas linhas abaixo da tabela.'},
-    {q:'Toque no primeiro elemento da série dos lantanídeos.', ok:z => z === 57,
-     dica:'É o lantânio (La), número atômico 57 — o que dá nome à série.'},
-    {q:'Toque no último elemento da série dos actinídeos.', ok:z => z === 103,
-     dica:'É o laurêncio (Lr), número atômico 103 — o último da segunda fila.'},
-    {q:'Toque no último elemento da série dos lantanídeos.', ok:z => z === 71,
-     dica:'É o lutécio (Lu), número atômico 71 — o último da primeira fila.'},
-    {q:'Toque em qualquer elemento representativo na tabela.',
-     ok:z => blocoSPDF(z) === 's' || blocoSPDF(z) === 'p',
-     dica:'Os elementos representativos formam os blocos s e p, nas duas pontas da tabela.'}
-  ]},
+     abertas, que é onde estão as respostas.
 
-  /* slide 8 · A Natureza dos Elementos */
-  7: {perguntas:[
-    {q:'Toque em qualquer elemento natural da tabela periódica',
-     ok:z => z >= 1 && z <= 92 && z !== 43 && z !== 61,
-     dica:'Os elementos naturais vão do 1 ao 92, menos o tecnécio (43) e o promécio (61).'},
-    {q:'Toque num elemento cujo isótopo mais comum é radioativo',
-     ok:z => z >= 83 || z === 43 || z === 61,
-     dica:'São os do 83 em diante, mais o tecnécio (43) e o promécio (61).'},
-    {q:'Toque num elemento transurânico', ok:z => z > 92,
-     dica:'Transurânicos são os que vêm depois do urânio — número atômico maior que 92.'},
-    {q:'Toque num elemento cisurânico', ok:z => z <= 92 && z !== 43 && z !== 61,
-     dica:'Cisurânicos são os do 1 ao 92, menos o 43 e o 61.'},
-    {q:'Toque no último elemento natural da tabela', ok:z => z === 92,
-     dica:'É o urânio (U), de número atômico 92.'},
-    {q:'Toque no último elemento com isótopo mais comum estável', ok:z => z === 82,
-     dica:'É o chumbo (Pb), de número atômico 82.'}
-  ]},
+     O LANTÂNIO E O ACTÍNIO NÃO SÃO DA SÉRIE. Eles dão o nome a ela e
+     ficam no grupo 3; a série dos lantanídeos vai do cério (58) ao
+     lutécio (71), e a dos actinídeos do tório (90) ao laurêncio (103).
+     Quem mudou foi o gabarito, e não o desenho: as gavetas continuam a
+     abrir com os quinze de sempre, porque é ali que a tabela os
+     guarda. */
+  6: {prepara:(mesa) => { abreSerie(mesa, 'la'); abreSerie(mesa, 'ac'); },
+      gera: () => {
+    const INTERNA = z => (z >= 58 && z <= 71) || (z >= 90 && z <= 103);
+    const modelos = [
+      () => ({q:'Toque em um elemento de transição interna.', ok:INTERNA,
+              dica:'São os lantanídeos e os actinídeos, nas duas filas abaixo da tabela: ' +
+                   'do cério (58) ao lutécio (71) e do tório (90) ao laurêncio (103).'}),
+      () => ({q:'Toque no primeiro elemento da série dos lantanídeos.', ok:z => z === 58,
+              dica:'É o cério (Ce), 58. O lantânio (57) dá o nome à série, mas não faz parte dela.'}),
+      () => ({q:'Toque no último elemento da série dos lantanídeos.', ok:z => z === 71,
+              dica:'É o lutécio (Lu), 71 — o último da primeira fila.'}),
+      () => ({q:'Toque no primeiro elemento da série dos actinídeos.', ok:z => z === 90,
+              dica:'É o tório (Th), 90. O actínio (89) dá o nome à série, mas não faz parte dela.'}),
+      () => ({q:'Toque no último elemento da série dos actinídeos.', ok:z => z === 103,
+              dica:'É o laurêncio (Lr), 103 — o último da segunda fila.'}),
+      () => ({q:'Toque em qualquer elemento representativo na tabela.',
+              ok:z => !naPilha(z) && (blocoSPDF(z) === 's' || blocoSPDF(z) === 'p'),
+              dica:'Os elementos representativos formam os blocos s e p, nas duas pontas da tabela.'}),
+      () => {
+        const n = 2 + ((Math.random()*13)|0);            /* do 2º ao 14º */
+        const la = Math.random() < .5;
+        const alvo = (la ? 57 : 89) + n;
+        return {q:'Toque no ' + ordinal(n) + ' elemento da série dos ' +
+                  (la ? 'lantanídeos' : 'actinídeos') + '.',
+                ok:z => z === alvo,
+                dica:'A série começa no ' + (la ? 'cério (58)' : 'tório (90)') +
+                     '.<br>Conte ' + n + ' casas a partir dele, contando com ele.'};
+      }
+    ];
+    return alguns(modelos, 5).map(f => f());
+  }},
+
+  /* slide 8 · A Natureza dos Elementos — com as duas séries abertas.
+     Aqui elas fazem falta: o último elemento natural é o urânio (92) e
+     os transurânicos começam logo depois dele, todos dentro da gaveta
+     dos actinídeos. Fechada, a resposta não estaria na tela. */
+  7: {prepara:(mesa) => { abreSerie(mesa, 'la'); abreSerie(mesa, 'ac'); },
+      gera: () => {
+    const natural = z => z <= 92 && z !== 43 && z !== 61;
+    const modelos = [
+      () => ({q:'Toque em qualquer elemento natural da tabela periódica', ok:natural,
+              dica:'Os elementos naturais vão do 1 ao 92, menos o tecnécio (43) e o promécio (61).'}),
+      () => ({q:'Toque num elemento cujo isótopo mais comum é radioativo',
+              ok:z => z >= 83 || z === 43 || z === 61,
+              dica:'São os do 83 em diante, mais o tecnécio (43) e o promécio (61).'}),
+      () => ({q:'Toque num elemento transurânico', ok:z => z > 92,
+              dica:'Transurânicos são os que vêm depois do urânio — número atômico maior que 92.'}),
+      () => ({q:'Toque num elemento cisurânico', ok:z => z <= 92 && z !== 43 && z !== 61,
+              dica:'Cisurânicos são os do 1 ao 92, menos o 43 e o 61.'}),
+      () => ({q:'Toque num elemento artificial', ok:z => z > 92 || z === 43 || z === 61,
+              dica:'Artificiais são os que vêm depois do urânio, mais o tecnécio (43) e o promécio (61).'}),
+      () => ({q:'Toque no último elemento natural da tabela', ok:z => z === 92,
+              dica:'É o urânio (U), de número atômico 92.'}),
+      () => ({q:'Toque no último elemento com isótopo mais comum estável', ok:z => z === 82,
+              dica:'É o chumbo (Pb), de número atômico 82.'}),
+      () => ({q:'Toque no elemento artificial de menor número atômico', ok:z => z === 43,
+              dica:'É o tecnécio (Tc), 43 — um buraco no meio dos naturais.'}),
+      () => {
+        const l = sorteia([2,3,4,5]);
+        return {q:'Toque em qualquer elemento natural do ' + ordinal(l) + ' período',
+                ok:(z, col, linha) => natural(z) && linha === l,
+                dica:'Naturais são os do 1 ao 92, menos o 43 e o 61.<br>Fique na linha ' + l + '.',
+                pista:{linha:l}};
+      }
+    ];
+    return alguns(modelos, 6).map(f => f());
+  }},
 
   /* slide 9 · A Tabela e os Elétrons de Valência */
-  8: {perguntas:[
-    {q:'Toque na família cujos elementos têm 6 elétrons na camada de valência',
-     tipo:'familia', ok:(z,col) => col === 16,
-     dica:'A família com 6 elétrons de valência é a 6A, a dos calcogênios.',
-     pista:{coluna:16}},
-    {q:'Toque em qualquer elemento que tem 2 elétrons na última camada',
-     ok:(z,col) => col === 2,
-     dica:'Os elementos com 2 elétrons na última camada estão na família 2A.',
-     pista:{coluna:2}},
-    {q:'Toque em qualquer elemento que tenha 8 elétrons de valência',
-     ok:(z,col) => col === 18 && z !== 2,
-     dica:'Os gases nobres (família 8A) têm 8 elétrons de valência — todos menos o hélio.',
-     pista:{coluna:18}},
-    {q:'Qual o total de elétrons de valência destes três átomos, somados?',
-     tipo:'escrita', atomos:[12, 6, 17], resposta:13,
-     dica:'Nos grupos A, os elétrons de valência coincidem com o número da família: 2A, 4A e 7A.'}
-  ]},
+  8: {gera: () => {
+    const VAL = {1:1, 2:2, 13:3, 14:4, 15:5, 16:6, 17:7, 18:8};
+    const COL_DE_VAL = {1:1, 2:2, 3:13, 4:14, 5:15, 6:16, 7:17, 8:18};
+    const perg = [];
+    /* 1 · a família inteira, pelo número de elétrons */
+    const v1 = sorteia([1,2,3,4,5,6,7]);
+    const c1 = COL_DE_VAL[v1];
+    perg.push({q:'Toque na família cujos elementos têm ' + v1 +
+                 ' elétrons na camada de valência',
+               tipo:'familia', ok:(z, col) => col === c1,
+               dica:'A família com ' + v1 + ' elétrons de valência é a ' + GRUPO_AB[c1] + '.',
+               pista:{coluna:c1}});
+    /* 2 · e um qualquer de outra */
+    const v2 = sorteia([1,2,3,4,5,6,7].filter(v => v !== v1));
+    const c2 = COL_DE_VAL[v2];
+    perg.push({q:'Toque em qualquer elemento que tem ' + v2 + ' elétrons na última camada',
+               ok:(z, col) => col === c2,
+               dica:'Os elementos com ' + v2 + ' elétrons na última camada estão na família ' +
+                    GRUPO_AB[c2] + '.',
+               pista:{coluna:c2}});
+    /* 3 · os oito dos gases nobres, menos o hélio */
+    perg.push({q:'Toque em qualquer elemento que tenha 8 elétrons de valência',
+               ok:(z, col) => col === 18 && z !== 2,
+               dica:'Os gases nobres (família 8A) têm 8 elétrons de valência — todos menos o hélio.',
+               pista:{coluna:18}});
+    /* 4 · a conta, com três átomos sorteados */
+    const repr = TODOS_NA_GRADE.filter(z => z !== 2 && VAL[posDe(z).col] !== undefined);
+    const tres = alguns(repr, 3);
+    perg.push({q:'Qual o total de elétrons de valência destes três átomos, somados?',
+               tipo:'escrita', atomos:tres,
+               resposta:tres.reduce((s, z) => s + VAL[posDe(z).col], 0),
+               dica:'Nos grupos A, os elétrons de valência coincidem com o número da família: ' +
+                    tres.map(z => GRUPO_AB[posDe(z).col]).join(', ') + '.'});
+    return perg;
+  }},
 
   /* slide 10 · A Tabela e o Subnível mais Energético */
   9: {perguntas:[
@@ -10670,7 +10838,29 @@ function quizLimpaTimers(){ quizTimers.forEach(clearTimeout); quizTimers = []; }
 
 function quizCena(){ return cenaDe(slides[quizSlide]); }
 function quizMesa(){ return slides[quizSlide] && slides[quizSlide].querySelector('.mesa'); }
-function quizPerguntas(){ return QUIZ[quizSlide] ? QUIZ[quizSlide].perguntas : []; }
+/* As perguntas de agora: as sorteadas, se o quiz tiver gerador, e a
+   lista fixa nos que ainda não têm. */
+function quizPerguntas(){
+  const q = QUIZ[quizSlide];
+  return q ? (q.sorteadas || q.perguntas || []) : [];
+}
+/* e o sorteio acontece ao abrir o quiz e a cada Refazer — que são as
+   duas portas por onde se passa por recomecaQuiz */
+function sorteiaPerguntas(){
+  const q = QUIZ[quizSlide];
+  if (q && q.gera) q.sorteadas = q.gera();
+}
+/* ---- os grupos por letra ----
+   No slide dos grupos A e B a pergunta fala em 1A, 2A, 3B — e os
+   números em cima da tabela têm de falar a mesma língua, ou o aluno
+   procura a família 2A numa fila que diz 2. */
+function poeLetrasAB(mesa, entra){
+  if (!mesa) return;
+  mesa.querySelectorAll('.cn').forEach(n => {
+    n.textContent = entra ? GRUPO_AB[+n.dataset.col] : n.dataset.col;
+    n.classList.toggle('ab', entra);
+  });
+}
 
 /* ---- abrir e fechar ---- */
 function abreQuiz(){
@@ -10695,6 +10885,7 @@ function abreQuiz(){
     /* e onde a pergunta fala de linha e de coluna, os dois eixos
        aparecem — é assim que o app anterior fazia */
     if (QUIZ[quizSlide].eixos) mesa.classList.add('numerada');
+    if (QUIZ[quizSlide].ab) poeLetrasAB(mesa, true);
     const prep = QUIZ[quizSlide].prepara;
     if (prep) prep(mesa);
   }
@@ -10741,6 +10932,7 @@ function acendeBreuDoQuiz(sl, entra, preto){
 }
 
 function recomecaQuiz(){
+  sorteiaPerguntas();          /* perguntas novas a cada vez */
   quizPasso = 0; quizAcertos = 0; quizTropecos = 0; quizTravado = false;
   quizTiraCartao();
   poePergunta();
@@ -10759,6 +10951,7 @@ function fechaQuiz(){
   if (mesa){
     clearTimeout(giraTimer);
     mesa.classList.remove('quiz', 'brilha-acerto', 'girando');
+    poeLetrasAB(mesa, false);        /* os números voltam a ser números */
     mesa.querySelectorAll('.pc.alvo-jogo, .pc.certo-jogo')
         .forEach(c => c.classList.remove('alvo-jogo', 'certo-jogo'));
     /* os blocos que o jogo separou voltam ao lugar */
