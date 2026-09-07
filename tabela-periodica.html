@@ -2385,7 +2385,9 @@ body.montagem .cena .rotulos{pointer-events:auto}
    acontecer: o que está esperando a sua hora não o acende. */
 #pista{
   position:absolute;left:26px;bottom:22px;z-index:12;
-  width:9px;height:9px;border-radius:50%;background:var(--indigo);
+  /* metade maior do que nasceu (9 px): de longe, na sala, o ponto de
+     9 px sumia contra o papel */
+  width:13.5px;height:13.5px;border-radius:50%;background:var(--indigo);
   opacity:0;pointer-events:none;
 }
 /* Aceso, o ponto tem opacidade própria: a pulsação é enfeite, e não o
