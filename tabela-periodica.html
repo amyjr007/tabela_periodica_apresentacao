@@ -1333,6 +1333,12 @@ body{
   opacity:0;transition:opacity .55s ease;
 }
 .breu-quiz.on{opacity:1}
+/* No quiz do slide 2 o breu é breu mesmo: preto cheio, sem a cúpula
+   azulada. Ali a tabela é a única coisa em cena, e o preto puro é o
+   que dá o contraste. */
+.breu-quiz.breu-total{
+  background:#000;
+}
 
 /* e o cabeçalho clareia junto: no escuro, a letra escura some */
 .slide.quiz-escuro .title{color:#F3F0FB}
@@ -1470,7 +1476,9 @@ body{
   /* debaixo da caixa da pergunta, no mesmo eixo dela */
   position:absolute;left:50%;top:164px;z-index:40;
   transform:translateX(-50%);
-  max-width:760px;pointer-events:none;
+  /* pega o dedo: a dica é arrastável como a pergunta, para o lugar
+     dela poder ser escolhido em aula e anotado depois */
+  max-width:760px;pointer-events:auto;cursor:grab;touch-action:none;
   font-family:var(--body);font-size:17px;line-height:1.45;
   color:var(--tinta-dim);
   padding:9px 14px;border-radius:10px;
@@ -1479,6 +1487,7 @@ body{
   transition:opacity .35s ease, translate .4s cubic-bezier(.2,.86,.26,1);
 }
 .quiz-dica.on{opacity:1;translate:0 0}
+.quiz-dica.levando{cursor:grabbing}
 .cena.em-quiz .quiz-dica{
   color:#EFE4CE;background:rgba(226,162,43,.14);border-color:rgba(226,162,43,.55);
 }
@@ -2108,6 +2117,14 @@ body{
 .mesa.numerada .cn{
   display:flex;
   animation:numColuna .26s cubic-bezier(.2,1.5,.4,1) var(--atraso,0ms) backwards;
+}
+/* No breu do quiz o índigo dos números some: linhas e colunas passam a
+   amarelo, que é a cor que o escuro deixa ler. O número em realce fica
+   de fora — aquele já tem a cor dele, e é ela que o distingue. */
+.slide.quiz-escuro .mesa.quiz .ln:not(.realce),
+.slide.quiz-escuro .mesa.quiz .cn:not(.realce){
+  color:var(--ouro-luz);border-color:rgba(226,162,43,.75);
+  background:rgba(226,162,43,.14);
 }
 .ln.realce,.cn.realce{background:var(--ouro-luz);border-color:var(--ouro);color:#fff;
   transform:translate(-50%,-50%) scale(1.14)}
@@ -3530,6 +3547,12 @@ function atualizaMarca(){
    professor ainda mergulhado. Do mundo só se sai pelo Voltar. */
 const avanca = () => {
   if (typeof mundoAberto !== 'undefined' && mundoAberto){ passoDoMundo(); return; }
+  /* NO QUIZ A SETA NÃO FAZ NADA. Quem passa de uma pergunta para a
+     outra é o acerto, e mais nada — errar não adianta a fila, e a seta
+     muito menos. Sem esta guarda ela caía no go() e levava a aula para
+     o slide seguinte, fechando o quiz por baixo do professor. A saída
+     é pelo menu dos controles, no mesmo botão que o abriu. */
+  if (typeof quizAtivo !== 'undefined' && quizAtivo) return;
   if (!passoAdiante()) go(atual+1, 'next');
 };
 /* voltar é, primeiro, desfazer o que se fez aqui; só quando não há mais
@@ -3539,6 +3562,7 @@ const volta  = () => {
     if (mundoAberto.tipo === 'metais') viraCubo(-1);
     return;
   }
+  if (typeof quizAtivo !== 'undefined' && quizAtivo) return;
   if (!passoAtras()) go(atual-1, 'prev');
 };
 
@@ -10179,6 +10203,17 @@ function textoDoSlide(i){
            ', alt:'  + pad(perg.offsetHeight, 3) +
            ' '.repeat(13) + ', esc:1.00 },\n';
   }
+  /* e a dica, quando estiver em cena: o número dela vai no nome, que
+     cada pergunta guarda a sua */
+  const dicaEmCena = slides[i].querySelector('.quiz-dica');
+  if (dicaEmCena){
+    out += '  { ' + ("el:'dica" + (quizPasso + 1) + "',").padEnd(16, ' ') +
+           ' x:' + pad(dicaEmCena.offsetLeft, 4) +
+           ', y:' + pad(Math.round(dicaEmCena.offsetTop + dicaEmCena.offsetHeight/2), 3) +
+           ', larg:' + pad(dicaEmCena.offsetWidth,  4) +
+           ', alt:'  + pad(dicaEmCena.offsetHeight, 3) +
+           ' '.repeat(13) + ', esc:1.00 },\n';
+  }
   /* OS BLOCOS SEPARADOS, um por linha.
      Cada um sai com o centro da caixa dele e com a escala a que foi
      pinçado — que é exatamente o par de números que o jogo do slide 4
@@ -10645,7 +10680,8 @@ function abreQuiz(){
   quizAtivo = true; quizSlide = atual;
   const cena = quizCena(), mesa = quizMesa();
   cena.classList.add('em-quiz');
-  acendeBreuDoQuiz(slides[quizSlide], true);
+  /* o quiz do slide 2 apaga a sala de vez: preto cheio */
+  acendeBreuDoQuiz(slides[quizSlide], true, quizSlide === 1);
   if (mesa){
     mesa.classList.add('quiz');
     /* No slide dos critérios a aula COMEÇA com a tabela desmontada, e
@@ -10685,7 +10721,7 @@ function abreQuiz(){
   atualizaBotaoQuiz();
 }
 /* o véu que apaga a sala, e a letra do cabeçalho que clareia com ele */
-function acendeBreuDoQuiz(sl, entra){
+function acendeBreuDoQuiz(sl, entra, preto){
   if (!sl) return;
   let veu = sl.querySelector(':scope > .breu-quiz');
   if (entra){
@@ -10694,6 +10730,7 @@ function acendeBreuDoQuiz(sl, entra){
       veu.className = 'breu-quiz';
       sl.insertBefore(veu, sl.firstChild);
     }
+    veu.classList.toggle('breu-total', !!preto);
     sl.classList.add('quiz-escuro');
     revela(veu, 'on');
   } else if (veu){
@@ -10936,6 +10973,14 @@ function erraQuiz(carta, perg){
   if (quizTropecos === 1) poeDica(perg.dica);
   else if (quizTropecos >= 2 && perg.pista && mesa) piscaFaixa(mesa, perg.pista);
 }
+/* ---- e a dica também anda pelo palco ----
+   Cada pergunta guarda o lugar da SUA dica, e não um lugar só para
+   todas: a dica fala do que está na tabela naquela pergunta, e o que
+   ela não pode é tapar justamente a resposta. Por isso a chave leva o
+   slide e o número da pergunta. */
+const dicaPos = {};
+const chaveDaDica = () => quizSlide + ':' + quizPasso;
+
 function poeDica(texto){
   const cena = quizCena();
   if (!cena || !texto) return;
@@ -10943,8 +10988,60 @@ function poeDica(texto){
   const d = document.createElement('div');
   d.className = 'quiz-dica';
   d.innerHTML = '<b>Dica:</b> ' + texto;
+  const posto = dicaPos[chaveDaDica()];
+  if (posto){ d.style.left = posto.x + 'px'; d.style.top = posto.y + 'px'; }
+  arrastaDica(d);
   cena.appendChild(d);
   revela(d, 'on');
+}
+function arrastaDica(d){
+  const chave = chaveDaDica(), numero = quizPasso + 1;
+  const eti = document.createElement('span');
+  eti.className = 'quiz-medida';
+  d.appendChild(eti);
+  let leva = null, some = null;
+  /* centro da caixa, que é a língua que o Ctrl+C fala */
+  const centro = (x, y) => [Math.round(x), Math.round(y + d.offsetHeight/2)];
+  const marca = (x, y) => {
+    const [cx, cy] = centro(x, y);
+    eti.textContent = 'dica ' + numero + '   x: ' + cx + '   y: ' + cy;
+    eti.classList.toggle('acima', y > 600);
+    if (!eti.classList.contains('on')) revela(eti, 'on');
+  };
+  d.addEventListener('pointerdown', (e) => {
+    if (naMontagem()) return;
+    const cs = getComputedStyle(d);
+    leva = { id:e.pointerId, px:e.clientX, py:e.clientY,
+             x:parseFloat(cs.left), y:parseFloat(cs.top) };
+    try { d.setPointerCapture(e.pointerId); } catch(_){}
+    d.classList.add('levando');
+    clearTimeout(some);
+    marca(leva.x, leva.y);
+    e.preventDefault();
+  });
+  d.addEventListener('pointermove', (e) => {
+    if (!leva || e.pointerId !== leva.id) return;
+    const meia = d.offsetWidth/2;
+    const x = Math.round(Math.max(meia, Math.min(1280 - meia, leva.x + (e.clientX - leva.px)/fitScale)));
+    const y = Math.round(Math.max(0, Math.min(720 - d.offsetHeight, leva.y + (e.clientY - leva.py)/fitScale)));
+    d.style.left = x + 'px';
+    d.style.top  = y + 'px';
+    dicaPos[chave] = { x, y };
+    marca(x, y);
+  });
+  const solta = () => {
+    if (!leva) return;
+    leva = null;
+    d.classList.remove('levando');
+    const p = dicaPos[chave];
+    if (p){
+      const [cx, cy] = centro(p.x, p.y);
+      navigator.clipboard?.writeText('dica ' + numero + ': x: ' + cx + ', y: ' + cy).catch(()=>{});
+    }
+    some = setTimeout(() => eti.classList.remove('on'), 5000);
+  };
+  d.addEventListener('pointerup', solta);
+  d.addEventListener('pointercancel', solta);
 }
 /* a faixa que pisca três vezes por cima da linha ou da coluna certa */
 function piscaFaixa(mesa, pista){
