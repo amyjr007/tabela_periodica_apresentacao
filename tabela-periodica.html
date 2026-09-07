@@ -2333,6 +2333,14 @@ body.montagem .cena .rotulos{pointer-events:auto}
    ele nunca aparecer. */
 #pista.on{opacity:.9;animation:pistaPulsa 2.4s ease-in-out infinite}
 @keyframes pistaPulsa{0%,100%{opacity:.28}50%{opacity:.9}}
+/* Sabido o lugar da frase que vem, o ponto larga o canto e vai para lá:
+   left e top passam a vir do script, e ele se centra no ponto dado.
+   A viagem é suave — o ponto caminha de uma frase para a outra em vez
+   de saltar, e o olho segue o caminho. */
+#pista.no-lugar{
+  bottom:auto;transform:translate(-50%,-50%);
+  transition:left .5s cubic-bezier(.3,.85,.3,1), top .5s cubic-bezier(.3,.85,.3,1);
+}
 
 /* carimbo de versão, discreto no canto */
 #ver{position:fixed;left:14px;bottom:11px;z-index:60;pointer-events:none;user-select:none;
@@ -3696,10 +3704,79 @@ function haPasso(){
   const r = ROTEIROS[atual];
   return !!(r && (r.espera || passoPronto()));
 }
-/* o ponto do canto acende quando o clique tem o que soltar */
+/* ---- e o ponto espera onde a frase vai aparecer ----
+   Cada slide tem as suas regras marcadas no layout — regra, regra2,
+   regra3b... —, e o layout diz onde cada uma para. A que vem a seguir é
+   a primeira da lista que ainda não está em cena; as outras já foram.
+   Nada disto precisa de ser dito duas vezes: a lista sai do próprio
+   layout, ordenada pela altura, e por isso não se desencontra do
+   roteiro quando um passo muda de lugar.
+   O ponto se põe no COMEÇO do texto — um pouco à esquerda da margem
+   por onde a frase entra —, e não no meio dela: é ali que a coisa
+   começa a aparecer. */
+const PISTA_ESQ = 104;      /* a margem que todas as regras partilham */
+const PISTA_RECUO = 15;     /* e o ponto fica logo antes dela */
+
+function lugarDaPista(){
+  const mapa = LAYOUTS[atual], sl = slides[atual];
+  if (!mapa || !sl) return null;
+  const cena = sl.querySelector('.cena');
+  if (!cena) return null;
+  /* Slide 2 abre com o monte de cartas: o primeiro clique derrama as
+     118, e não traz frase nenhuma. Sem carta na mesa, o ponto não tem
+     texto para anunciar e fica no canto. */
+  if (atual === 1 && !cena.querySelector('.pc')) return null;
+
+  const chaves = Object.keys(mapa)
+    .filter(k => /^regra/.test(k))
+    .sort((a, b) => (mapa[a].y || 0) - (mapa[b].y || 0));
+  for (const k of chaves){
+    /* a primeira regra do slide 2 não tem nome próprio: é a .regra sem
+       data-mont, e é assim que se sabe se ela já entrou */
+    const ja = k === 'regra' ? cena.querySelector('.regra:not([data-mont])')
+                             : cena.querySelector('[data-mont="' + k + '"]');
+    if (ja) continue;
+    const L = mapa[k];
+    /* Marcada pelo centro, a entrada não diz a margem esquerda — essa
+       depende da largura do texto, que só a frase feita conhece. Uma
+       irmã já em cena serve de régua, que todas partem da mesma
+       margem; sem irmã nenhuma, sobra a margem medida. */
+    let esq = L.esq;
+    if (esq === undefined){
+      const irma = cena.querySelector('.regra');
+      if (irma){
+        const r = irma.getBoundingClientRect(), s = stage.getBoundingClientRect();
+        esq = (r.left - s.left) / fitScale;
+      } else esq = PISTA_ESQ;
+    }
+    return { x: esq - PISTA_RECUO, y: L.y };
+  }
+  return null;
+}
+/* o ponto acende quando o clique tem o que soltar, e espera no lugar
+   onde a coisa vai aparecer */
 function atualizaPista(){
   const p = document.getElementById('pista');
-  if (p) p.classList.toggle('on', haPasso());
+  if (!p) return;
+  const ha = haPasso();
+  p.classList.toggle('on', ha);
+  const onde = ha ? lugarDaPista() : null;
+  if (onde){
+    /* Vindo do canto, o ponto não caminha: lá ele está preso pelo pé
+       (bottom), e o topo não tem de onde partir — a viagem sairia
+       torta, horizontal de um lado e seca do outro. De uma frase para
+       a outra, aí sim, ele caminha. */
+    const jaPosto = p.classList.contains('no-lugar');
+    if (!jaPosto) p.style.transition = 'none';
+    p.style.left = onde.x.toFixed(1) + 'px';
+    p.style.top  = onde.y.toFixed(1) + 'px';
+    p.classList.add('no-lugar');
+    if (!jaPosto){ void p.offsetWidth; p.style.removeProperty('transition'); }
+  } else {
+    p.classList.remove('no-lugar');
+    p.style.removeProperty('left');
+    p.style.removeProperty('top');
+  }
 }
 
 function passoAdiante(){
