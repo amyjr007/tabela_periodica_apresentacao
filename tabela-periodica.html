@@ -3555,6 +3555,7 @@ const avanca = () => {
      o slide seguinte, fechando o quiz por baixo do professor. A saída
      é pelo menu dos controles, no mesmo botão que o abriu. */
   if (typeof quizAtivo !== 'undefined' && quizAtivo) return;
+  if (typeof memAberto !== 'undefined' && memAberto) return;
   if (!passoAdiante()) go(atual+1, 'next');
 };
 /* voltar é, primeiro, desfazer o que se fez aqui; só quando não há mais
@@ -3565,6 +3566,7 @@ const volta  = () => {
     return;
   }
   if (typeof quizAtivo !== 'undefined' && quizAtivo) return;
+  if (typeof memAberto !== 'undefined' && memAberto) return;
   if (!passoAtras()) go(atual-1, 'prev');
 };
 
@@ -3807,6 +3809,9 @@ function atualizaPista(){
 
 function passoAdiante(){
   if (quizAtivo) return false;      /* a aula fica parada onde estava */
+  /* e o jogo da memória é do mesmo tamanho do quiz: enquanto ele
+     estiver na tela, a aula por baixo não anda */
+  if (typeof memAberto !== 'undefined' && memAberto) return false;
   /* e o mundo quântico é paralelo à aula: mergulhado, nada do que se
      faz lá dentro mexe no que está cá fora */
   if (typeof mundoAberto !== 'undefined' && mundoAberto) return false;
@@ -9759,6 +9764,13 @@ function ancoraMesa(m){
 }
 
 stage.addEventListener('pointerdown', (ev) => {
+  /* COM O JOGO DA MEMÓRIA ABERTO, O DEDO É DELE.
+     O jogo é uma folha por cima do slide, e não mais uma camada da
+     tabela. Sem esta guarda o palco capturava o ponteiro — e capturado
+     o ponteiro, o clique deixa de nascer na carta e vai parar em quem
+     capturou: a carta nunca virava, e o soltar do dedo ainda passava o
+     passo da aula por baixo do jogo. */
+  if (typeof memAberto !== 'undefined' && memAberto) return;
   const m = mesaPronta();
   if (!m || ev.target.closest('button, a, input')) return;
   /* NO QUIZ O DEDO É SÓ DO QUIZ
