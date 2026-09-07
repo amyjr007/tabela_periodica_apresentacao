@@ -4434,8 +4434,28 @@ function reiniciaCena2(){
       }
     });
     mesa.classList.add('pronta');
+    const tinhaTodos = cena.classList.contains('tem-todos');
     cena.classList.remove('tem-todos');
     cena.classList.add('tem-botao');
+    /* E ISTO TEM VOLTA.
+       Entrar no quiz sem a tabela montada faz o quiz montá-la — ele
+       pergunta pela tabela. Ao sair, o slide tem de voltar a ser o que
+       era: sem esta desfeita ficavam o botão de abrir a tabela aceso e
+       a marca de 'pronta' numa mesa que o desfazer do primeiro passo
+       tinha acabado de esvaziar — botão de abrir uma tabela que não
+       está lá, por cima do "todos".
+       Vai para a pilha DEPOIS do primeiro passo, e por isso sai antes
+       dele: primeiro o slide esquece que montou, depois as cartas
+       somem. */
+    r.desfazer.push(() => {
+      mesa.classList.remove('pronta');
+      cena.classList.remove('tem-botao');
+      if (tinhaTodos) cena.classList.add('tem-todos');
+      montandoTudo = false;
+      cicloMesa = 0;
+      poeModo(mesa, 'junta');
+      atualizaBotao(mesa);
+    });
     atualizaPista();
   };
 
