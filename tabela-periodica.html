@@ -2561,11 +2561,25 @@ body.montagem .slide.is-active .solto.pego{
 .mem-carta .emoji{font-size:26px;line-height:1}
 /* o par certo assenta e apaga-se; o errado treme em vermelho */
 .mem-carta.casada{pointer-events:none}
+/* A cor é a do par (--ph, --ps), posta na carta ao nascer. O verde de
+   antes era um só para todos: dizia "acertou", e não "estes dois são
+   um". O tom continua apagado — quem apaga é a opacidade, logo
+   abaixo —, e a cor mora na face, no contorno e no halo, que é o que
+   se enxerga de longe. */
 .mem-carta.casada .frente{
-  background:linear-gradient(160deg,#DFF5E8,#BFE9D2);
-  border-color:rgba(31,157,85,.5);
-  box-shadow:0 0 0 2.5px var(--natural), 0 0 20px 5px rgba(31,157,85,.4);
+  background:linear-gradient(160deg,
+             hsl(var(--ph,150) var(--ps,45%) 94%),
+             hsl(var(--ph,150) var(--ps,45%) 83%));
+  border-color:hsl(var(--ph,150) var(--ps,45%) 58% / .6);
+  box-shadow:0 0 0 2.5px hsl(var(--ph,150) var(--ps,45%) 46%),
+             0 0 20px 5px hsl(var(--ph,150) var(--ps,45%) 50% / .38);
 }
+/* o símbolo e o nome também tomam a cor, escurecida: no cartão apagado
+   é o texto que se lê primeiro */
+.mem-carta.casada .simbolo,
+.mem-carta.casada .nome{color:hsl(var(--ph,150) var(--ps,45%) 26%)}
+.mem-carta.casada .chapeu,
+.mem-carta.casada .miudo{color:hsl(var(--ph,150) var(--ps,45%) 38% / .8)}
 .mem-carta.casada{opacity:.62;transition:opacity .5s ease .3s}
 .mem-carta.errada .frente{
   box-shadow:0 0 0 2.5px var(--neon), 0 0 20px 6px rgba(255,46,76,.5);
@@ -11639,17 +11653,26 @@ function limpaJogo(){
    pontos por par, vinte se for prata ou ouro, mais cinco se o par
    seguinte for do mesmo grupo do anterior, e menos dois por engano.
    ============================================================ */
+/* Cada par tem a SUA cor, e é por ela que os dois se reconhecem depois
+   de virados: no fim do jogo estão os vinte cartões abertos e apagados
+   na mesa, e é a cor que diz qual símbolo é de qual nome. Por isso os
+   dez matizes são espalhados pela roda inteira — a cor aqui é etiqueta
+   de par, antes de ser enfeite —, e onde deu para acertar o elemento
+   sem juntar dois parecidos, acertou-se: o ouro é dourado, o cobre é
+   cor de cobre, a prata é um azul-aço lavado, a água do hidrogênio é
+   azul. Os três metais quentes ficam vizinhos de matiz e se separam
+   pela saturação. */
 const MEM_PARES = [
-  { z:1,  sym:'H',  nome:'Hidrogênio', g:1,  p:1, massa:'1,008',  cat:'Ametal',              emoji:'💧' },
-  { z:8,  sym:'O',  nome:'Oxigênio',   g:16, p:2, massa:'15,999', cat:'Ametal',              emoji:'🔥' },
-  { z:6,  sym:'C',  nome:'Carbono',    g:14, p:2, massa:'12,011', cat:'Ametal',              emoji:'💎' },
-  { z:7,  sym:'N',  nome:'Nitrogênio', g:15, p:2, massa:'14,007', cat:'Ametal',              emoji:'🌿' },
-  { z:11, sym:'Na', nome:'Sódio',      g:1,  p:3, massa:'22,990', cat:'Metal alcalino',      emoji:'🧂' },
-  { z:26, sym:'Fe', nome:'Ferro',      g:8,  p:4, massa:'55,845', cat:'Metal de transição',  emoji:'⚙️' },
-  { z:29, sym:'Cu', nome:'Cobre',      g:11, p:4, massa:'63,546', cat:'Metal de transição',  emoji:'⚡' },
-  { z:47, sym:'Ag', nome:'Prata',      g:11, p:5, massa:'107,87', cat:'Metal de transição',  emoji:'🌟' },
-  { z:79, sym:'Au', nome:'Ouro',       g:11, p:6, massa:'196,97', cat:'Metal de transição',  emoji:'👑' },
-  { z:30, sym:'Zn', nome:'Zinco',      g:12, p:4, massa:'65,38',  cat:'Metal de transição',  emoji:'🛡️' }
+  { z:1,  sym:'H',  nome:'Hidrogênio', g:1,  p:1, massa:'1,008',  cat:'Ametal',              emoji:'💧', h:208, s:60 },
+  { z:8,  sym:'O',  nome:'Oxigênio',   g:16, p:2, massa:'15,999', cat:'Ametal',              emoji:'🔥', h:330, s:52 },
+  { z:6,  sym:'C',  nome:'Carbono',    g:14, p:2, massa:'12,011', cat:'Ametal',              emoji:'💎', h:272, s:45 },
+  { z:7,  sym:'N',  nome:'Nitrogênio', g:15, p:2, massa:'14,007', cat:'Ametal',              emoji:'🌿', h:138, s:45 },
+  { z:11, sym:'Na', nome:'Sódio',      g:1,  p:3, massa:'22,990', cat:'Metal alcalino',      emoji:'🧂', h: 92, s:45 },
+  { z:26, sym:'Fe', nome:'Ferro',      g:8,  p:4, massa:'55,845', cat:'Metal de transição',  emoji:'⚙️', h:  8, s:42 },
+  { z:29, sym:'Cu', nome:'Cobre',      g:11, p:4, massa:'63,546', cat:'Metal de transição',  emoji:'⚡', h: 34, s:70 },
+  { z:47, sym:'Ag', nome:'Prata',      g:11, p:5, massa:'107,87', cat:'Metal de transição',  emoji:'🌟', h:224, s:14 },
+  { z:79, sym:'Au', nome:'Ouro',       g:11, p:6, massa:'196,97', cat:'Metal de transição',  emoji:'👑', h: 56, s:78 },
+  { z:30, sym:'Zn', nome:'Zinco',      g:12, p:4, massa:'65,38',  cat:'Metal de transição',  emoji:'🛡️', h:166, s:52 }
 ];
 let memAberto = null, memCartas = [], memViradas = [];
 let memPontos = 0, memPares = 0, memErros = 0, memUltimoG = null, memConferindo = false;
@@ -11665,7 +11688,8 @@ function cartaDaMemoria(d, tipo){
       '<div class="nome">' + d.nome + '</div>' +
       '<div class="miudo">' + d.cat + '</div>' +
       '<div class="miudo">Grupo ' + d.g + ' · ' + d.p + 'º período</div>';
-  return '<div class="mem-carta" data-z="' + d.z + '" data-tipo="' + tipo + '" data-g="' + d.g + '">' +
+  return '<div class="mem-carta" data-z="' + d.z + '" data-tipo="' + tipo + '" data-g="' + d.g + '"' +
+              ' style="--ph:' + d.h + ';--ps:' + d.s + '%">' +
            '<div class="giro">' +
              '<div class="face costas">⚛</div>' +
              '<div class="face frente">' + corpo + '</div>' +
