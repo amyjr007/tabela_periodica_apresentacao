@@ -3036,7 +3036,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.0 · aula completa';
+const VERSAO    = 'v1.1 · aula completa';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
@@ -11363,23 +11363,54 @@ const QUIZ = {
   }},
 
   /* slide 10 · A Tabela e o Subnível mais Energético */
-  9: {perguntas:[
-    {q:'Toque no elemento que tem o subnível mais energético 3s<sup>2</sup>', ok:z => z === 12,
-     dica:'Acaba em 3s²: terceira camada, subnível s cheio — o segundo elemento do 3º período.',
-     pista:{linha:3}},
-    {q:'Toque no elemento com subnível mais energético 4p<sup>6</sup>', ok:z => z === 36,
-     dica:'O p cheio fecha o período: procure o último elemento da quarta linha.',
-     pista:{linha:4}},
-    {q:'Toque no elemento cujo subnível de maior energia é o 3p<sup>1</sup>', ok:z => z === 13,
-     dica:'Um só elétron no 3p: é o primeiro elemento do bloco p, no 3º período.',
-     pista:{linha:3}},
-    {q:'Toque no elemento que tem o subnível mais energético 3d<sup>5</sup>', ok:z => z === 25,
-     dica:'Cinco elétrons no 3d: conte cinco casas no bloco d do 4º período.',
-     pista:{linha:4}},
-    {q:'Toque no elemento com subnível mais energético 5d<sup>2</sup>', ok:z => z === 72,
-     dica:'Dois elétrons no 5d: o bloco d do 6º período, logo depois dos lantanídeos.',
-     pista:{linha:6}}
-  ]}
+  9: {gera: () => {
+    /* O subnível de maior energia é o ÚLTIMO a ser preenchido na ordem
+       de Pauling, e o par (subnível, quantos elétrons) diz exatamente
+       um elemento: os anteriores estão todos cheios, e a soma fecha o
+       número atômico. Por isso a resposta é única, e sai da mesma conta
+       que a aula acabou de mostrar. */
+    const ultimo = z => {
+      let resto = z, u = null;
+      for (const sub of AUFBAU){
+        if (resto <= 0) break;
+        const q = Math.min(CABE[sub[1]], resto);
+        resto -= q;
+        u = { sub, q };
+      }
+      return u;
+    };
+    /* AS EXCEÇÕES FICAM DE FORA.
+       Nestes dez a distribuição real não é a que a diagonal prevê — o
+       cromo e o cobre roubam um elétron do s para fechar o d, e assim
+       por diante. Perguntar por eles seria pedir ao aluno a resposta
+       errada pela regra que se acabou de ensinar. */
+    const FORA_DA_DIAGONAL = new Set([24, 29, 41, 42, 44, 45, 46, 47, 78, 79]);
+    /* Do lítio ao rádio, sem as duas séries e sem as exceções: abaixo
+       do lítio a conta não tem o que ensinar, e a transição interna tem
+       o slide dela — e a fila de baixo nem está em cena aqui. */
+    const bons = TODOS_NA_GRADE.filter(z =>
+      z >= 3 && z <= 88 && !FORA_DA_DIAGONAL.has(z) && blocoSPDF(z) !== 'f');
+    const COMO = [
+      'Toque no elemento que tem o subnível mais energético ',
+      'Toque no elemento com subnível mais energético ',
+      'Toque no elemento cujo subnível de maior energia é o '
+    ];
+    return alguns(bons, 5).map(z => {
+      const u = ultimo(z), letra = u.sub[1], linha = posDe(z).row;
+      const escrito = u.sub + '<sup>' + u.q + '</sup>';
+      const cheio = u.q === CABE[letra];
+      return {
+        q: sorteia(COMO) + escrito,
+        ok: w => w === z,
+        dica: 'Acaba em ' + escrito + ': ' +
+              (cheio && letra === 'p'
+                ? 'o p cheio fecha o período — é o último elemento da linha ' + linha + '.'
+                : 'conte ' + u.q + (u.q === 1 ? ' casa' : ' casas') +
+                  ' no bloco ' + letra + ' do ' + ordinal(linha) + ' período.'),
+        pista: {linha: linha}
+      };
+    });
+  }}
 };
 const temQuiz = i => !!QUIZ[i];
 
