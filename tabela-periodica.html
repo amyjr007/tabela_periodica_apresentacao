@@ -478,6 +478,23 @@ body{
    Puxada uma carta, anda o tipo inteiro. Enquanto o bloco está na mão
    ele ganha altura e sombra, para se ver que saiu do tabuleiro. */
 .mesa.blocos .pc{cursor:grab}
+
+/* ---------- O SLIDE DOS TIPOS PINTA POR TIPO ----------
+   Nos outros slides a carta veste a cor da FAMÍLIA dela, e são dez.
+   Aqui a leitura é outra: há metais, ametais e gases nobres, e mais
+   nada — então os metais são todos de uma cor, os ametais de outra e
+   os nobres da sua. São as mesmas três cores em que a frase da regra
+   escreve cada palavra, de modo que a palavra e o bloco dizem a mesma
+   coisa. O hidrogénio, que é um bloco de um elemento só, veste o
+   verde dos ametais, que é o que ele é.
+
+   Vai com !important porque a cor da família é posta na carta como
+   estilo inline, ao nascer — e estilo inline ganha a uma regra
+   normal. Aqui a folha é que tem de mandar. */
+.mesa.tipos .pc[data-tipo="metais"]     {--cor:var(--cat-transicao)!important}
+.mesa.tipos .pc[data-tipo="ametais"]    {--cor:var(--cat-ametais)!important}
+.mesa.tipos .pc[data-tipo="nobres"]     {--cor:var(--cat-nobres)!important}
+.mesa.tipos .pc[data-tipo="hidrogenio"] {--cor:var(--cat-ametais)!important}
 .mesa.blocos .pc.no-bloco{cursor:grabbing;z-index:22}
 .mesa.blocos .pc.no-bloco .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
   0 10px 22px rgba(80,40,0,.34)}
@@ -3178,6 +3195,10 @@ function estadoMesaPara(mesa, i){
      ele com as identificações que já foram ditas */
   if (i !== 5) apagaGrupos(mesa);
   mesa.classList.toggle('grupos', i === 5 && !!slides[5].querySelector('.regra'));
+  /* pintar por TIPO é leitura do slide 4 e de mais nenhum: a mesa
+     atravessa os slides toda, e a classe ia com ela — noutro slide
+     que use a cor da família, os três tipos comiam as dez famílias */
+  mesa.classList.toggle('tipos', i === 3 && mesa.classList.contains('blocos'));
   if (i === 5) poeGrupos(mesa);
   /* o slide das séries: a tabela sobe uma casa para caber a fila que
      vai nascer embaixo dela, e fora dali as séries voltam para a pilha */
@@ -3708,6 +3729,7 @@ function criaCarta(z){
   c.dataset.z = z;
   c.dataset.linha = posDe(z).row;
   c.dataset.col   = posDe(z).col;
+  c.dataset.tipo  = tipoDe(z);   /* o slide 4 pinta por aqui */
   /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
   c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
   c.innerHTML = '<div class="pc-in" style="background:'+fundoCinza(z)+'">' +
@@ -4256,7 +4278,7 @@ function montaRoteiro4(){
 
     /* dita a frase, os blocos se soltam do tabuleiro */
     const mesa = sl.querySelector('.mesa');
-    if (mesa) mesa.classList.add('blocos');
+    if (mesa) mesa.classList.add('blocos', 'tipos');
 
     /* o botão de refazer nasce com a cena e só aparece quando algum
        bloco tiver saído do lugar */
@@ -4281,7 +4303,7 @@ function montaRoteiro4(){
       setTimeout(() => t.remove(), 950);
       const m = sl.querySelector('.mesa');
       if (m){
-        m.classList.remove('blocos');
+        m.classList.remove('blocos', 'tipos');
         m.querySelectorAll('.rot-tipo').forEach(e => e.remove());
       }
     });
