@@ -915,9 +915,32 @@ body{
 .face-frase em{font-style:normal;color:#CFD8E2;font-weight:700}
 
 /* ---------- os três lingotes, na face 1 ---------- */
+/* A perspetiva mora no contentor: é ela que dá profundidade ao tombo
+   dos lingotes, que sem ela girariam achatados. */
 .lingotes{position:absolute;left:24px;top:96px;width:392px;
-  display:flex;gap:16px;pointer-events:none}
-.lingote{display:block}
+  display:flex;gap:16px;pointer-events:none;perspective:760px}
+/* Os três pegam o dedo — só para a mão saber que ali se toca; quem
+   decide o que fazer com o toque é o despachante do mundo, que conta
+   em coordenada de face. */
+.lingote{display:block;pointer-events:auto;cursor:pointer}
+/* O LINGOTE ROLA COMO UM DADO.
+   Uma ou duas voltas inteiras nos dois eixos, sorteadas a cada toque —
+   um dado não cai duas vezes do mesmo jeito —, com um salto curto para
+   fora do plano no meio do caminho. Termina em volta cheia, e por isso
+   assenta exatamente como estava. O eixo passa pela massa da peça, e
+   não pelo ar acima dela. */
+.lingote.rola{
+  transform-origin:50% 62%;
+  animation:lingoteRola var(--dur,.9s) cubic-bezier(.28,.5,.24,1);
+}
+@keyframes lingoteRola{
+  0%  {transform:rotateX(0deg) rotateY(0deg) translateZ(0) scale(1)}
+  28% {transform:rotateX(calc(var(--vx,360deg) * .30))
+                rotateY(calc(var(--vy,360deg) * .30)) translateZ(34px) scale(1.07)}
+  62% {transform:rotateX(calc(var(--vx,360deg) * .70))
+                rotateY(calc(var(--vy,360deg) * .70)) translateZ(20px) scale(1.03)}
+  100%{transform:rotateX(var(--vx,360deg)) rotateY(var(--vy,360deg)) translateZ(0) scale(1)}
+}
 .nomes-metal{
   position:absolute;left:24px;top:186px;width:392px;
   display:flex;gap:16px;pointer-events:none;
@@ -8771,6 +8794,42 @@ function acordaTubos(w){
     }
   };
 }
+/* ---- os lingotes rolam como dados ----
+   A caixa de cada um vem pela MESMA projeção que o pontoNaFace aplica
+   ao dedo: a caixa na tela, medida contra a caixa da face na tela, e
+   as duas levadas para os 440 da parede. Assim as contas concordam por
+   construção, com o cubo inclinado como está. (Pelos offsets não dava:
+   lingote é SVG, e offsetLeft é coisa de elemento HTML — dava NaN.) */
+function caixaNaFace(el, face){
+  const rf = face.getBoundingClientRect(), re = el.getBoundingClientRect();
+  if (!rf.width || !rf.height) return null;
+  return { x: (re.left - rf.left) / rf.width  * 440,
+           y: (re.top  - rf.top ) / rf.height * 440,
+           w: re.width  / rf.width  * 440,
+           h: re.height / rf.height * 440 };
+}
+function lingoteEm(p){
+  const face = mundoAberto && mundoAberto.cubo &&
+               mundoAberto.cubo.querySelector('.face.a-frente');
+  if (!face) return null;
+  let achado = null;
+  face.querySelectorAll('.lingote').forEach(sv => {
+    const c = caixaNaFace(sv, face);
+    if (c && p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h) achado = sv;
+  });
+  return achado;
+}
+function rolaLingote(sv){
+  if (sv.classList.contains('rola')) return;    /* já está a rolar */
+  const voltas = () => (Math.random() < .55 ? 360 : 720) + 'deg';
+  const dur = (.78 + Math.random()*.34).toFixed(2) + 's';
+  sv.style.setProperty('--vx', voltas());
+  sv.style.setProperty('--vy', voltas());
+  sv.style.setProperty('--dur', dur);
+  sv.classList.add('rola');
+  setTimeout(() => sv.classList.remove('rola'), 1250);
+}
+
 /* A hora do último gesto dentro de uma face.
  Um arrasto que começa
    na face acaba muitas vezes FORA do cubo — puxar fio ou levar a
@@ -8887,6 +8946,11 @@ function abreMundo(mesa, tipo){
     ev.stopPropagation();
     if (ev.target.closest('.mundo-voltar')) return;
     const p = pontoNaFace(ev);
+    /* na face dos sólidos, os três lingotes rolam quando tocados */
+    if (p && p.dentro && mundoAberto && mundoAberto.face === 1){
+      const lg = lingoteEm(p);
+      if (lg){ rolaLingote(lg); return; }
+    }
     if (p && p.dentro && mundoAberto && mundoAberto.cubo) return;   /* em cima do cubo: é para mexer */
     if (mundoAberto && Date.now() - (mundoAberto.mexeu || 0) < 700) return;
     passoDoMundo();
