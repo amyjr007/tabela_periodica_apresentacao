@@ -488,8 +488,13 @@ body{
    — são para ensinar o gesto e não contam ponto; daí em diante vêm
    em branco. Dez acertos fecham o jogo.
    ============================================================ */
+/* A CARTA PEGA O DEDO, e é preciso dizê-lo: ela mora dentro da .cena,
+   que é pointer-events:none de propósito — só o que fala com o dedo
+   é que se declara. Sem esta linha a carta descia e não se deixava
+   arrastar, e nenhum teste meu apanhava isso, porque eu despachava os
+   eventos direto no elemento e saltava por cima do teste de acerto. */
 .carta-jogo{
-  position:absolute;z-index:70;transform:translate(-50%,-50%);
+  position:absolute;z-index:70;pointer-events:auto;transform:translate(-50%,-50%);
   width:96px;height:112px;border-radius:12px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   background:linear-gradient(150deg,#FBFAFE,#E7E3F2);
@@ -533,8 +538,8 @@ body{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4),
              0 0 0 3px var(--natural), 0 0 22px 6px rgba(31,157,85,.6);
 }
-/* os dois botões redondos do canto: começar embaixo, refazer em cima */
-.jogo-btn, .jogo-refaz{
+/* o botão redondo do canto de baixo à direita */
+.jogo-btn{
   position:absolute;right:30px;z-index:60;pointer-events:auto;cursor:pointer;
   display:flex;align-items:center;justify-content:center;border-radius:50%;
   transition:transform .16s, background .2s, color .2s, box-shadow .2s, opacity .3s;
@@ -548,13 +553,6 @@ body{
 }
 .jogo-btn:hover{transform:scale(1.06)}
 .jogo-btn:active{transform:scale(.95)}
-.jogo-refaz{
-  bottom:136px;width:60px;height:60px;
-  border:1.5px solid rgba(226,162,43,.5);color:var(--ouro-luz);
-  background:rgba(20,17,46,.7);
-}
-.jogo-refaz:hover{border-color:var(--ouro-luz);background:rgba(40,32,70,.85);transform:scale(1.06)}
-.jogo-refaz:active{transform:scale(.94)}
 /* ---------- O SLIDE DOS TIPOS PINTA POR TIPO ----------
    Nos outros slides a carta veste a cor da FAMÍLIA dela, e são dez.
    Aqui a leitura é outra: há metais, ametais e gases nobres, e mais
@@ -9991,6 +9989,12 @@ document.addEventListener('keydown', (e) => {
     fechaMundo();
     return;
   }
+  /* o Escape fecha o quiz: no slide do jogo é a porta de saída, que
+     lá o canto de baixo é do botão de começar */
+  if (typeof quizAtivo !== 'undefined' && quizAtivo && e.key === 'Escape'){
+    fechaQuiz();
+    return;
+  }
   /* com a caixa de anotações aberta, o teclado é dela */
   if (!notes.hidden){ if (e.key === 'Escape') hideNotes(); return; }
 
@@ -10367,12 +10371,17 @@ function abreQuiz(){
      e no quiz aquela fila é resposta — e o quiz tem o botão de sair
      dele, que é o único que faz falta aqui */
   mostraBarra(false);
-  const sair = document.createElement('button');
-  sair.className = 'quiz-sair';
-  sair.type = 'button';
-  sair.textContent = 'Sair do quiz';
-  sair.addEventListener('click', fechaQuiz);
-  cena.appendChild(sair);
+  /* O botão de sair mora na quina de baixo à direita — e no slide do
+     jogo aquela quina é do "Começar", que lhe ficava por cima. Ali
+     sai-se pelo Escape, ou pelo botão do quiz na barra. */
+  if (!QUIZ[quizSlide].jogo){
+    const sair = document.createElement('button');
+    sair.className = 'quiz-sair';
+    sair.type = 'button';
+    sair.textContent = 'Sair do quiz';
+    sair.addEventListener('click', fechaQuiz);
+    cena.appendChild(sair);
+  }
   const placar = document.createElement('div');
   placar.className = 'quiz-placar';
   cena.appendChild(placar);
@@ -10691,13 +10700,17 @@ function piscaFaixa(mesa, pista){
    Dez acertos fecham o jogo, e a nota desconta os erros e o tempo,
    como no app anterior — o jogo é o de lá, trazido para esta casa.
    ============================================================ */
-const JOGO_K = .5;                    /* a que tamanho os blocos encolhem */
 const JOGO_ALVO = 10;                 /* acertos para terminar */
 const JOGO_ENSINO = ['metais','metais','metais','ametais','nobres'];
+/* Onde cada bloco fica e a que tamanho — postos à mão pelo professor,
+   arrastados e pinçados no próprio slide, e trazidos de lá pelo
+   Ctrl+C. Cada um tem a sua escala: os nobres são uma coluna estreita
+   e aguentam ficar grandes; os metais são a mancha maior e encolhem
+   mais. */
 const JOGO_CENTROS = {
-  metais:  { x:330, y:534 },
-  ametais: { x:742, y:498 },
-  nobres:  { x:906, y:534 }
+  metais:  { x:438,  y:530, k:.74 },
+  ametais: { x:956,  y:545, k:.79 },
+  nobres:  { x:1201, y:550, k:.92 }
 };
 let jogoAtivo = false, jogoAcertos = 0, jogoErros = 0, jogoT0 = 0;
 let jogoUsados = [], jogoCarta = null, jogoAlvoAceso = null;
@@ -10719,11 +10732,11 @@ function separaBlocos(mesa){
     const t = tipoDe(+c.dataset.z);
     (grupos[t] || grupos.metais).push(c);
   });
-  const poe = (c, x, y) => {
+  const poe = (c, x, y, k) => {
     c.style.transition = 'left .7s cubic-bezier(.3,.85,.3,1), top .7s cubic-bezier(.3,.85,.3,1)';
     c.style.left = x.toFixed(1) + 'px';
     c.style.top  = y.toFixed(1) + 'px';
-    c.firstElementChild.style.setProperty('--sc', JOGO_K);
+    c.firstElementChild.style.setProperty('--sc', k);
     setTimeout(() => c.style.removeProperty('transition'), 760);
   };
   const cantos = {};
@@ -10739,16 +10752,17 @@ function separaBlocos(mesa){
     const cx = (x1+x2)/2, cy = (y1+y2)/2, alvo = JOGO_CENTROS[t];
     cs.forEach(c => {
       const a = alvoDe(+c.dataset.z, 'junta');
-      poe(c, alvo.x + (a.x - cx) * JOGO_K, alvo.y + (a.y - cy) * JOGO_K);
+      poe(c, alvo.x + (a.x - cx) * alvo.k, alvo.y + (a.y - cy) * alvo.k, alvo.k);
     });
-    cantos[t] = { x: alvo.x - (cx - x1) * JOGO_K, y: alvo.y - (cy - y1) * JOGO_K };
+    cantos[t] = { x: alvo.x - (cx - x1) * alvo.k, y: alvo.y - (cy - y1) * alvo.k, k: alvo.k };
     descolados.add(t);
-    escalaBloco[t] = JOGO_K;
+    escalaBloco[t] = alvo.k;
   });
   /* o hidrogénio é um ametal e joga com eles, mas na tabela mora
      sozinho — aqui encosta ao canto do bloco deles, como quem espera */
   if (cantos.ametais) grupos.hidrogenio.forEach(c =>
-    poe(c, cantos.ametais.x - 42, cantos.ametais.y));
+    poe(c, cantos.ametais.x - (CARTA_W + 12) * cantos.ametais.k,
+           cantos.ametais.y, cantos.ametais.k));
   /* e cada bloco diz o seu nome */
   setTimeout(() => {
     Object.keys(JOGO_CENTROS).forEach(t => {
@@ -10766,15 +10780,8 @@ function poeBotoesDoJogo(cena){
   b.textContent = 'Começar';
   b.addEventListener('click', (ev) => { ev.stopPropagation(); comecaJogo(); });
   cena.appendChild(b);
-  const r = document.createElement('button');
-  r.className = 'jogo-refaz';
-  r.type = 'button';
-  r.title = 'Recomeçar o jogo';
-  r.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"' +
-    ' stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' +
-    '<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4.5V11h-6.4"/></svg>';
-  r.addEventListener('click', (ev) => { ev.stopPropagation(); comecaJogo(); });
-  cena.appendChild(r);
+  /* e mais nada nesta quina: recomeça-se pelo "Refazer" do cartão do
+     resultado, e o "Começar" volta a aparecer ao fim de cada partida */
 }
 
 /* ---- o jogo ---- */
