@@ -9451,7 +9451,12 @@ stage.addEventListener('pointerdown', (ev) => {
      Nada de arrastar bloco, abrir a tabela, pegar rótulo ou dar zoom:
      o toque é registado — porque é ele que responde à pergunta — e o
      resto do que a mesa sabe fazer fica de fora. */
-  if (quizAtivo){
+  /* A EXCEÇÃO É O SLIDE DO JOGO: ali os blocos continuam a andar com o
+     dedo e a mudar de tamanho com a pinça, porque é assim que o
+     professor os põe onde quer antes de a turma jogar — e o Ctrl+C
+     leva as posições daqui para o arquivo. O gesto da carta que cai
+     não passa por aqui: ela captura o dedo dela e cala o evento. */
+  if (quizAtivo && !(QUIZ[quizSlide] && QUIZ[quizSlide].jogo)){
     dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
     if (dedosMesa.size > 1) houvePinca = true;
     else {
@@ -9512,7 +9517,7 @@ stage.addEventListener('pointerdown', (ev) => {
            mundo quântico dele. Só nos que já saíram — nos que ainda
            estão encaixados o gesto é outro, o de segurar para arrancar,
            e as duas coisas não podem morar no mesmo toque. */
-        if (descolados.has(tipo)){
+        if (descolados.has(tipo) && !quizAtivo){
           const agora = Date.now();
           if (toqueBloco && toqueBloco.tipo === tipo && agora - toqueBloco.t < 420){
             toqueBloco = null;
@@ -9529,6 +9534,9 @@ stage.addEventListener('pointerdown', (ev) => {
       }
       return;
     }
+    /* e o dedo no vazio não leva a mesa toda: no jogo, mexer é mexer
+       num bloco */
+    if (quizAtivo) return;
   }
   m.classList.remove('macia');            /* na mão, sem inércia */
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
@@ -9877,6 +9885,31 @@ function textoDoSlide(i){
            ', larg:' + pad(perg.offsetWidth,  4) +
            ', alt:'  + pad(perg.offsetHeight, 3) +
            ' '.repeat(13) + ', esc:1.00 },\n';
+  }
+  /* OS BLOCOS SEPARADOS, um por linha.
+     Cada um sai com o centro da caixa dele e com a escala a que foi
+     pinçado — que é exatamente o par de números que o jogo do slide 4
+     usa para os pôr no lugar. Colando isto de volta, os blocos ficam
+     onde o professor os deixou. */
+  const soltos = [...descolados].filter(tp => tp !== 'hidrogenio');
+  if (soltos.length){
+    const mesaB = slides[i].querySelector('.mesa');
+    soltos.forEach(tp => {
+      const cs = [...mesaB.querySelectorAll('.pc')]
+        .filter(c => tipoDe(+c.dataset.z) === tp);
+      if (!cs.length) return;
+      let x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+      cs.forEach(c => {
+        const x = parseFloat(c.style.left), y = parseFloat(c.style.top);
+        if (x < x1) x1 = x;  if (x > x2) x2 = x;
+        if (y < y1) y1 = y;  if (y > y2) y2 = y;
+      });
+      out += '  { ' + ("el:'bloco-" + tp + "',").padEnd(22, ' ') +
+             ' x:' + pad(Math.round((x1+x2)/2), 4) +
+             ', y:' + pad(Math.round((y1+y2)/2), 3) +
+             ' '.repeat(26) +
+             ', esc:' + (escalaBloco[tp] || 1).toFixed(2) + ' },\n';
+    });
   }
   /* a mesa entra com o tamanho a que ela foi pinçada, e já com a conta
      feita: é a carta desse tamanho que eu fixo no arquivo */
