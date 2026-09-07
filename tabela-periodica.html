@@ -1990,6 +1990,14 @@ body{
    guardados: o toque seguinte devolve a cena como ela estava */
 .mesa.subnivel.sem-subs .rot-sub,
 .mesa.subnivel.sem-subs .chip-mini{opacity:0;pointer-events:none}
+/* o mesmo anel do botão da tabela, agora nos dois do canto: discreto,
+   e só até o primeiro toque em cada um */
+.botao-full.chama-toque::after,
+.botao-pauling.chama-toque::after,
+.botao-subnivel.chama-toque::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;pointer-events:none;
+  animation:botaoPulsa 2.2s ease-out .4s infinite;
+}
 .botao-pauling:hover{background:var(--indigo);color:#fff}
 .botao-pauling:active{transform:scale(.94)}
 .botao-pauling.aceso{background:var(--indigo);color:#fff}
@@ -2240,17 +2248,19 @@ body{
    cima, que acima dele é papel; o da linha põe à esquerda, pelo mesmo
    motivo. Vai num ::after para não disputar o transform do realce, que
    é quem os faz crescer. */
-.mesa.numerada.batizada.tem-realce .ln.realce::after,
-.mesa.numerada.batizada.tem-realce .cn.realce::after{
+/* Tocado o número de um eixo, a bolinha daquele eixo não volta mais:
+   ela dizia "pode-se tocar aqui", e isso já foi dito. */
+.mesa.numerada.batizada.tem-realce:not(.disse-periodo) .ln.realce::after,
+.mesa.numerada.batizada.tem-realce:not(.disse-grupo)   .cn.realce::after{
   content:'';position:absolute;
   width:9px;height:9px;border-radius:50%;
   background:var(--indigo);pointer-events:none;
   animation:pistaPulsa 2.4s ease-in-out infinite;
 }
-.mesa.numerada.batizada.tem-realce .cn.realce::after{
+.mesa.numerada.batizada.tem-realce:not(.disse-grupo) .cn.realce::after{
   left:50%;top:-13px;margin-left:-4.5px;
 }
-.mesa.numerada.batizada.tem-realce .ln.realce::after{
+.mesa.numerada.batizada.tem-realce:not(.disse-periodo) .ln.realce::after{
   top:50%;left:-13px;margin-top:-4.5px;
 }
 
@@ -2462,6 +2472,25 @@ body.montagem .cena .rotulos{pointer-events:auto}
   bottom:auto;transform:translate(-50%,-50%);
   transition:left .5s cubic-bezier(.3,.85,.3,1), top .5s cubic-bezier(.3,.85,.3,1);
 }
+
+/* ---------- as bolinhas-guia, pousadas nas peças ----------
+   O mesmo ponto da pista, agora em cima da tabela: onde a aula espera
+   um toque, uma bolinha pulsa ali. Moram DENTRO da mesa, em coordenada
+   de palco como as cartas, e por isso acompanham a tabela quando ela
+   se abre, anda ou é pinçada. O anel branco em volta é o que as faz
+   ler-se por cima de uma carta de qualquer cor. */
+.guia{
+  position:absolute;z-index:22;pointer-events:none;
+  width:13.5px;height:13.5px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:var(--indigo);
+  box-shadow:0 0 0 3px rgba(255,255,255,.6), 0 2px 8px rgba(20,17,46,.35);
+  opacity:0;
+  transition:opacity .3s ease,
+             left .5s cubic-bezier(.3,.85,.3,1),
+             top  .5s cubic-bezier(.3,.85,.3,1);
+}
+.guia.on{opacity:.95;animation:pistaPulsa 2.4s ease-in-out infinite}
 
 /* carimbo de versão, discreto no canto */
 #ver{position:fixed;left:14px;bottom:11px;z-index:60;pointer-events:none;user-select:none;
@@ -3491,6 +3520,11 @@ const viuEixo = {linhas:false, colunas:false};
 
 function estadoMesaPara(mesa, i){
   limpaRealce(mesa);
+  /* as bolinhas são do slide que as pôs: mudando de slide, saem todas
+     e quem chega põe as suas */
+  limpaGuias(mesa);
+  if (i !== 6) blocosVistos7.clear();
+  mesa.classList.remove('disse-periodo', 'disse-grupo');
   /* AS DUAS CENAS DA DISTRIBUIÇÃO SÃO INDEPENDENTES
      Chegar ao slide do subnível ou ao da distribuição é chegar a um
      slide novo: os tijolos que o outro pôs, os filhotes que ele soltou
@@ -3511,6 +3545,7 @@ function estadoMesaPara(mesa, i){
      dizem o nome delas, e um número em cima de "1A" seria dizer duas
      vezes a mesma coisa com dois nomes diferentes */
   mesa.classList.toggle('so-linhas', i === 5 || i === 9 || i === 10);
+  setTimeout(() => reponhaGuias(mesa, i), 0);   /* já com as classes postas */
   /* o que foi arrancado no slide dos blocos volta para a estrutura: os
      outros slides falam da tabela inteira, e não de pedaços dela */
   if (i !== 3 && descolados.size) refazBlocos(mesa);
@@ -3542,7 +3577,12 @@ function estadoMesaPara(mesa, i){
   /* pintar por TIPO é leitura do slide 4 e de mais nenhum: a mesa
      atravessa os slides toda, e a classe ia com ela — noutro slide
      que use a cor da família, os três tipos comiam as dez famílias */
-  mesa.classList.toggle('tipos', i === 3 && mesa.classList.contains('blocos'));
+  /* A COR DOS TIPOS CHEGA COM A TABELA.
+     Este slide fala dos tipos, e a tabela entra já pintada por eles —
+     a mesma cor que ficava depois do primeiro clique. Antes ela chegava
+     na cor das famílias e mudava quando a frase entrava, e a troca de
+     cor roubava a atenção justamente de quem estava a ler a frase. */
+  mesa.classList.toggle('tipos', i === 3);
   if (i === 5) poeGrupos(mesa);
   /* o slide das séries: a tabela sobe uma casa para caber a fila que
      vai nascer embaixo dela, e fora dali as séries voltam para a pilha */
@@ -3943,6 +3983,87 @@ function lugarDaPista(){
   }
   return null;
 }
+/* ============================================================
+   AS BOLINHAS-GUIA
+   Cada slide diz quais põe e o que as apaga; aqui só se sabe pôr,
+   mudar de lugar e tirar. A chave é o nome do que a bolinha aponta —
+   'periodo', 'fam-1', 'bloco-s' —, e pôr duas vezes a mesma chave é
+   mudar a de lugar, e não criar outra: é assim que uma bolinha passeia
+   de uma peça para outra.
+   ============================================================ */
+/* O QUE JÁ FOI PEDIDO E ATENDIDO NÃO VOLTA A PEDIR.
+   A bolinha ensina um gesto; ensinado, ela não tem mais o que dizer, e
+   voltar ao slide não a traz de volta. A memória é da aula inteira, e
+   só recomeça quando a aula recomeça. */
+const guiasDitas = new Set();
+
+function poeGuia(mesa, chave, x, y){
+  if (!mesa || guiasDitas.has(chave)) return null;
+  let g = mesa.querySelector('.guia[data-guia="' + chave + '"]');
+  if (!g){
+    g = document.createElement('i');
+    g.className = 'guia';
+    g.dataset.guia = chave;
+    mesa.appendChild(g);
+    g.style.left = x.toFixed(1) + 'px';
+    g.style.top  = y.toFixed(1) + 'px';
+    revela(g, 'on');
+    return g;
+  }
+  g.style.left = x.toFixed(1) + 'px';
+  g.style.top  = y.toFixed(1) + 'px';
+  return g;
+}
+/* em cima da primeira carta de uma coluna — é ali que a família começa,
+   e o hidrogênio não conta para a coluna 1 */
+function poeGuiaNaColuna(mesa, chave, col){
+  const cs = cartasDaFamilia(mesa, col);
+  if (!cs.length) return null;
+  const topo = cs.reduce((a, c) =>
+    parseFloat(c.style.top) < parseFloat(a.style.top) ? c : a);
+  return poeGuia(mesa, chave, parseFloat(topo.style.left),
+                 parseFloat(topo.style.top) - CARTA_H/2 - 15);
+}
+/* em cima de uma carta */
+function poeGuiaNaCarta(mesa, chave, z){
+  const c = mesa.querySelector('.pc[data-z="' + z + '"]');
+  if (!c) return null;
+  return poeGuia(mesa, chave, parseFloat(c.style.left),
+                 parseFloat(c.style.top) - CARTA_H/2 - 13);
+}
+function tiraGuia(mesa, chave){
+  guiasDitas.add(chave);
+  if (!mesa) return;
+  mesa.querySelectorAll('.guia[data-guia="' + chave + '"]').forEach(g => {
+    g.classList.remove('on');
+    setTimeout(() => g.remove(), 320);
+  });
+}
+/* ---- e a bolinha que passeia ----
+   Quando o que se pede não é uma peça em especial mas QUALQUER uma, a
+   bolinha anda: pousa numa carta, espera, salta para outra. Como a
+   chave é a mesma, pôr é mudar de lugar — e a transição do CSS faz o
+   salto ser um deslize. Ela para quando o toque acontecer, quando o
+   slide mudar, ou quando alguém a tirar. */
+let passeioGuia = null;
+function paraPasseio(){
+  if (passeioGuia){ clearInterval(passeioGuia); passeioGuia = null; }
+}
+function passeiaGuia(mesa, chave, cartas){
+  paraPasseio();
+  if (!mesa || !cartas.length) return;
+  const salta = () => {
+    const c = cartas[(Math.random()*cartas.length)|0];
+    poeGuia(mesa, chave, parseFloat(c.style.left), parseFloat(c.style.top));
+  };
+  salta();
+  passeioGuia = setInterval(salta, 1500);
+}
+function limpaGuias(mesa){
+  paraPasseio();
+  if (mesa) mesa.querySelectorAll('.guia').forEach(g => g.remove());
+}
+
 /* ---- e o botão que pede toque ----
    No slide 2 a segunda frase espera a tabela mostrar as colunas, e quem
    as mostra é o botão do canto — em três toques: linhas, junta,
@@ -4220,6 +4341,8 @@ function reiniciaCena2(){
   if (typeof montaRoteiro8 === 'function') montaRoteiro8();
   if (typeof montaRoteiro9 === 'function') montaRoteiro9();
   if (typeof montaRoteiro10 === 'function') montaRoteiro10();
+  guiasDitas.clear();                /* e as bolinhas voltam a ter o que dizer */
+  blocosVistos7.clear();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   festejouFamilias = false;
   gruposDitos.clear();               /* e sem nome de grupo dito */
@@ -4947,6 +5070,17 @@ function cartasDaFamilia(mesa, col){
   return [...mesa.querySelectorAll('.pc')]
     .filter(c => +c.dataset.col === col && +c.dataset.z !== 1);
 }
+/* ---- as cinco famílias com nome pedem toque ----
+   Uma bolinha em cima de cada uma, e a que já foi levantada não a tem
+   mais: familiasPintadas é a memória de quem já subiu, e é por ela que
+   se sabe quais ainda esperam. */
+function poeGuiasDasFamilias(mesa){
+  if (!mesa || !mesa.classList.contains('familias')) return;
+  Object.keys(FAMILIAS).forEach(col => {
+    if (familiasPintadas.has(String(col))) tiraGuia(mesa, 'fam-' + col);
+    else poeGuiaNaColuna(mesa, 'fam-' + col, +col);
+  });
+}
 function marcaPrincipais(mesa, on){
   mesa.querySelectorAll('.pc').forEach(c => {
     const eh = on && !!FAMILIAS[+c.dataset.col] && +c.dataset.z !== 1;
@@ -5058,6 +5192,7 @@ function alternaFamilia(mesa, carta){
   if (!cartas.length) return;
   cartas.forEach(c => c.classList.add('no-alto'));
   familiasPintadas.add(chave);
+  tiraGuia(mesa, 'fam-' + chave);     /* esta já foi pedida e atendida */
   pintaFamilias(mesa);
   conferFamilias(mesa);
   /* o hidrogênio dá um passo para o lado quando os alcalinos sobem:
@@ -5202,6 +5337,11 @@ function conferGrupos(mesa){
   /* Dita a última das dezoito, a tabela comemora com a mesma festa da
      montagem do slide 2 — a onda verde e os confetes. Uma vez só: quem
      volta ao slide encontra a tabela nomeada, e não a festa de novo. */
+  /* Ditas as dezoito, o que falta é ver que QUALQUER elemento responde:
+     a bolinha passeia pela tabela pedindo um toque, e some no primeiro
+     que vier. */
+  passeiaGuia(mesa, 'grp-qualquer',
+    [...mesa.querySelectorAll('.pc')].filter(c => !naPilha(+c.dataset.z)));
   if (festejouGrupos) return;
   festejouGrupos = true;
   brilhoVerde(mesa);
@@ -5240,6 +5380,16 @@ function alternaGrupo(mesa, carta){
     if (+c.dataset.col === col) c.classList.add('no-alto');
   });
   grupoNoAlto = col;
+  /* a bolinha da 1A só sai quando for a 1A a ser tocada; a que passeia
+     sai com qualquer toque, que é o que ela pedia */
+  if (col === 1) tiraGuia(mesa, 'grp-1a');
+  /* a que passeia só se dá por atendida se estiver mesmo em cena: tirar
+     uma bolinha que ainda não apareceu era gastá-la antes da hora, e a
+     memória não a deixava nascer depois */
+  if (mesa.querySelector('.guia[data-guia="grp-qualquer"]')){
+    paraPasseio();
+    tiraGuia(mesa, 'grp-qualquer');
+  }
   diGrupo(mesa, col);
 }
 
@@ -5446,9 +5596,10 @@ function montaRoteiro6(){
     aplicaLayout(5);                     /* o lugar dela está no layout */
     revela(t, 'posta');
 
-    /* dita a frase, a tabela responde ao dedo */
+    /* dita a frase, a tabela responde ao dedo -- e a bolinha pousa na
+       1A, que e por onde a nomeacao comeca */
     const mesa = sl.querySelector('.mesa');
-    if (mesa) mesa.classList.add('grupos');
+    if (mesa){ mesa.classList.add('grupos'); poeGuiaNaColuna(mesa, 'grp-1a', 1); }
 
     /* e o botão que fecha a tabela outra vez nasce com a cena, escondido
        até haver o que refazer */
@@ -5748,7 +5899,44 @@ function poeFull(mesa, ligado, animada){
    isso se acerta: ao trocar de slide a mesa já mudou de dono, e o botão
    que estava aceso ficou no slide de trás. Quem volta encontra o botão
    dizendo o que a tabela é agora. */
+/* ---- as três bolinhas dos blocos, no slide 7 ----
+   Descidas as duas filas, a tabela mostra os três blocos de uma vez, e
+   nada dizia que se podia tocar neles. Uma bolinha em cada — numa
+   carta que seja claramente daquele bloco —, e cada uma sai quando o
+   bloco dela for mostrado. Vistos os três, quem passa a pedir toque é
+   o botão da forma longa. */
+const GUIA_BLOCO7 = { representativos:15, externa:26, interna:60 };
+const blocosVistos7 = new Set();
+
+/* ---- e quem chega repõe as suas ----
+   Trocar de slide leva as bolinhas todas (limpaGuias); voltando, cada
+   slide repõe as que ainda fazem sentido — as já atendidas não voltam,
+   que a memória as segura. */
+function reponhaGuias(mesa, i){
+  if (!mesa) return;
+  if (i === 4) poeGuiasDasFamilias(mesa);
+  else if (i === 5 && mesa.classList.contains('grupos')) poeGuiaNaColuna(mesa, 'grp-1a', 1);
+  else if (i === 6) poeGuiasDosBlocos(mesa, 6);
+  else if (i === 8 && mesa.classList.contains('viva')) poeGuiaNaColuna(mesa, 'val-1a', 1);
+}
+function poeGuiasDosBlocos(mesa, slide){
+  const i = slide === undefined ? atual : slide;
+  if (!mesa || i !== 6 || seriesAbertas.size < 2 || modoFull) return;
+  Object.keys(GUIA_BLOCO7).forEach(chave => {
+    if (blocosVistos7.has(chave)) tiraGuia(mesa, 'bl-' + chave);
+    else poeGuiaNaCarta(mesa, 'bl-' + chave, GUIA_BLOCO7[chave]);
+  });
+  const cena = mesa.parentNode, b = cena && cena.querySelector('.botao-full');
+  if (b && blocosVistos7.size === 3 && !b.dataset.chamou){
+    b.dataset.chamou = '1';
+    b.classList.add('chama-toque');
+    b.addEventListener('click', () => b.classList.remove('chama-toque'), { once:true });
+  }
+}
 function atualizaBotaoFull(mesa){
+  /* as bolinhas dos blocos vêm primeiro: elas não dependem do botão
+     existir, e ele só nasce com o passo da cena */
+  poeGuiasDosBlocos(mesa);
   const cena = mesa.parentNode;
   const b = cena && cena.querySelector('.botao-full');
   if (!b) return;
@@ -5825,6 +6013,11 @@ function mostraBloco7(mesa, chave){
   /* na forma longa as cercas não valem: elas foram medidas para a
      tabela curta, e aqui os blocos estão noutro lugar */
   if (modoFull) return;
+  /* visto este bloco, a bolinha dele sai — e sai mesmo que o toque
+     seja o que apaga a cerca, porque o bloco já foi mostrado uma vez */
+  blocosVistos7.add(chave);
+  tiraGuia(mesa, 'bl-' + chave);
+  poeGuiasDosBlocos(mesa);
   if (blocoRealcado === chave){ escondeCerca(mesa); return; }
   escondeCerca(mesa);
   const d = BLOCOS7[chave];
@@ -6008,6 +6201,9 @@ function baixaColuna(mesa){
   colunaNoAlto = null;
 }
 function sobeColuna(mesa, col){
+  /* levantada uma família dos grupos A, a bolinha da 1A cumpriu o que
+     tinha a dizer */
+  if (ehRepresentativo(col)) tiraGuia(mesa, 'val-1a');
   const jaEstava = colunaNoAlto === col;
   baixaColuna(mesa);
   if (jaEstava) return;
@@ -6264,9 +6460,10 @@ function montaRoteiro9(){
     revela(t, 'posta');
 
     /* dita a frase, a tabela responde ao dedo e o botão do canto
-       aparece */
+       aparece — e a bolinha pousa na 1A, que é por onde a conta
+       começa */
     const mesa = sl.querySelector('.mesa');
-    if (mesa) mesa.classList.add('viva');
+    if (mesa){ mesa.classList.add('viva'); poeGuiaNaColuna(mesa, 'val-1a', 1); }
     cena.classList.add('valencia-viva');
 
     r.desfazer.push(() => {
@@ -6556,6 +6753,13 @@ function montaRoteiro10(){
     const mesa = sl.querySelector('.mesa');
     if (mesa) mesa.classList.add('viva');
     cena.classList.add('valencia-viva');
+    /* e os dois botões do canto pedem toque, discretamente: são eles
+       as duas leituras que este slide tem para mostrar. Cada um se
+       aquieta quando for usado. */
+    cena.querySelectorAll('.botao-pauling, .botao-subnivel').forEach(b => {
+      b.classList.add('chama-toque');
+      b.addEventListener('click', () => b.classList.remove('chama-toque'), { once:true });
+    });
 
     r.desfazer.push(() => {
       r.i = 0;
@@ -6738,11 +6942,15 @@ function varreEstaveis(mesa){
   varreCores(mesa, 1, Z_ESTAVEL, corEstavel, c => {
     ergueCarta(c);
     diNatureza(mesa, 'estaveis');
+    /* pintados os estáveis, o próximo toque é do outro lado da
+       fronteira: a bolinha pousa no 83, o primeiro depois do chumbo */
+    poeGuiaNaCarta(mesa, 'radio', Z_ESTAVEL + 1);
   });
 }
 function varreRadioativos(mesa){
   if (radioativosVarridos) return;
   radioativosVarridos = true;
+  tiraGuia(mesa, 'radio');
   marcaChamando(mesa);
   varreCores(mesa, Z_ESTAVEL + 1, 118, () => 'var(--ouro-luz)',
              () => diNatureza(mesa, 'radioativo'));
@@ -7037,9 +7245,10 @@ function montaRoteiro5(){
     aplicaLayout(4);                     /* o lugar dela está no layout */
     revela(t, 'posta');
 
-    /* dita a frase, a tabela passa a responder ao dedo */
+    /* dita a frase, a tabela passa a responder ao dedo — e as cinco
+       famílias com nome pedem o toque, cada uma com a sua bolinha */
     const mesa = sl.querySelector('.mesa');
-    if (mesa) mesa.classList.add('familias');
+    if (mesa){ mesa.classList.add('familias'); poeGuiasDasFamilias(mesa); }
 
     r.desfazer.push(() => {
       r.i = 0;
@@ -9963,6 +10172,8 @@ function rotulaCoordenada(mesa, n){
   alvo.innerHTML = linha ? '<b>'+n.textContent+'</b>º período'
                          : 'Grupo <b>'+n.textContent+'</b>';
   alvo.classList.add('on');
+  /* dito o nome deste eixo, a bolinha dele sai de cena */
+  mesa.classList.add(linha ? 'disse-periodo' : 'disse-grupo');
   poeRotulos(mesa);
 }
 /* A altura em que a ficha do elemento e os nomes das coordenadas
