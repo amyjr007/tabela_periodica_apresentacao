@@ -2266,6 +2266,20 @@ body{
   animation:botaoEntra .62s cubic-bezier(.2,1.35,.4,1) .35s backwards,
             botaoChama 1.5s ease-out 1.1s 2;
 }
+/* ENQUANTO O PRÓXIMO GESTO FOR ELE, O BOTÃO PULSA.
+   Um anel que cresce e se apaga, na cor do ponto da pista: os dois
+   avisos dizem a mesma coisa — "é aqui o próximo toque" — e por isso
+   falam a mesma língua. Mora num ::after para não disputar a animação
+   de entrada do próprio botão, que acontece no mesmo instante. */
+.cena.tem-botao #botao-mesa.chama-toque::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;pointer-events:none;
+  animation:botaoPulsa 1.9s ease-out .5s infinite;
+}
+@keyframes botaoPulsa{
+  0%  {box-shadow:0 0 0 0    rgba(76,63,191,.5)}
+  70% {box-shadow:0 0 0 18px rgba(76,63,191,0)}
+  100%{box-shadow:0 0 0 0    rgba(76,63,191,0)}
+}
 #botao-mesa:hover{background:var(--indigo);color:#fff;box-shadow:0 9px 24px rgba(32,28,66,.28)}
 #botao-mesa:active{transform:scale(.96)}
 #botao-mesa svg{flex:none}
@@ -3885,14 +3899,35 @@ function lugarDaPista(){
   }
   return null;
 }
-/* o ponto acende quando o clique tem o que soltar, e espera no lugar
-   onde a coisa vai aparecer */
+/* ---- e o botão que pede toque ----
+   No slide 2 a segunda frase espera a tabela mostrar as colunas, e quem
+   as mostra é o botão do canto — em três toques: linhas, junta,
+   colunas. Enquanto esses três não acontecerem, quem pisca é ele, e não
+   o ponto: o próximo gesto é ali. Dados os três, ele se aquieta e o
+   ponto volta, anunciando a frase que vem. */
+function chamaOBotao(){
+  const sl = slides[atual];
+  const b = sl && sl.querySelector('#botao-mesa');
+  if (!b) return;
+  const mesa = sl.querySelector('.mesa');
+  b.classList.toggle('chama-toque',
+    atual === 1 && !!mesa && mesa.classList.contains('pronta') &&
+    !mesa.classList.contains('viu-colunas'));
+}
+
+/* O PONTO ANUNCIA TEXTO, E SÓ TEXTO.
+   Ele acende quando o próximo clique traz uma frase para a tela — é
+   isso que ele quer dizer. O que espera um toque numa PEÇA (o elemento
+   que chama na montagem do slide 2) não o acende: aquilo não é frase
+   que vem, é gesto que falta, e para esse aviso há o que pisca na
+   própria peça. Por isso a conta aqui é passoPronto(), e não haPasso():
+   o segundo diz sim também ao r.espera. */
 function atualizaPista(){
   const p = document.getElementById('pista');
   if (!p) return;
-  const ha = haPasso();
-  p.classList.toggle('on', ha);
-  const onde = ha ? lugarDaPista() : null;
+  chamaOBotao();
+  const onde = passoPronto() ? lugarDaPista() : null;
+  p.classList.toggle('on', !!onde);
   if (onde){
     /* Vindo do canto, o ponto não caminha: lá ele está preso pelo pé
        (bottom), e o topo não tem de onde partir — a viagem sairia
