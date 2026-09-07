@@ -2209,6 +2209,27 @@ body{
 .mesa.numerada.batizada.tem-realce .cn{pointer-events:auto;cursor:pointer}
 .mesa.numerada.batizada.tem-realce .ln:hover,
 .mesa.numerada.batizada.tem-realce .cn:hover{border-color:var(--ouro);color:var(--ouro)}
+/* E OS QUE ESTÃO ACESOS GANHAM O PONTO.
+   Clicáveis são os números, mas só os da cruz do elemento tocado dizem
+   alguma coisa — e nada neles avisava que se podia tocar ali. O ponto é
+   o mesmo aviso da pista, na mesma cor e no mesmo pulsar: "é aqui".
+   Cada um usa o espaço que tem: o número da coluna põe o ponto por
+   cima, que acima dele é papel; o da linha põe à esquerda, pelo mesmo
+   motivo. Vai num ::after para não disputar o transform do realce, que
+   é quem os faz crescer. */
+.mesa.numerada.batizada.tem-realce .ln.realce::after,
+.mesa.numerada.batizada.tem-realce .cn.realce::after{
+  content:'';position:absolute;
+  width:9px;height:9px;border-radius:50%;
+  background:var(--indigo);pointer-events:none;
+  animation:pistaPulsa 2.4s ease-in-out infinite;
+}
+.mesa.numerada.batizada.tem-realce .cn.realce::after{
+  left:50%;top:-13px;margin-left:-4.5px;
+}
+.mesa.numerada.batizada.tem-realce .ln.realce::after{
+  top:50%;left:-13px;margin-top:-4.5px;
+}
 
 /* a faixa que acende a linha (ou a coluna) inteira, número junto */
 .banda,.banda2{
