@@ -2195,6 +2195,11 @@ body{
    O preenchimento é 'backwards' de propósito — segura o estado inicial
    durante o atraso, mas solta o final, senão o transform da animação
    tomaria conta do botão e o afundar do toque não aconteceria. */
+/* No quiz este botão não existe: a regra de cima já o mandava sair,
+   mas esta, de peso igual e escrita depois, ganhava-lhe. O !important
+   resolve a disputa do lado certo — abrir a tabela no meio de uma
+   pergunta é dar a resposta. */
+.cena.em-quiz #botao-mesa{display:none!important}
 .cena.tem-botao #botao-mesa{
   display:flex;
   animation:botaoEntra .62s cubic-bezier(.2,1.35,.4,1) .35s backwards,
@@ -3023,6 +3028,8 @@ function go(i, dir){
   }, dur);
 
   atual = i;
+  /* e o elemento que tinha saltado para o vazio volta ao lugar dele */
+  if (typeof devolveSalto === 'function') devolveSalto(false);
   /* o quiz é de um slide só: mudou o slide, ele sai de cena */
   if (typeof quizAtivo !== 'undefined' && quizAtivo) fechaQuiz();
   if (typeof atualizaBotaoQuiz === 'function') atualizaBotaoQuiz();
@@ -9291,6 +9298,78 @@ function atualizaBotao(mesa){
   b.setAttribute('aria-label', ROTULOS[proximo]);
 }
 
+
+/* ============================================================
+   O ELEMENTO QUE SALTA PARA O VAZIO · slide 2
+   Tocado, o elemento não cresce no lugar: SALTA — num arco, como as
+   cartas saltam na montagem — para o buraco que a tabela tem acima
+   dos metais de transição, e chega lá com o dobro do tamanho. É ali
+   que ele fica a ser visto, longe da mancha das outras cartas.
+
+   Tocado outra vez, volta pelo mesmo arco ao lugar de onde saiu.
+   Tocado OUTRO elemento com um já fora, o que estava fora não faz
+   caminho de volta nenhum: some dali e reaparece em casa no mesmo
+   instante, para o novo não ter de esperar por ele.
+
+   O arco é o mesmo da montagem — uma Bézier quadrática cujo controle
+   sobe o dobro da altura —, mas escrito aqui fora: o de lá vive
+   fechado dentro do roteiro do slide.
+   ============================================================ */
+let saltado = null;                    /* { c, x0, y0, z0 } */
+
+function arcoAte(c, x, y, dur){
+  const dx = parseFloat(c.style.left) - x;
+  const dy = parseFloat(c.style.top)  - y;
+  c.style.left = x.toFixed(1) + 'px';
+  c.style.top  = y.toFixed(1) + 'px';
+  const alto = Math.min(200, Math.hypot(dx, dy) * .3) + 28;
+  const cx = dx/2, cy = dy/2 - alto*2;
+  const N = 16, quadros = [];
+  for (let i = 0; i <= N; i++){
+    const t = 1 - Math.pow(1 - i/N, 2.6), u = 1 - t;
+    quadros.push({ translate: (u*u*dx + 2*u*t*cx).toFixed(1) + 'px ' +
+                              (u*u*dy + 2*u*t*cy).toFixed(1) + 'px', offset: i/N });
+  }
+  c.animate(quadros, { duration: dur, easing: 'linear' });
+}
+/* o buraco da tabela: colunas 3 a 12, linhas 1 a 3 */
+function vazioDaTabela(){
+  return { x: (xDaColuna(7, modoMesa) + xDaColuna(8, modoMesa)) / 2,
+           y: yDaLinha(2, modoMesa) };
+}
+function devolveSalto(voando){
+  if (!saltado) return;
+  const { c, x0, y0, z0 } = saltado;
+  saltado = null;
+  const miolo = c.firstElementChild;
+  if (voando){
+    miolo.style.setProperty('--sc', '1');
+    arcoAte(c, x0, y0, 620);
+    setTimeout(() => { c.style.zIndex = z0 || zPadrao(+c.dataset.z); }, 660);
+    return;
+  }
+  /* sem caminho de volta: a transição do miolo é calada por um quadro
+     para o encolher não ficar a acontecer no lugar novo */
+  miolo.style.transition = 'none';
+  c.style.left = x0.toFixed(1) + 'px';
+  c.style.top  = y0.toFixed(1) + 'px';
+  miolo.style.setProperty('--sc', '1');
+  c.style.zIndex = z0 || zPadrao(+c.dataset.z);
+  void c.offsetWidth;
+  miolo.style.removeProperty('transition');
+}
+function saltaElemento(mesa, c){
+  const mesmo = saltado && saltado.c === c;
+  if (!mesmo && saltado) devolveSalto(false);
+  escolheCarta(mesa, mesmo ? null : c);
+  if (mesmo){ devolveSalto(true); return; }
+  const alvo = vazioDaTabela();
+  saltado = { c, x0: parseFloat(c.style.left), y0: parseFloat(c.style.top),
+              z0: c.style.zIndex };
+  c.style.zIndex = '40';
+  c.firstElementChild.style.setProperty('--sc', '2');
+  arcoAte(c, alvo.x, alvo.y, 620);
+}
 /* ---- o elemento tocado cresce ----
    Só um de cada vez: o anterior volta ao tamanho antes de o novo
    crescer, esteja ele na mesma faixa ou noutra. */
@@ -9430,6 +9509,7 @@ function mostraFicha(mesa, z){
 }
 
 function limpaRealce(mesa){
+  devolveSalto(false);      /* quem estava no vazio volta para casa */
   mesa.classList.remove('tem-realce');
   desmarcaNobre(mesa);
   mesa.querySelectorAll('.realce').forEach(e => e.classList.remove('realce'));
@@ -9715,7 +9795,10 @@ function largaMesa(ev){
 
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
-      escolheCarta(m, carta);
+      /* no slide dos critérios o elemento salta para o vazio da tabela;
+         nos outros continua a crescer onde está */
+      if (atual === 1) saltaElemento(m, carta);
+      else escolheCarta(m, carta);
       /* a faixa existe com a tabela aberta, ou numerada nos dois eixos;
          junta e sem números, o elemento cresce sozinho */
       if (modoMesa !== 'junta' || m.classList.contains('numerada'))
