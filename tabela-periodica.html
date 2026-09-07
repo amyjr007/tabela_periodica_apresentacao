@@ -316,10 +316,14 @@ body{
    Vai em 'translate', e não em 'transform': estas peças usam o
    transform para se posicionar (o translateY(-50%) e a escala da
    montagem), e animar transform apagaria isso. */
-.desliza-sai-next  {animation:deslizaSaiDir  .62s cubic-bezier(.42,.02,.24,1) both}
-.desliza-entra-next{animation:deslizaEntraEsq .62s cubic-bezier(.42,.02,.24,1) both}
-.desliza-sai-prev  {animation:deslizaSaiEsq  .62s cubic-bezier(.42,.02,.24,1) both}
-.desliza-entra-prev{animation:deslizaEntraDir .62s cubic-bezier(.42,.02,.24,1) both}
+/* 1,55 s: a 40% da velocidade que isto tinha (0,62 s) — a viagem é a
+   mesma, o palco inteiro, andada com calma. O tempo mora aqui e no
+   DUR_PASSAGEM lá embaixo, e os dois têm de andar juntos: o slide que
+   sai só pode se recolher depois de a peça dele ter atravessado. */
+.desliza-sai-next  {animation:deslizaSaiDir   1.55s cubic-bezier(.42,.02,.24,1) both}
+.desliza-entra-next{animation:deslizaEntraEsq 1.55s cubic-bezier(.42,.02,.24,1) both}
+.desliza-sai-prev  {animation:deslizaSaiEsq   1.55s cubic-bezier(.42,.02,.24,1) both}
+.desliza-entra-prev{animation:deslizaEntraDir 1.55s cubic-bezier(.42,.02,.24,1) both}
 @keyframes deslizaSaiDir   {from{translate:0 0}       to{translate:1280px 0}}
 @keyframes deslizaEntraEsq {from{translate:-1280px 0} to{translate:0 0}}
 @keyframes deslizaSaiEsq   {from{translate:0 0}       to{translate:-1280px 0}}
@@ -3143,7 +3147,7 @@ function go(i, dir){
      passagem é o giro, e não o empurrão */
   const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 10 && i >= 1 && i <= 10;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
-  const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
+  const dur = fx === 'cube' ? 880 : (fx === 'gira' ? DUR_PASSAGEM : 640);
 
   /* a cena dos 118 recomeça quando se entra nela pela capa — que é
      onde a história começa. Voltando do slide 3, ela fica como estava. */
@@ -3230,9 +3234,11 @@ const PECAS_CABECA = '.num, .title, .regua, .subtitle';
    dizem o assunto que está a sair, e ficar para trás uma frase do
    slide anterior enquanto o título já é outro fica estranho */
 const PECAS_PASSAGEM = PECAS_CABECA + ', .regra';
-/* quanto dura a passagem entre dois slides de conteúdo — o mesmo tempo
-   que o go() dá à cena antes de recolher o slide que saiu */
-const DUR_PASSAGEM = 1000;
+/* Quanto dura a passagem entre dois slides de conteúdo. É este número
+   que o go() dá à cena antes de recolher o slide que saiu, e ele vem
+   depois do 1,55 s do deslize: recolher antes cortaria a viagem no
+   meio, com o título ainda a atravessar o palco. */
+const DUR_PASSAGEM = 1650;
 const FUNDO_FACE2 = 'linear-gradient(145deg,#DCD7F3,#C0B8E8)';
 
 /* a carta vira: no fio da meia-volta, quando ela está de perfil e não
@@ -3565,7 +3571,7 @@ function giraCabecalhos(de, para, dir){
   });
   slides[para].querySelectorAll(PECAS_PASSAGEM).forEach(el => {
     el.classList.add('desliza-entra-' + lado);
-    setTimeout(() => el.classList.remove('desliza-entra-' + lado), 700);
+    setTimeout(() => el.classList.remove('desliza-entra-' + lado), 1650);
   });
 }
 
