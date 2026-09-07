@@ -545,7 +545,7 @@ body{
 .mundo.on{opacity:1}
 /* opaco de verdade: nada do slide atravessa */
 .mundo-breu{
-  position:absolute;inset:0;
+  position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(circle at var(--ox,50%) var(--oy,50%),
              #17133C 0%, #0C0A26 48%, #06051A 100%);
 }
@@ -554,16 +554,22 @@ body{
    varre os cantos da tela justo quando o olho deveria estar na
    matéria; lá se aprendeu, aqui já nasce quieta. */
 .mundo-aurora{
-  position:absolute;inset:0;mix-blend-mode:screen;
+  position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
   background:conic-gradient(from 0deg at var(--ox,50%) var(--oy,50%),
     color-mix(in srgb, var(--cor) 18%, transparent),
     rgba(76,63,191,.14),
     color-mix(in srgb, var(--ouro-luz) 9%, transparent),
     color-mix(in srgb, var(--cor) 18%, transparent));
 }
-/* o pó do vácuo: pontos que derivam devagar. É o que faz aquilo ser um
-   lugar, e não uma folha preta */
-.mundo-po{position:absolute;inset:0;overflow:hidden}
+/* O pó do vácuo: pontos que derivam devagar. É o que faz aquilo ser
+   um lugar, e não uma folha preta.
+
+   E NÃO PEGA O DEDO. Isto é uma folha do tamanho do mundo por cima de
+   tudo: sem esta linha, era ELA que recebia todos os toques em cima
+   do cubo — o dedo nunca chegava à face, a poça e o fio não se
+   mexiam, e o clique, por não ter nascido numa face, virava o cubo.
+   Camada de enfeite não recebe toques. */
+.mundo-po{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .mundo-po i{
   position:absolute;width:var(--s,3px);height:var(--s,3px);border-radius:50%;
   background:color-mix(in srgb, var(--cor) 55%, #FFFFFF);
@@ -580,7 +586,7 @@ body{
    coisa ao contrário — tirada a classe, ele encolhe de volta para o
    bloco de onde veio. */
 .mundo-zoom{
-  position:absolute;inset:0;pointer-events:none;
+  position:absolute;inset:0;
   transform-origin:var(--ox,50%) var(--oy,50%);
   transform:scale(.26);opacity:0;
   transition:transform .85s cubic-bezier(.2,.82,.28,1), opacity .5s ease;
@@ -590,6 +596,7 @@ body{
    rótulos de dentro do mundo, e não a do cabeçalho da aula */
 .mundo-tit{
   position:absolute;left:50%;top:76px;transform:translateX(-50%);
+  pointer-events:none;
   font-family:var(--mono);font-weight:500;font-size:26px;
   letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;
   /* A cor do tipo, CLAREADA. Crua ela serve à carta, que é clara por
@@ -634,7 +641,7 @@ body{
    Pousado, a face da frente é onde se mexe. */
 .cubo-cx{
   position:absolute;left:50%;top:436px;width:440px;height:440px;
-  margin:-220px 0 0 -220px;perspective:1600px;pointer-events:none;
+  margin:-220px 0 0 -220px;perspective:1600px;
 }
 .cubo{
   position:absolute;inset:0;transform-style:preserve-3d;
@@ -655,8 +662,17 @@ body{
 /* virar de face é mais curto do que chegar: a chegada é uma entrada, a
    virada é uma consulta */
 .cubo.pousado.virando{transition:transform 1s cubic-bezier(.3,.78,.28,1)}
+/* AS FACES CALAM-SE, E NÃO OS ANTEPASSADOS.
+   O caminho até aqui passa por uma câmara com transform e por um cubo
+   em preserve-3d, e dentro de um contexto 3D o navegador não vai
+   procurar alvos na subárvore de quem tem pointer-events:none — o
+   'auto' da face da frente não a resgatava. Enquanto isso durou, todo
+   o toque em cima do cubo caía na folha do mundo: a poça e o fio não
+   se mexiam, e o clique, por não ter nascido numa face, virava a
+   peça. Agora quem se cala é cada face, uma a uma, e a da frente
+   volta a ouvir. */
 .cubo .face{
-  position:absolute;inset:0;overflow:hidden;
+  position:absolute;inset:0;overflow:hidden;pointer-events:none;
   background:linear-gradient(150deg,#232046 0%,#171436 45%,#100E28 100%);
   border:1px solid rgba(207,198,245,.16);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.09),
@@ -6859,25 +6875,16 @@ function acordaMercurio(cx){
   });
 
   let dedo = null;
-  const local = (ev) => {
-    /* offsetX/offsetY vêm na coordenada do próprio SVG, e é o navegador
-       que faz a conta da face inclinada do cubo — daí a poça funcionar
-       certa mesmo com o cubo pousado de lado */
-    const k = 340 / (svg.clientWidth || 340);
-    return { x: ev.offsetX * k, y: ev.offsetY * k };
+  /* o ponto chega em coordenada da FACE; a poça vive numa caixa posta
+     em (50,212) dentro dela, e o desenho tem 340 de largura para 340
+     de caixa — logo é só descontar o canto */
+  const local = (p) => ({ x: p.x - 50, y: p.y - 212 });
+  const naPoca = (p) => p.x > 40 && p.x < 400 && p.y > 202 && p.y < 402;
+  mundoAberto.gesto = {
+    desce: (p) => { if (naPoca(p)) dedo = local(p); },
+    anda:  (p) => { if (dedo) dedo = local(p); },
+    larga: () => { dedo = null; }
   };
-  cx.addEventListener('pointerdown', (ev) => {
-    dedo = local(ev);
-    mexeuNaFace();
-    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
-    ev.preventDefault();
-    ev.stopPropagation();
-  });
-  cx.addEventListener('pointermove', (ev) => { if (dedo) dedo = local(ev); });
-  const larga = () => { dedo = null; };
-  cx.addEventListener('pointerup', larga);
-  cx.addEventListener('pointercancel', larga);
-  cx.addEventListener('pointerleave', larga);
 
   /* AS CONSTANTES, E O PORQUÊ DE CADA UMA.
      Só com empurrão radial o dedo não parte a poça: empurra-a inteira
@@ -7041,6 +7048,8 @@ function acordaFace(cubo, n){
   dormeEletro();
   dormeMalha();
   dormeFio();
+  /* o gesto é da face que está de frente: a que sai leva o dela */
+  if (mundoAberto) mundoAberto.gesto = null;
   acendeFace(cubo, n);
   const face = cubo.querySelector('.face.f' + n);
   if (!face) return;
@@ -7213,20 +7222,11 @@ function acordaCalor(face){
      de uma caixa de 340 posta em (50,184) — logo, um para um */
   const BX1 = 50 + BAR_X1, BX2 = 50 + BAR_X2, BY1 = 184 + 18, BY2 = 184 + 100;
   let dedo = null;
-  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
-  const pega = (ev) => {
-    dedo = onde(ev);
-    fogo.classList.add('on');
-    mexeuNaFace();
-    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
-    ev.preventDefault(); ev.stopPropagation();
+  mundoAberto.gesto = {
+    desce: (p) => { dedo = p; fogo.classList.add('on'); },
+    anda:  (p) => { if (dedo) dedo = p; },
+    larga: () => { dedo = null; fogo.classList.remove('on'); }
   };
-  const larga = () => { dedo = null; fogo.classList.remove('on'); };
-  cx.addEventListener('pointerdown', pega);
-  cx.addEventListener('pointermove', (ev) => { if (dedo) dedo = onde(ev); });
-  cx.addEventListener('pointerup', larga);
-  cx.addEventListener('pointercancel', larga);
-  cx.addEventListener('pointerleave', larga);
   quenta(fogo, paradas, calor, () => dedo, BX1, BX2, BY1, BY2);
 }
 
@@ -7371,27 +7371,21 @@ function acordaEletro(face){
   const poe = () => { barra.style.left = bx + 'px'; barra.style.top = by + 'px'; };
   poe();
 
-  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
-  cx.addEventListener('pointerdown', (ev) => {
-    const p = onde(ev);
-    /* só se o dedo desceu EM CIMA da barra: o resto da face não a puxa */
-    if (Math.abs(p.x - bx) > BARRA_W/2 || Math.abs(p.y - by) > BARRA_H/2) return;
-    pega = { dx: bx - p.x, dy: by - p.y };
-    cx.classList.add('pegando');
-    mexeuNaFace();
-    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
-    ev.preventDefault(); ev.stopPropagation();
-  });
-  cx.addEventListener('pointermove', (ev) => {
-    if (!pega) return;
-    const p = onde(ev);
-    bx = Math.max(BARRA_W/2 - 30, Math.min(470 - BARRA_W/2, p.x + pega.dx));
-    by = Math.max(BARRA_H/2 + 74, Math.min(408 - BARRA_H/2, p.y + pega.dy));
-    poe();
-  });
-  const solta = () => { pega = null; cx.classList.remove('pegando'); };
-  cx.addEventListener('pointerup', solta);
-  cx.addEventListener('pointercancel', solta);
+  mundoAberto.gesto = {
+    desce: (p) => {
+      /* só se o dedo desceu EM CIMA da barra: o resto da face não a puxa */
+      if (Math.abs(p.x - bx) > BARRA_W/2 || Math.abs(p.y - by) > BARRA_H/2) return;
+      pega = { dx: bx - p.x, dy: by - p.y };
+      cx.classList.add('pegando');
+    },
+    anda: (p) => {
+      if (!pega) return;
+      bx = Math.max(BARRA_W/2 - 30, Math.min(470 - BARRA_W/2, p.x + pega.dx));
+      by = Math.max(BARRA_H/2 + 74, Math.min(408 - BARRA_H/2, p.y + pega.dy));
+      poe();
+    },
+    larga: () => { pega = null; cx.classList.remove('pegando'); }
+  };
 
   /* a barra encosta no cobre nu? A caixa dela contra a faixa descascada */
   const encosta = () => bx + BARRA_W/2 > NU_X1 && bx - BARRA_W/2 < NU_X2 &&
@@ -7606,10 +7600,7 @@ function acordaMalha(face){
     setTimeout(() => { batendo = false; }, 560);
   }
 
-  cx.addEventListener('pointerdown', (ev) => {
-    bate();
-    ev.preventDefault(); ev.stopPropagation();
-  });
+  mundoAberto.gesto = { desce: () => bate() };
 }
 function dormeMalha(){}
 
@@ -7740,16 +7731,10 @@ function acordaFio(face){
   };
   escreve();
 
-  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
-  cx.addEventListener('pointerdown', (ev) => {
-    dedo = onde(ev);
-    mexeuNaFace();
-    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
-    ev.preventDefault(); ev.stopPropagation();
-  });
-  cx.addEventListener('pointermove', (ev) => {
+  mundoAberto.gesto = {
+    desce: (p) => { dedo = p; },
+    anda: (t) => {
     if (!dedo) return;
-    const t = onde(ev);
     /* QUALQUER caminho do dedo puxa fio, e não só o que vai para a
        direita: quem está a mostrar isto à turma arrasta como lhe sai,
        e um gesto na diagonal não podia ficar sem resposta. A fieira
@@ -7758,13 +7743,39 @@ function acordaFio(face){
     puxado += Math.hypot(t.x - dedo.x, t.y - dedo.y) * 2;
     escreve();
     dedo = t;
-  });
-  const larga = () => { dedo = null; };
-  cx.addEventListener('pointerup', larga);
-  cx.addEventListener('pointercancel', larga);
+    },
+    larga: () => { dedo = null; }
+  };
 }
 function dormeFio(){}
-/* A hora do último gesto dentro de uma face. Um arrasto que começa
+/* O DEDO NÃO CHEGA À FACE — E POR ISSO NÃO SE PEDE À FACE QUE O RECEBA.
+   O caminho até uma parede do cubo passa por uma câmara com transform
+   e por um cubo em preserve-3d. Dentro de um contexto 3D o navegador
+   entrega o toque ao CUBO, e não à parede que está à frente: pedir a
+   posição à face nunca dava nada, e o toque acabava sempre na folha
+   do mundo — a poça e o fio não se mexiam, e o clique, por não ter
+   nascido numa face, virava a peça.
+
+   A folha do mundo é 2D e recebe sempre. Então é ela que ouve, e é
+   aqui que a posição do dedo se converte para a coordenada da face da
+   frente. A face está de frente — POSE_FACE trata disso —, de modo
+   que a conversão é uma translação e uma escala, e mais nada.
+   'dentro' diz se o dedo caiu mesmo em cima dela: um gesto só COMEÇA
+   dentro, mas depois de começado continua a ser seguido fora, senão
+   arrastar até à beirada largava a peça a meio. */
+function pontoNaFace(ev){
+  if (!mundoAberto || !mundoAberto.cubo) return null;
+  const face = mundoAberto.cubo.querySelector('.face.a-frente');
+  if (!face) return null;
+  const r = face.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  const x = (ev.clientX - r.left) / r.width  * 440;
+  const y = (ev.clientY - r.top)  / r.height * 440;
+  return { x, y, dentro: x >= 0 && y >= 0 && x <= 440 && y <= 440 };
+}
+
+/* A hora do último gesto dentro de uma face.
+ Um arrasto que começa
    na face acaba muitas vezes FORA do cubo — puxar fio ou levar a
    barra leva o dedo para longe —, e nesse caso o clique que se segue
    não nasce na face: nasce no antepassado comum dos dois pontos, que
@@ -7835,14 +7846,47 @@ function abreMundo(mesa, tipo){
      (a poça, o fogo, o Voltar) já tratou do seu antes de chegar aqui. */
   ['pointerdown','pointerup','pointermove','pointercancel','wheel','dblclick']
     .forEach(t => w.addEventListener(t, (ev) => ev.stopPropagation()));
+  /* o despachante: um só conjunto de ouvintes na folha do mundo, que
+     entrega o gesto já convertido à face que estiver acordada */
+  let pegando = false;
+  w.addEventListener('pointerdown', (ev) => {
+    const g = mundoAberto && mundoAberto.gesto;
+    if (!g) return;
+    const p = pontoNaFace(ev);
+    if (!p || !p.dentro) return;
+    pegando = true;
+    mexeuNaFace();
+    try { w.setPointerCapture(ev.pointerId); } catch(_){}
+    if (g.desce) g.desce(p);
+    ev.preventDefault();
+  });
+  w.addEventListener('pointermove', (ev) => {
+    const g = mundoAberto && mundoAberto.gesto;
+    if (!g || !pegando) return;
+    const p = pontoNaFace(ev);
+    if (p && g.anda) g.anda(p);
+  });
+  const largou = () => {
+    if (!pegando) return;
+    pegando = false;
+    mexeuNaFace();
+    const g = mundoAberto && mundoAberto.gesto;
+    if (g && g.larga) g.larga();
+  };
+  w.addEventListener('pointerup', largou);
+  w.addEventListener('pointercancel', largou);
+
   /* QUEM VIRA O CUBO É O CLIQUE FORA DELE.
+
      Duas guardas, e são precisas as duas. A primeira: um toque em cima
      do cubo é para mexer na matéria da face, e nunca para virar a
      peça. A segunda apanha o gesto que começou na face e acabou fora
      dela — ver mexeuNaFace(). */
   w.addEventListener('click', (ev) => {
     ev.stopPropagation();
-    if (ev.target.closest('.face, .mundo-voltar')) return;
+    if (ev.target.closest('.mundo-voltar')) return;
+    const p = pontoNaFace(ev);
+    if (p && p.dentro) return;            /* em cima do cubo: é para mexer */
     if (mundoAberto && Date.now() - (mundoAberto.mexeu || 0) < 700) return;
     passoDoMundo();
   });
