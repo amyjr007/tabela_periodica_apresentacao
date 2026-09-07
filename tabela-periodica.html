@@ -3236,6 +3236,9 @@ function go(i, dir){
   if (typeof mundoAberto !== 'undefined' && mundoAberto) fechaMundo();
   dir = dir || (i > atual ? 'next' : 'prev');
   sentidoDaPassagem = dir === 'prev' ? 'prev' : 'next';
+  /* o aviso do passo bloqueado é de uma visita só: chegando ao slide,
+     a primeira seta volta a explicar antes de deixar passar */
+  if (ROTEIROS[i]) ROTEIROS[i].avisou = false;
 
   const de    = atual;
   const sai   = slides[atual];
@@ -4131,12 +4134,19 @@ function passoAdiante(){
   if (r.i >= r.passos.length) return false;
   const faz = passoPronto();
   if (!faz){
-    /* ainda não é a hora dele — e a cena que souber dizer o que falta
-       diz agora, em vez de o clique não fazer nada */
+    /* AINDA NÃO É A HORA DELE — MAS ISTO NÃO PODE SER UMA PAREDE.
+       A primeira seta diz o que falta; a segunda deixa passar. Sem a
+       segunda, uma cena que espera por um gesto que o professor não
+       quer fazer prende a aula naquele slide para sempre — era o que
+       acontecia no dos grupos, cuja última frase espera a tabela ser
+       aberta em blocos e fechada outra vez. */
+    if (r.avisou) return false;        /* já se disse o que faltava */
+    r.avisou = true;
     if (r.aoBloquear) r.aoBloquear();
     atualizaPista();
     return true;
   }
+  r.avisou = false;
   r.i++;
   faz();
   atualizaPista();
@@ -4837,6 +4847,10 @@ function montaRoteiro3(){
     cena.appendChild(t);
     aplicaLayout(2);                     /* o lugar dela está no layout */
     revela(t, 'posta');
+    /* e uma bolinha no boro, para dizer que a tabela responde ao dedo:
+       qualquer elemento serve, e o primeiro toque a dispensa */
+    const mesa3 = sl.querySelector('.mesa');
+    if (mesa3) poeGuiaNaCarta(mesa3, 'coord-toque', 5);
 
     r.desfazer.push(() => {
       r.i = 0;
@@ -5914,7 +5928,8 @@ const blocosVistos7 = new Set();
    que a memória as segura. */
 function reponhaGuias(mesa, i){
   if (!mesa) return;
-  if (i === 4) poeGuiasDasFamilias(mesa);
+  if (i === 2 && slides[2].querySelector('[data-mont="regra3"]')) poeGuiaNaCarta(mesa, 'coord-toque', 5);
+  else if (i === 4) poeGuiasDasFamilias(mesa);
   else if (i === 5 && mesa.classList.contains('grupos')) poeGuiaNaColuna(mesa, 'grp-1a', 1);
   else if (i === 6) poeGuiasDosBlocos(mesa, 6);
   else if (i === 8 && mesa.classList.contains('viva')) poeGuiaNaColuna(mesa, 'val-1a', 1);
@@ -7103,6 +7118,13 @@ function montaRoteiro8(){
       for (let z = 1; z <= Z_NATURAL; z++){
         if (!SEM_ISOTOPO_ESTAVEL.has(z)) apagaCorDaCarta(mesa, z);
       }
+      /* e o halo dos artificiais sai com ele: era a marca da leitura
+         que acabou de sair de cena, e ficar aceso sobre a tabela lisa
+         era a resposta da pergunta anterior atrapalhando a nova */
+      mesa.querySelectorAll('.pc.art').forEach(c => {
+        c.classList.remove('art');
+        c.style.removeProperty('z-index');
+      });
       acendeCarta(mesa, Z_ESTAVEL, 'var(--estavel)');
       marcaChamando(mesa);
     }
@@ -8834,16 +8856,55 @@ function mundoDosNobres(w){
     '<div class="nb-dica"></div>';
   zoom.appendChild(cx);
   mundoAberto.i = 0;
+  /* A BOLINHA VAI ANDANDO À FRENTE DO QUE SE PEDE.
+     Primeiro na linha da frase que a seta vai trazer; depois na linha
+     da segunda; depois em cima do hélio, que é onde a matéria começa a
+     responder ao dedo; e, acesos os cinco tubos na chapa, na bobina.
+     Cada uma sai no gesto que ela pedia. */
+  poeGuiaDoMundo(w, 'nb-frase1', 396, 164);
   mundoAberto.passos = [
-    () => fraseDoMundo(w, 148, 'São <b>inertes</b> e pouco reativos'),
     () => {
+      tiraGuiaDoMundo(w, 'nb-frase1');
+      fraseDoMundo(w, 148, 'São <b>inertes</b> e pouco reativos');
+      poeGuiaDoMundo(w, 'nb-frase2', 396, 206);
+    },
+    () => {
+      tiraGuiaDoMundo(w, 'nb-frase2');
       fraseDoMundo(w, 190, 'Mas emitem um <b>brilho diferente</b> quando sofrem descarga elétrica');
       cx.classList.add('viva');
       const d = cx.querySelector('.nb-dica');
       if (d) d.textContent = 'Baixe um tubo até o metal, ou aproxime a bobina';
       acordaTubos(w);
+      /* o hélio é o primeiro da estante: a bolinha pousa nele para
+         dizer que os tubos se pegam */
+      poeGuiaDoMundo(w, 'nb-tubo', TUBOS[0].x, TUBO_TOPO - 22);
     }
   ];
+}
+/* ---- a bolinha dentro do mundo quântico ----
+   Lá dentro a pista do palco não se vê (o mundo a apaga), e mesmo
+   assim há gestos a pedir: a seta que traz a frase, o tubo que se
+   baixa, a bobina que se aproxima. Estas moram na folha do mundo, em
+   coordenada de palco, que é onde a estante está desenhada. */
+function poeGuiaDoMundo(w, chave, x, y){
+  const zoom = w && w.querySelector('.mundo-zoom');
+  if (!zoom || zoom.querySelector('.guia[data-guia="' + chave + '"]')) return null;
+  const g = document.createElement('i');
+  g.className = 'guia';
+  g.dataset.guia = chave;
+  g.style.left = x + 'px';
+  g.style.top  = y + 'px';
+  zoom.appendChild(g);
+  revela(g, 'on');
+  return g;
+}
+function tiraGuiaDoMundo(w, chave){
+  const zoom = w && w.querySelector('.mundo-zoom');
+  if (!zoom) return;
+  zoom.querySelectorAll('.guia[data-guia="' + chave + '"]').forEach(g => {
+    g.classList.remove('on');
+    setTimeout(() => g.remove(), 320);
+  });
 }
 function fraseDoMundo(w, y, html){
   const f = document.createElement('div');
@@ -8959,6 +9020,9 @@ function acordaTubos(w){
 
   /* o dedo pega no tubo — e SÓ O DESCE, que um tubo na estante não
      anda de lado — ou pega na bobina, que anda para onde quiser */
+  /* quais tubos já acenderam encostando na chapa: cheios os cinco, a
+     bobina passa a ser o que falta experimentar */
+  const acesos = new Set();
   mundoAberto.gesto = {
     desce: (p) => {
       const o = toroide();
@@ -8968,11 +9032,15 @@ function acordaTubos(w){
       }
       const i = TUBOS.findIndex(t => Math.abs(p.x - t.x) < TUBO_W/2 + 12 &&
                                      p.y > TUBO_TOPO - 10 && p.y < BASE_Y + 10);
-      if (i >= 0) pegue = { i, y0: p.y, d0: desceu[i] };
+      if (i >= 0){
+        pegue = { i, y0: p.y, d0: desceu[i] };
+        tiraGuiaDoMundo(w, 'nb-tubo');   /* pegou num tubo: já sabe que se pega */
+      }
     },
     anda: (p) => {
       if (!pegue) return;
       if (pegue.bob){
+        tiraGuiaDoMundo(w, 'nb-bobina');   /* a bobina já se mexeu */
         bdx = Math.max(-700, Math.min(120, pegue.dx0 + (p.x - pegue.x0)));
         bdy = Math.max(-120, Math.min(90,  pegue.dy0 + (p.y - pegue.y0)));
         bobina.setAttribute('transform', 'translate(' + bdx.toFixed(1) + ',' + bdy.toFixed(1) + ')');
@@ -8985,7 +9053,15 @@ function acordaTubos(w){
       const i = pegue.i;
       desceu[i] = Math.max(0, Math.min(TUBO_QUEDA, pegue.d0 + (p.y - pegue.y0)));
       const luz = poe(i);
-      faisca(i, desceu[i] >= TUBO_QUEDA - .5);
+      const encostou = desceu[i] >= TUBO_QUEDA - .5;
+      faisca(i, encostou);
+      if (encostou && !acesos.has(i)){
+        acesos.add(i);
+        /* acesos os cinco na chapa, falta a outra maneira de os
+           acender: a bolinha passa para a bobina */
+        if (acesos.size === TUBOS.length)
+          poeGuiaDoMundo(w, 'nb-bobina', BOB_X, BOB_TOPO - 26);
+      }
       if (dica && luz >= 1) dica.textContent = TUBOS[i].nome + ' sob descarga';
     },
     larga: () => {
@@ -10513,6 +10589,9 @@ function largaMesa(ev){
 
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
+      /* no slide das coordenadas, o primeiro elemento tocado dispensa
+         a bolinha: ela só dizia que se podia tocar */
+      if (atual === 2) tiraGuia(m, 'coord-toque');
       /* No slide dos critérios o toque manda o elemento para o vazio da
          tabela — mas só com ela junta: aberta em linhas ou em colunas o
          vazio acima dos metais de transição não existe, e aí o toque só
