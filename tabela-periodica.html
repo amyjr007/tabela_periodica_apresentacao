@@ -2463,6 +2463,10 @@ body.montagem .slide.is-active .solto.pego{
   font-family:var(--display);font-weight:800;font-size:13.5px;letter-spacing:.01em;
   color:var(--ouro);
 }
+/* "quiz 2" tem duas palavras e o botão da barra tem 38px fixos: o 2
+   caía para a linha de baixo. Este cresce com o que tem dentro, e o
+   texto não quebra. */
+#bar #quiz2-btn{width:auto;padding:0 11px;white-space:nowrap}
 #bar .btn-quiz:hover{background:rgba(226,162,43,.16);color:var(--ouro)}
 #bar .btn-quiz.on{background:var(--ouro-luz);color:#fff}
 #bar .btn-quiz[disabled]{opacity:.3;cursor:default;background:transparent;color:var(--ouro)}
@@ -9403,11 +9407,24 @@ function atualizaBotao(mesa){
    ============================================================ */
 let saltado = null;                    /* { c, x0, y0, z0 } */
 
+/* Escreve o lugar novo sem deslizar até ele.
+   Desde que a tabela se abriu em linhas ou colunas, cada carta carrega
+   uma transição de left e top que ninguém mais tira. Com ela de pé, a
+   carta caminha por conta própria para o lugar novo ao mesmo tempo que
+   o arco a desloca — e o voo parece começar longe de onde ela estava.
+   Aqui a mudança é seca: quem leva a carta é só o arco. */
+function poeSemDeslizar(c, x, y){
+  const tr = c.style.transition;
+  c.style.transition = 'none';
+  c.style.left = x.toFixed(1) + 'px';
+  c.style.top  = y.toFixed(1) + 'px';
+  void c.offsetWidth;
+  if (tr) c.style.transition = tr; else c.style.removeProperty('transition');
+}
 function arcoAte(c, x, y, dur){
   const dx = parseFloat(c.style.left) - x;
   const dy = parseFloat(c.style.top)  - y;
-  c.style.left = x.toFixed(1) + 'px';
-  c.style.top  = y.toFixed(1) + 'px';
+  poeSemDeslizar(c, x, y);
   const alto = Math.min(200, Math.hypot(dx, dy) * .3) + 28;
   const cx = dx/2, cy = dy/2 - alto*2;
   const N = 16, quadros = [];
@@ -9437,8 +9454,7 @@ function devolveSalto(voando){
   /* sem caminho de volta: a transição do miolo é calada por um quadro
      para o encolher não ficar a acontecer no lugar novo */
   miolo.style.transition = 'none';
-  c.style.left = x0.toFixed(1) + 'px';
-  c.style.top  = y0.toFixed(1) + 'px';
+  poeSemDeslizar(c, x0, y0);
   miolo.style.setProperty('--sc', '1');
   c.style.zIndex = z0 || zPadrao(+c.dataset.z);
   void c.offsetWidth;
@@ -9456,6 +9472,33 @@ function saltaElemento(mesa, c){
   c.firstElementChild.style.setProperty('--sc', '2');
   arcoAte(c, alvo.x, alvo.y, 620);
 }
+/* ---- e quem manda saltar é o dedo parado meio segundo ----
+   O clique voltou a ser só o que sempre foi: marca o elemento e acende
+   a cruz da linha com a coluna. Saltar é gesto de propósito — meio
+   segundo de dedo parado em cima —, e só acontece com a tabela junta:
+   aberta em linhas ou em colunas, o vazio acima dos metais de transição
+   não existe, e o elemento não teria para onde ir. Já fora, ele volta
+   com um clique simples.
+   Disparado o salto, o toque é dado por gasto (toqueMesa = null): o
+   dedo já disse o que queria, e o soltar não vai marcar mais nada. */
+const PRESSO_SALTO = 500;
+let pressoSalto = null;
+
+function armaSalto(mesa, ev){
+  desarmaSalto();
+  if (atual !== 1 || quizAtivo || modoMesa !== 'junta') return;
+  const c = ev.target.closest && ev.target.closest('.pc');
+  if (!c || (saltado && saltado.c === c)) return;
+  pressoSalto = setTimeout(() => {
+    pressoSalto = null;
+    toqueMesa = null;
+    saltaElemento(mesa, c);
+  }, PRESSO_SALTO);
+}
+function desarmaSalto(){
+  if (pressoSalto){ clearTimeout(pressoSalto); pressoSalto = null; }
+}
+
 /* ---- o elemento tocado cresce ----
    Só um de cada vez: o anterior volta ao tamanho antes de o novo
    crescer, esteja ele na mesma faixa ou noutra. */
@@ -9728,6 +9771,7 @@ stage.addEventListener('pointerdown', (ev) => {
     houvePinca = false;
     toqueMesa = {id:ev.pointerId, x:ev.clientX, y:ev.clientY,
                  t:Date.now(), alvo:ev.target};
+    armaSalto(m, ev);
   }
   ancoraMesa(m);
   try { stage.setPointerCapture(ev.pointerId); } catch(_){}
@@ -9737,6 +9781,10 @@ document.addEventListener('pointermove', (ev) => {
   const m = mesaPronta();
   if (!m) return;
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  /* dedo que anda não é dedo parado: o salto perde a vez */
+  if (pressoSalto && toqueMesa &&
+      Math.hypot(ev.clientX - toqueMesa.x, ev.clientY - toqueMesa.y) > 8)
+    desarmaSalto();
   const agora = centroDe(dedosMesa), b = baseMesa;
   let zoom = b.zoom;
   if (dedosMesa.size > 1 && b.d > 12)
@@ -9749,6 +9797,7 @@ document.addEventListener('pointermove', (ev) => {
 });
 function largaMesa(ev){
   if (!dedosMesa.has(ev.pointerId)) return;
+  desarmaSalto();               /* subiu antes do meio segundo: era clique */
   /* toque é o dedo que sobe onde desceu, depressa e sozinho — o que
      sobra depois de descontar a pinça e o arrasto */
   const foiToque = toqueMesa && ev.pointerId === toqueMesa.id && !houvePinca &&
@@ -9881,13 +9930,21 @@ function largaMesa(ev){
 
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
-      /* no slide dos critérios o elemento salta para o vazio da tabela;
-         nos outros continua a crescer onde está */
-      if (atual === 1) saltaElemento(m, carta);
-      else escolheCarta(m, carta);
+      /* O clique marca. Quem manda o elemento para o vazio da tabela é
+         o dedo parado meio segundo (ver armaSalto); ao clique sobra
+         trazê-lo de volta, e arrumar a casa quando o dedo procura
+         outro elemento — o que estava fora some dali e reaparece em
+         casa no mesmo instante, sem fazer o caminho de volta. */
+      const voltando = saltado && saltado.c === carta;
+      if (voltando) saltaElemento(m, carta);
+      else {
+        if (saltado) devolveSalto(false);
+        escolheCarta(m, carta);
+      }
       /* a faixa existe com a tabela aberta, ou numerada nos dois eixos;
          junta e sem números, o elemento cresce sozinho */
-      if (modoMesa !== 'junta' || m.classList.contains('numerada'))
+      if (!voltando &&
+          (modoMesa !== 'junta' || m.classList.contains('numerada')))
         realceFaixa(m, carta);
     }
     else passoAdiante();
