@@ -10801,7 +10801,8 @@ const SONS = {
   certo:  'Audios/right.mp3',      /* o do jogo dos blocos */
   erro:   'Audios/error.mp3',
   fraco:  'Audios/lowscore.mp3',
-  placar: 'Audios/statistics.mp3'
+  placar: 'Audios/statistics.mp3',
+  vira:   'Audios/flipcard.mp3'    /* a carta do jogo da memória */
 };
 function tocaSom(nome){
   const src = SONS[nome];
@@ -11722,6 +11723,7 @@ function viraMemoria(i){
   if (!el || el.classList.contains('casada') || el.classList.contains('virada')) return;
   if (memViradas.length >= 2) return;
   el.classList.add('virada');
+  tocaSom('vira');
   memViradas.push(i);
   if (memViradas.length === 2) conferePar();
 }
