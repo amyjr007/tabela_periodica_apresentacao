@@ -626,6 +626,39 @@ body{
   border-color:var(--ouro-luz);box-shadow:0 0 30px rgba(226,162,43,.45);transform:scale(1.05);
 }
 .mundo-voltar:active{transform:scale(.97)}
+
+/* ---------- O MUNDO DOS GASES NOBRES ---------- */
+.nb-cx{position:absolute;inset:0;pointer-events:none}
+.estante{position:absolute;inset:0;width:100%;height:100%}
+/* antes da segunda frase a estante ainda não pega o dedo: só depois
+   de se falar em descarga é que faz sentido encostar um tubo */
+.nb-cx.viva{pointer-events:auto;touch-action:none;cursor:grab}
+.nb-cx.viva:active{cursor:grabbing}
+.tubo{transition:transform .28s cubic-bezier(.2,.9,.3,1)}
+.tubo .luz{transition:opacity .12s ease}
+.tubo-et{
+  font-family:var(--mono);font-size:15px;font-weight:700;fill:#20242B;
+  text-anchor:middle;letter-spacing:.04em;
+}
+.tubo-nome{
+  font-family:var(--mono);font-size:10.5px;fill:rgba(226,222,240,.5);
+  text-anchor:middle;letter-spacing:.14em;text-transform:uppercase;
+}
+.nb-dica{
+  position:absolute;left:0;right:0;top:644px;text-align:center;pointer-events:none;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);
+}
+/* a frase do mundo, quando o mundo não é um cubo */
+.mundo-frase{
+  position:absolute;left:50%;transform:translateX(-50%);width:940px;text-align:center;
+  font-family:var(--display);font-weight:600;font-size:24px;line-height:1.35;
+  color:#EDE8FA;text-shadow:0 2px 20px rgba(6,5,26,.9);
+  opacity:0;translate:0 16px;
+  transition:opacity .55s ease, translate .7s cubic-bezier(.2,.86,.26,1);
+}
+.mundo-frase.on{opacity:1;translate:0 0}
+.mundo-frase b{color:var(--ouro-luz);font-weight:800}
 /* A pista mora no palco, e não no slide: nenhum z-index de dentro do
    mundo a alcança. Some enquanto se estiver mergulhado — um ponto a
    pulsar por cima do vácuo pareceria coisa de outro mundo, e é
@@ -3266,13 +3299,16 @@ function atualizaMarca(){
    cubo. Sem esta guarda, um toque ali levava a aula embora com o
    professor ainda mergulhado. Do mundo só se sai pelo Voltar. */
 const avanca = () => {
-  if (typeof mundoAberto !== 'undefined' && mundoAberto){ viraCubo(1); return; }
+  if (typeof mundoAberto !== 'undefined' && mundoAberto){ passoDoMundo(); return; }
   if (!passoAdiante()) go(atual+1, 'next');
 };
 /* voltar é, primeiro, desfazer o que se fez aqui; só quando não há mais
    o que desfazer é que se volta de slide */
 const volta  = () => {
-  if (typeof mundoAberto !== 'undefined' && mundoAberto){ viraCubo(-1); return; }
+  if (typeof mundoAberto !== 'undefined' && mundoAberto){
+    if (mundoAberto.tipo === 'metais') viraCubo(-1);
+    return;
+  }
   if (!passoAtras()) go(atual-1, 'prev');
 };
 
@@ -7764,16 +7800,239 @@ function dormeFio(){}
    dentro, mas depois de começado continua a ser seguido fora, senão
    arrastar até à beirada largava a peça a meio. */
 function pontoNaFace(ev){
-  if (!mundoAberto || !mundoAberto.cubo) return null;
-  const face = mundoAberto.cubo.querySelector('.face.a-frente');
-  if (!face) return null;
-  const r = face.getBoundingClientRect();
+  if (!mundoAberto) return null;
+  /* com cubo, a conta é na face da frente e dá coordenada de face;
+     sem cubo — os gases nobres — é na folha do mundo, e dá coordenada
+     de palco, que é onde a estante está desenhada */
+  const face = mundoAberto.cubo && mundoAberto.cubo.querySelector('.face.a-frente');
+  const alvo = face || mundoAberto.el;
+  if (!alvo) return null;
+  const r = alvo.getBoundingClientRect();
   if (!r.width || !r.height) return null;
-  const x = (ev.clientX - r.left) / r.width  * 440;
-  const y = (ev.clientY - r.top)  / r.height * 440;
-  return { x, y, dentro: x >= 0 && y >= 0 && x <= 440 && y <= 440 };
+  const W = face ? 440 : 1280, H = face ? 440 : 720;
+  const x = (ev.clientX - r.left) / r.width  * W;
+  const y = (ev.clientY - r.top)  / r.height * H;
+  return { x, y, dentro: x >= 0 && y >= 0 && x <= W && y <= H };
 }
 
+
+/* ============================================================
+   O MUNDO DOS GASES NOBRES
+   Uma estante de acrílico com cinco tubos de descarga, como os das
+   bancadas de laboratório. Cada tubo fica POUSADO UM DEDO ACIMA do
+   contacto de metal que corre na base: segura-se nele, baixa-se até
+   encostar, e o gás acende. Larga-se e ele volta a subir e apaga.
+
+   É por isso que a cena existe: o gás nobre não reage com nada — mas
+   sob descarga cada um dá a SUA cor, e essa cor é a impressão digital
+   dele. Ver os cinco lado a lado, e poder acender um de cada vez, diz
+   isso melhor do que qualquer frase.
+   ============================================================ */
+const TUBOS = [
+  { s:'He', nome:'Hélio',    x:400, core:'#FFF2DC', gas:'#FF9A4D', halo:'#FF7BA0' },
+  { s:'Ne', nome:'Neônio',   x:520, core:'#FFE0C2', gas:'#FF3D00', halo:'#FF5A1A' },
+  { s:'Ar', nome:'Argônio',  x:640, core:'#EADCFF', gas:'#7C4DFF', halo:'#9A5CFF' },
+  { s:'Kr', nome:'Criptônio',x:760, core:'#F4FFFA', gas:'#8FE8C4', halo:'#9CD8FF' },
+  { s:'Xe', nome:'Xenônio',  x:880, core:'#DCEBFF', gas:'#3D8BFF', halo:'#7C7CFF' }
+];
+const TUBO_W = 46;            /* a largura do vidro */
+const TUBO_TOPO = 236;        /* a ponta do tubo, levantado */
+const TUBO_ALT = 252;         /* da ponta à base */
+const TUBO_QUEDA = 26;        /* quanto ele desce até encostar no metal */
+const BASE_Y = 514;           /* a chapa de metal, no tabuleiro */
+
+function tuboSVG(t, i){
+  const x = t.x, m = TUBO_W/2;
+  const g = 'tb' + i;
+  return '<g class="tubo" data-i="' + i + '" transform="translate(0,0)">' +
+    /* o brilho do gás, por trás do vidro */
+    '<g class="luz" opacity="0">' +
+      '<rect x="' + (x-m+7) + '" y="' + (TUBO_TOPO+40) + '" width="' + (TUBO_W-14) +
+        '" height="' + (TUBO_ALT-66) + '" rx="' + (TUBO_W/2-7) + '"' +
+        ' fill="url(#' + g + 'gas)" filter="url(#nb-brilho)"/>' +
+      /* o fio branco do meio é ESTREITO: numa lâmpada de descarga o
+         que se vê é a cor do gás, com o coração aceso lá dentro. Um
+         miolo largo comia a cor e todos os tubos ficavam parecidos. */
+      '<rect x="' + (x-m+16) + '" y="' + (TUBO_TOPO+50) + '" width="' + (TUBO_W-32) +
+        '" height="' + (TUBO_ALT-88) + '" rx="' + (TUBO_W/2-16) + '" fill="' + t.core +
+        '" opacity=".8"/>' +
+    '</g>' +
+    /* o vidro: o cone da ponta e o corpo */
+    '<path d="M' + x + ',' + TUBO_TOPO + ' L' + (x+m) + ',' + (TUBO_TOPO+38) +
+      ' L' + (x+m) + ',' + (TUBO_TOPO+TUBO_ALT-16) +
+      ' Q' + (x+m) + ',' + (TUBO_TOPO+TUBO_ALT) + ' ' + (x+m-14) + ',' + (TUBO_TOPO+TUBO_ALT) +
+      ' L' + (x-m+14) + ',' + (TUBO_TOPO+TUBO_ALT) +
+      ' Q' + (x-m) + ',' + (TUBO_TOPO+TUBO_ALT) + ' ' + (x-m) + ',' + (TUBO_TOPO+TUBO_ALT-16) +
+      ' L' + (x-m) + ',' + (TUBO_TOPO+38) + ' Z"' +
+      ' fill="url(#nb-vidro)" stroke="rgba(226,240,255,.5)" stroke-width="1.3"/>' +
+    /* os dois reflexos que fazem o vidro ser vidro */
+    '<rect x="' + (x-m+7) + '" y="' + (TUBO_TOPO+44) + '" width="6" height="' + (TUBO_ALT-80) +
+      '" rx="3" fill="rgba(255,255,255,.55)"/>' +
+    '<rect x="' + (x+m-13) + '" y="' + (TUBO_TOPO+52) + '" width="3" height="' + (TUBO_ALT-100) +
+      '" rx="1.5" fill="rgba(255,255,255,.28)"/>' +
+    /* o elétrodo de baixo, que é quem toca no metal */
+    '<rect x="' + (x-12) + '" y="' + (TUBO_TOPO+TUBO_ALT-9) + '" width="24" height="12" rx="3"' +
+      ' fill="url(#nb-metal)"/>' +
+    /* a etiqueta, acima da barra da estante */
+    '<rect x="' + (x-m+3) + '" y="' + (TUBO_TOPO+50) + '" width="' + (TUBO_W-6) + '" height="26"' +
+      ' rx="3" fill="#F4F6F8" opacity=".93"/>' +
+    '<text x="' + x + '" y="' + (TUBO_TOPO+68) + '" class="tubo-et">' + t.s + '</text>' +
+  '</g>';
+}
+
+function estanteSVG(){
+  const defs = TUBOS.map((t, i) =>
+    '<linearGradient id="tb' + i + 'gas" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="' + t.halo + '"/>' +
+      '<stop offset=".5" stop-color="' + t.gas + '"/>' +
+      '<stop offset="1" stop-color="' + t.halo + '"/>' +
+    '</linearGradient>').join('');
+  return '<svg class="estante" viewBox="0 0 1280 720" aria-hidden="true">' +
+    '<defs>' + defs +
+      /* o vidro: quase nada, e é isso que o faz vidro */
+      '<linearGradient id="nb-vidro" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0"   stop-color="rgba(196,220,245,.30)"/>' +
+        '<stop offset=".18" stop-color="rgba(236,248,255,.16)"/>' +
+        '<stop offset=".5"  stop-color="rgba(150,180,214,.10)"/>' +
+        '<stop offset=".84" stop-color="rgba(196,220,245,.22)"/>' +
+        '<stop offset="1"   stop-color="rgba(120,150,186,.34)"/>' +
+      '</linearGradient>' +
+      /* o acrílico da estante: mais claro nas quinas */
+      '<linearGradient id="nb-acril" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="rgba(226,240,255,.42)"/>' +
+        '<stop offset=".35" stop-color="rgba(180,206,236,.16)"/>' +
+        '<stop offset="1"   stop-color="rgba(226,240,255,.30)"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="nb-metal" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#E6EDF5"/><stop offset=".4" stop-color="#8494A6"/>' +
+        '<stop offset=".55" stop-color="#B9C6D4"/><stop offset="1" stop-color="#3E4855"/>' +
+      '</linearGradient>' +
+      '<filter id="nb-brilho" x="-160%" y="-70%" width="420%" height="240%">' +
+        '<feGaussianBlur stdDeviation="13" result="b"/>' +
+        '<feMerge><feMergeNode in="b"/><feMergeNode in="b"/>' +
+        '<feMergeNode in="SourceGraphic"/></feMerge>' +
+      '</filter>' +
+      '<filter id="nb-faisca" x="-200%" y="-200%" width="500%" height="500%">' +
+        '<feGaussianBlur stdDeviation="2.6" result="b"/>' +
+        '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+      '</filter>' +
+    '</defs>' +
+    /* o tabuleiro de baixo, e a chapa de metal que corre nele */
+    '<rect x="352" y="' + BASE_Y + '" width="576" height="46" rx="5" fill="url(#nb-acril)"' +
+      ' stroke="rgba(226,240,255,.42)" stroke-width="1.2"/>' +
+    '<rect x="368" y="' + (BASE_Y-7) + '" width="544" height="9" rx="3" fill="url(#nb-metal)"/>' +
+    '<g class="faiscas"></g>' +
+    /* os tubos entram aqui, entre o tabuleiro e a barra de cima */
+    '<g class="tubos">' + TUBOS.map(tuboSVG).join('') + '</g>' +
+    /* a barra de cima, POR DIANTE dos tubos: é ela que os segura, e é
+       vê-los passar por trás dela que faz a estante parecer estante */
+    '<rect x="352" y="322" width="576" height="30" rx="5" fill="url(#nb-acril)"' +
+      ' stroke="rgba(226,240,255,.5)" stroke-width="1.2"/>' +
+    '<rect x="352" y="322" width="576" height="4" rx="2" fill="rgba(255,255,255,.4)"/>' +
+    /* os dois montantes */
+    '<rect x="352" y="322" width="14" height="' + (BASE_Y-322) + '" rx="4" fill="url(#nb-acril)"/>' +
+    '<rect x="914" y="322" width="14" height="' + (BASE_Y-322) + '" rx="4" fill="url(#nb-acril)"/>' +
+    /* os nomes, por baixo do tabuleiro */
+    TUBOS.map(t => '<text x="' + t.x + '" y="' + (BASE_Y+74) + '" class="tubo-nome">' +
+      t.nome + '</text>').join('') +
+  '</svg>';
+}
+
+
+/* a cena dos nobres: a estante entra com o mundo, e as duas frases
+   vêm a clique, uma de cada vez. A estante só pega o dedo depois da
+   segunda — antes dela ainda não se falou em descarga nenhuma. */
+function mundoDosNobres(w){
+  const zoom = w.querySelector('.mundo-zoom');
+  const cx = document.createElement('div');
+  cx.className = 'nb-cx';
+  cx.innerHTML = estanteSVG() +
+    '<div class="nb-dica"></div>';
+  zoom.appendChild(cx);
+  mundoAberto.i = 0;
+  mundoAberto.passos = [
+    () => fraseDoMundo(w, 148, 'São <b>inertes</b> e pouco reativos'),
+    () => {
+      fraseDoMundo(w, 190, 'Mas emitem um <b>brilho diferente</b> quando sofrem descarga elétrica');
+      cx.classList.add('viva');
+      const d = cx.querySelector('.nb-dica');
+      if (d) d.textContent = 'Baixe um tubo até o metal';
+      acordaTubos(w);
+    }
+  ];
+}
+function fraseDoMundo(w, y, html){
+  const f = document.createElement('div');
+  f.className = 'mundo-frase';
+  f.style.top = y + 'px';
+  f.innerHTML = html;
+  w.querySelector('.mundo-zoom').appendChild(f);
+  revela(f, 'on');
+  return f;
+}
+function acordaTubos(w){
+  const svg = w.querySelector('.estante');
+  const dica = w.querySelector('.nb-dica');
+  if (!svg) return;
+  const gs = [...svg.querySelectorAll('.tubo')];
+  const gFaiscas = svg.querySelector('.faiscas');
+  /* quanto cada tubo já desceu, e qual deles está aceso */
+  const desceu = gs.map(() => 0);
+  let pegue = null;                 /* {i, y0, desceu0} */
+
+  const poe = (i) => {
+    gs[i].setAttribute('transform', 'translate(0,' + desceu[i].toFixed(1) + ')');
+    const aceso = desceu[i] >= TUBO_QUEDA - .5;
+    gs[i].querySelector('.luz').setAttribute('opacity', aceso ? '1' : '0');
+    gs[i].classList.toggle('aceso', aceso);
+    return aceso;
+  };
+  const faisca = (i, liga) => {
+    if (!liga){ gFaiscas.innerHTML = ''; return; }
+    const t = TUBOS[i];
+    let d = '';
+    for (let k = 0; k < 7; k++){
+      const a = -Math.PI * (.15 + .7 * Math.random());
+      const v = 6 + Math.random() * 20;
+      d += '<circle cx="' + (t.x + Math.cos(a)*v).toFixed(0) + '" cy="' +
+           (BASE_Y - 4 + Math.sin(a)*v*.5).toFixed(0) + '" r="' +
+           (1 + Math.random()*1.6).toFixed(1) + '" fill="' + t.core + '"/>';
+    }
+    gFaiscas.innerHTML = '<g filter="url(#nb-faisca)">' + d + '</g>';
+  };
+
+  gs.forEach((_, i) => poe(i));
+
+  /* o dedo pega no tubo e SÓ O DESCE: um tubo na estante não anda de
+     lado, e deixá-lo andar dava a impressão de que se podia tirá-lo */
+  mundoAberto.gesto = {
+    desce: (p) => {
+      const i = TUBOS.findIndex(t => Math.abs(p.x - t.x) < TUBO_W/2 + 12 &&
+                                     p.y > TUBO_TOPO - 10 && p.y < BASE_Y + 10);
+      if (i < 0) return;
+      pegue = { i, y0: p.y, d0: desceu[i] };
+    },
+    anda: (p) => {
+      if (!pegue) return;
+      const i = pegue.i;
+      desceu[i] = Math.max(0, Math.min(TUBO_QUEDA, pegue.d0 + (p.y - pegue.y0)));
+      const aceso = poe(i);
+      faisca(i, aceso);
+      if (dica && aceso) dica.textContent = TUBOS[i].nome + ' sob descarga';
+    },
+    larga: () => {
+      if (!pegue) return;
+      /* larga-se e o tubo volta a subir: a descarga dura o que durar o
+         contacto, e a cena fica pronta para o gás seguinte */
+      const i = pegue.i;
+      pegue = null;
+      desceu[i] = 0;
+      poe(i);
+      faisca(i, false);
+      if (dica) dica.textContent = 'Baixe um tubo até o metal';
+    }
+  };
+}
 /* A hora do último gesto dentro de uma face.
  Um arrasto que começa
    na face acaba muitas vezes FORA do cubo — puxar fio ou levar a
@@ -7788,7 +8047,10 @@ function mexeuNaFace(){
 /* o clique adiante, dentro do mundo: por enquanto quem tem o que
    mostrar é o cubo dos metais, e adiantar é virá-lo de face */
 function passoDoMundo(){
-  viraCubo(1);
+  if (!mundoAberto) return;
+  if (mundoAberto.tipo === 'metais'){ viraCubo(1); return; }
+  const p = mundoAberto.passos;
+  if (p && mundoAberto.i < p.length) p[mundoAberto.i++]();
 }
 function abreMundo(mesa, tipo){
   if (mundoAberto || !mesa) return;
@@ -7830,6 +8092,7 @@ function abreMundo(mesa, tipo){
   /* nos metais o cubo É o mundo: entra com ele, e não depois de um
      clique. Os outros tipos abrem com o nome e mais nada, à espera. */
   if (tipo === 'metais') mundoAberto.cubo = cuboDosMetais(w);
+  if (tipo === 'nobres') mundoDosNobres(w);
   w.querySelector('.mundo-voltar').addEventListener('click', (ev) => {
     ev.stopPropagation();
     fechaMundo();
@@ -7886,7 +8149,7 @@ function abreMundo(mesa, tipo){
     ev.stopPropagation();
     if (ev.target.closest('.mundo-voltar')) return;
     const p = pontoNaFace(ev);
-    if (p && p.dentro) return;            /* em cima do cubo: é para mexer */
+    if (p && p.dentro && mundoAberto && mundoAberto.cubo) return;   /* em cima do cubo: é para mexer */
     if (mundoAberto && Date.now() - (mundoAberto.mexeu || 0) < 700) return;
     passoDoMundo();
   });
