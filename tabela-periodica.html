@@ -292,10 +292,21 @@ body{
    e a escala da montagem), e uma animação de transform apagaria isso.
    As duas se somam — primeiro rotate, depois transform.
    ============================================================ */
-.gira-sai  {animation:cabSai   .46s cubic-bezier(.45,0,.7,1) both}
-.gira-entra{animation:cabEntra .46s cubic-bezier(.3,.25,.3,1) .46s both}
-@keyframes cabSai  {from{rotate:y 0deg;  opacity:1} to{rotate:y 90deg; opacity:0}}
-@keyframes cabEntra{from{rotate:y -90deg;opacity:0} to{rotate:y 0deg;  opacity:1}}
+/* O EMPURRÃO
+   O cabeçalho que sai é empurrado para a direita pelo que chega: os
+   dois andam AO MESMO TEMPO — um indo embora pela direita, o outro
+   vindo da esquerda —, e é isso que faz o novo parecer empurrar o
+   velho, em vez de um esperar o outro acabar. É o mesmo sentido em que
+   as frases da aula entram, e assim a tela toda anda para o mesmo
+   lado. As frases já ditas vão junto na saída: elas são daquele
+   assunto, e saem com o título dele.
+   Vai em 'translate', e não em 'transform': estas peças usam o
+   transform para se posicionar — o translateY(-50%) e a escala da
+   montagem — e animar transform apagaria isso. */
+.desliza-sai  {animation:cabDeslizaSai   .5s  cubic-bezier(.5,0,.75,.4) both}
+.desliza-entra{animation:cabDeslizaEntra .58s cubic-bezier(.2,.72,.3,1) both}
+@keyframes cabDeslizaSai  {from{translate:0 0;      opacity:1} to{translate:360px 0; opacity:0}}
+@keyframes cabDeslizaEntra{from{translate:-360px 0; opacity:0} to{translate:0 0;     opacity:1}}
 
 /* a carta vira a face: meia volta, troca de cara no fio, e completa */
 @keyframes viraCarta{
@@ -3198,6 +3209,13 @@ function pinta(){
    o tabuleiro na diagonal.
    ============================================================ */
 const PECAS_CABECA = '.num, .title, .regua, .subtitle';
+/* e na passagem as frases da aula andam com o cabeçalho: são elas que
+   dizem o assunto que está a sair, e ficar para trás uma frase do
+   slide anterior enquanto o título já é outro fica estranho */
+const PECAS_PASSAGEM = PECAS_CABECA + ', .regra';
+/* quanto dura a passagem entre dois slides de conteúdo — o mesmo tempo
+   que o go() dá à cena antes de recolher o slide que saiu */
+const DUR_PASSAGEM = 1000;
 const FUNDO_FACE2 = 'linear-gradient(145deg,#DCD7F3,#C0B8E8)';
 
 /* a carta vira: no fio da meia-volta, quando ela está de perfil e não
@@ -3515,13 +3533,21 @@ function levaMesaPara(i, comGiro){
 function giraCabecalhos(de, para){
   levaMesaPara(para, true);
 
-  slides[de].querySelectorAll(PECAS_CABECA).forEach(el => {
-    el.classList.add('gira-sai');
-    setTimeout(() => el.classList.remove('gira-sai'), 520);
+  /* A CLASSE DE SAÍDA FICA ATÉ O SLIDE SAIR DE CENA.
+     O slide que sai continua inteiro à vista enquanto tiver 'is-leaving'
+     — opacidade 1, uma camada abaixo do que chega —, e isso dura o
+     tempo todo da passagem. Tirando a classe assim que a animação
+     acaba, o cabeçalho velho voltava do nada e ficava por baixo do
+     novo até o fim: era esse fantasma que estragava a troca. Com o
+     preenchimento 'both', ele fica onde a animação o deixou — fora da
+     tela e apagado — até o slide inteiro se recolher. */
+  slides[de].querySelectorAll(PECAS_PASSAGEM).forEach(el => {
+    el.classList.add('desliza-sai');
+    setTimeout(() => el.classList.remove('desliza-sai'), DUR_PASSAGEM + 60);
   });
-  slides[para].querySelectorAll(PECAS_CABECA).forEach(el => {
-    el.classList.add('gira-entra');
-    setTimeout(() => el.classList.remove('gira-entra'), 1000);
+  slides[para].querySelectorAll(PECAS_PASSAGEM).forEach(el => {
+    el.classList.add('desliza-entra');
+    setTimeout(() => el.classList.remove('desliza-entra'), 640);
   });
 }
 
