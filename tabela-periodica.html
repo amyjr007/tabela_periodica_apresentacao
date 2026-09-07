@@ -659,6 +659,28 @@ body{
 }
 .mundo-frase.on{opacity:1;translate:0 0}
 .mundo-frase b{color:var(--ouro-luz);font-weight:800}
+
+/* ---------- A NOITE DO MUNDO DOS NOBRES ----------
+   Aqui o fundo é preto mesmo. A luz de um tubo de descarga não se
+   mede pelo que ela é: mede-se pelo escuro à volta dela — e o breu
+   arroxeado dos outros mundos, com a sua aurora e o seu pó, roubava
+   metade do efeito. Neste, a aurora sai de cena e o pó fica quase
+   apagado, só o bastante para o vazio não ser uma parede lisa. */
+.mundo.noite .mundo-breu{
+  background:radial-gradient(ellipse 88% 78% at 50% 46%,
+             #0B0B0F 0%, #050507 52%, #000000 100%);
+}
+.mundo.noite .mundo-aurora{opacity:0}
+.mundo.noite .mundo-po i{opacity:.14}
+/* O TREMOR DA DESCARGA.
+   Descarga em gás não é uma luz quieta: pisca de leve, depressa e sem
+   compasso certo. São dois passos de opacidade num sexto de segundo —
+   o suficiente para o olho ler "lâmpada acesa" em vez de "retângulo
+   colorido". */
+.tubo.aceso .luz{animation:tremeDescarga .17s steps(2,end) infinite alternate}
+@keyframes tremeDescarga{
+  0%{opacity:.88} 50%{opacity:1} 100%{opacity:.94}
+}
 /* A pista mora no palco, e não no slide: nenhum z-index de dentro do
    mundo a alcança. Some enquanto se estiver mergulhado — um ponto a
    pulsar por cima do vácuo pareceria coisa de outro mundo, e é
@@ -7845,17 +7867,31 @@ function tuboSVG(t, i){
   const x = t.x, m = TUBO_W/2;
   const g = 'tb' + i;
   return '<g class="tubo" data-i="' + i + '" transform="translate(0,0)">' +
-    /* o brilho do gás, por trás do vidro */
-    '<g class="luz" opacity="0">' +
+    /* A LUZ, EM QUATRO CAMADAS, e somada ao que está por baixo
+       (mix-blend-mode screen) — é assim que a luz se comporta: soma-se,
+       não tapa. De fora para dentro: a POÇA que o tubo derrama no
+       tabuleiro, o BLOOM largo que lava tudo à volta, a COLUNA de gás
+       e o NÚCLEO branco, estreito. Uma só camada borrada dava um
+       cilindro colorido; são os degraus de desfoque que dão a
+       impressão de luz a sério. */
+    '<g class="luz" opacity="0" style="mix-blend-mode:screen">' +
+      '<ellipse cx="' + x + '" cy="' + (BASE_Y+2) + '" rx="78" ry="15"' +
+        ' fill="' + t.gas + '" filter="url(#nb-bloom)"/>' +
+      '<rect x="' + (x-m+9) + '" y="' + (TUBO_TOPO+44) + '" width="' + (TUBO_W-18) +
+        '" height="' + (TUBO_ALT-72) + '" rx="' + (TUBO_W/2-9) + '"' +
+        ' fill="' + t.halo + '" filter="url(#nb-bloom)" opacity=".75"/>' +
       '<rect x="' + (x-m+7) + '" y="' + (TUBO_TOPO+40) + '" width="' + (TUBO_W-14) +
         '" height="' + (TUBO_ALT-66) + '" rx="' + (TUBO_W/2-7) + '"' +
-        ' fill="url(#' + g + 'gas)" filter="url(#nb-brilho)"/>' +
+        ' fill="url(#' + g + 'gas)" filter="url(#nb-halo)"/>' +
       /* o fio branco do meio é ESTREITO: numa lâmpada de descarga o
          que se vê é a cor do gás, com o coração aceso lá dentro. Um
          miolo largo comia a cor e todos os tubos ficavam parecidos. */
       '<rect x="' + (x-m+16) + '" y="' + (TUBO_TOPO+50) + '" width="' + (TUBO_W-32) +
         '" height="' + (TUBO_ALT-88) + '" rx="' + (TUBO_W/2-16) + '" fill="' + t.core +
-        '" opacity=".8"/>' +
+        '" opacity=".82"/>' +
+      /* os elétrodos ficam ao rubro nas pontas, como nos tubos a sério */
+      '<ellipse cx="' + x + '" cy="' + (TUBO_TOPO+TUBO_ALT-14) + '" rx="11" ry="7"' +
+        ' fill="' + t.core + '" filter="url(#nb-halo)"/>' +
     '</g>' +
     /* o vidro: o cone da ponta e o corpo */
     '<path d="M' + x + ',' + TUBO_TOPO + ' L' + (x+m) + ',' + (TUBO_TOPO+38) +
@@ -7907,10 +7943,14 @@ function estanteSVG(){
         '<stop offset="0" stop-color="#E6EDF5"/><stop offset=".4" stop-color="#8494A6"/>' +
         '<stop offset=".55" stop-color="#B9C6D4"/><stop offset="1" stop-color="#3E4855"/>' +
       '</linearGradient>' +
-      '<filter id="nb-brilho" x="-160%" y="-70%" width="420%" height="240%">' +
-        '<feGaussianBlur stdDeviation="13" result="b"/>' +
-        '<feMerge><feMergeNode in="b"/><feMergeNode in="b"/>' +
-        '<feMergeNode in="SourceGraphic"/></feMerge>' +
+      /* dois degraus de desfoque: o largo para o bloom, o curto para a
+         coluna. Sem merge nenhum — a luz aqui é para ser SOMADA por
+         cima, e não empilhada dentro do próprio filtro. */
+      '<filter id="nb-bloom" x="-320%" y="-160%" width="740%" height="420%">' +
+        '<feGaussianBlur stdDeviation="24"/>' +
+      '</filter>' +
+      '<filter id="nb-halo" x="-200%" y="-90%" width="500%" height="280%">' +
+        '<feGaussianBlur stdDeviation="9"/>' +
       '</filter>' +
       '<filter id="nb-faisca" x="-200%" y="-200%" width="500%" height="500%">' +
         '<feGaussianBlur stdDeviation="2.6" result="b"/>' +
@@ -7946,6 +7986,8 @@ function mundoDosNobres(w){
   const zoom = w.querySelector('.mundo-zoom');
   const cx = document.createElement('div');
   cx.className = 'nb-cx';
+  /* a luz só se vê no escuro: este mundo apaga o resto */
+  w.classList.add('noite');
   cx.innerHTML = estanteSVG() +
     '<div class="nb-dica"></div>';
   zoom.appendChild(cx);
