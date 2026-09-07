@@ -678,6 +678,10 @@ body{
    o suficiente para o olho ler "lâmpada acesa" em vez de "retângulo
    colorido". */
 .tubo.aceso .luz{animation:tremeDescarga .17s steps(2,end) infinite alternate}
+/* a bobina, quando tem alguma ampola no campo, ganha o halo dela */
+.bobina{transition:filter .2s ease}
+.bobina.viva{filter:drop-shadow(0 0 16px rgba(168,196,255,.7))
+                    drop-shadow(0 0 44px rgba(120,150,255,.45))}
 @keyframes tremeDescarga{
   0%{opacity:.88} 50%{opacity:1} 100%{opacity:.94}
 }
@@ -7916,6 +7920,45 @@ function tuboSVG(t, i){
   '</g>';
 }
 
+
+/* ---- A BOBINA DE TESLA ----
+   Fica à direita da estante e anda com o dedo. Aproximada de uma
+   ampola, acende-a SEM LHE TOCAR — que é precisamente o que uma
+   bobina de Tesla faz a um tubo de descarga numa bancada de verdade:
+   o campo dela ioniza o gás à distância. Quanto mais perto, mais
+   forte, e do topo saem serpentinas para o tubo. */
+const BOB_X = 1086, BOB_TOPO = 352;     /* onde ela mora, e a altura do toroide */
+const BOB_ALCANCE = 205;                /* até onde o campo dela chega */
+
+function bobinaSVG(){
+  let voltas = '';
+  for (let y = 384; y < 528; y += 5.6){
+    voltas += '<rect x="' + (BOB_X-21) + '" y="' + y.toFixed(1) + '" width="42" height="2.6"' +
+              ' rx="1.3" fill="url(#bb-cobre)" opacity=".95"/>';
+  }
+  let primaria = '';
+  for (let k = 0; k < 3; k++){
+    primaria += '<rect x="' + (BOB_X-34) + '" y="' + (528 + k*7) + '" width="68" height="5"' +
+                ' rx="2.5" fill="url(#bb-cobre)"/>';
+  }
+  return '<g class="bobina" transform="translate(0,0)">' +
+    /* a base */
+    '<rect x="' + (BOB_X-52) + '" y="552" width="104" height="20" rx="4" fill="url(#bb-base)"/>' +
+    '<rect x="' + (BOB_X-52) + '" y="552" width="104" height="3" rx="1.5" fill="rgba(255,255,255,.22)"/>' +
+    primaria +
+    /* o núcleo da secundária, e o fio enrolado por cima dele */
+    '<rect x="' + (BOB_X-22) + '" y="380" width="44" height="150" rx="4" fill="url(#bb-nucleo)"/>' +
+    voltas +
+    /* o toroide */
+    '<ellipse cx="' + BOB_X + '" cy="' + BOB_TOPO + '" rx="60" ry="19" fill="url(#bb-metal)"/>' +
+    '<ellipse cx="' + BOB_X + '" cy="' + (BOB_TOPO-4) + '" rx="60" ry="19"' +
+      ' fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.4"/>' +
+    '<ellipse cx="' + (BOB_X-16) + '" cy="' + (BOB_TOPO-7) + '" rx="22" ry="6"' +
+      ' fill="rgba(255,255,255,.3)"/>' +
+    '<circle cx="' + BOB_X + '" cy="' + (BOB_TOPO-22) + '" r="7" fill="url(#bb-metal)"/>' +
+    '<text x="' + BOB_X + '" y="596" class="tubo-nome">Bobina de Tesla</text>' +
+  '</g>';
+}
 function estanteSVG(){
   const defs = TUBOS.map((t, i) =>
     '<linearGradient id="tb' + i + 'gas" x1="0" y1="0" x2="0" y2="1">' +
@@ -7938,6 +7981,22 @@ function estanteSVG(){
         '<stop offset="0"   stop-color="rgba(226,240,255,.42)"/>' +
         '<stop offset=".35" stop-color="rgba(180,206,236,.16)"/>' +
         '<stop offset="1"   stop-color="rgba(226,240,255,.30)"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="bb-cobre" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#4E2409"/><stop offset=".3" stop-color="#E08B45"/>' +
+        '<stop offset=".45" stop-color="#FFD6A8"/><stop offset=".7" stop-color="#B4602A"/>' +
+        '<stop offset="1" stop-color="#3A1A06"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="bb-nucleo" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#171B22"/><stop offset=".4" stop-color="#39424C"/>' +
+        '<stop offset="1" stop-color="#0C0F14"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="bb-base" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#3A2A18"/><stop offset="1" stop-color="#140E08"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="bb-metal" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#E9F0F8"/><stop offset=".35" stop-color="#93A2B2"/>' +
+        '<stop offset=".55" stop-color="#C3CFDC"/><stop offset="1" stop-color="#2B333D"/>' +
       '</linearGradient>' +
       '<linearGradient id="nb-metal" x1="0" y1="0" x2="0" y2="1">' +
         '<stop offset="0" stop-color="#E6EDF5"/><stop offset=".4" stop-color="#8494A6"/>' +
@@ -7962,6 +8021,8 @@ function estanteSVG(){
       ' stroke="rgba(226,240,255,.42)" stroke-width="1.2"/>' +
     '<rect x="368" y="' + (BASE_Y-7) + '" width="544" height="9" rx="3" fill="url(#nb-metal)"/>' +
     '<g class="faiscas"></g>' +
+    bobinaSVG() +
+    '<g class="arcos"></g>' +
     /* os tubos entram aqui, entre o tabuleiro e a barra de cima */
     '<g class="tubos">' + TUBOS.map(tuboSVG).join('') + '</g>' +
     /* a barra de cima, POR DIANTE dos tubos: é ela que os segura, e é
@@ -7998,7 +8059,7 @@ function mundoDosNobres(w){
       fraseDoMundo(w, 190, 'Mas emitem um <b>brilho diferente</b> quando sofrem descarga elétrica');
       cx.classList.add('viva');
       const d = cx.querySelector('.nb-dica');
-      if (d) d.textContent = 'Baixe um tubo até o metal';
+      if (d) d.textContent = 'Baixe um tubo até o metal, ou aproxime a bobina';
       acordaTubos(w);
     }
   ];
@@ -8012,22 +8073,38 @@ function fraseDoMundo(w, y, html){
   revela(f, 'on');
   return f;
 }
+let nbAnim = null;
+function dormeTubos(){
+  cancelAnimationFrame(nbAnim);
+  nbAnim = null;
+}
 function acordaTubos(w){
   const svg = w.querySelector('.estante');
   const dica = w.querySelector('.nb-dica');
   if (!svg) return;
   const gs = [...svg.querySelectorAll('.tubo')];
   const gFaiscas = svg.querySelector('.faiscas');
-  /* quanto cada tubo já desceu, e qual deles está aceso */
+  const gArcos = svg.querySelector('.arcos');
+  const bobina = svg.querySelector('.bobina');
+  /* quanto cada tubo já desceu, e onde a bobina foi parar */
   const desceu = gs.map(() => 0);
-  let pegue = null;                 /* {i, y0, desceu0} */
+  const perto = gs.map(() => 0);
+  let bdx = 0, bdy = 0;
+  let pegue = null;                 /* o tubo, ou a bobina */
 
+  /* O BRILHO DE CADA TUBO VEM DE DUAS FONTES: o contacto com a chapa,
+     que é tudo ou nada, e o campo da bobina, que é mais forte quanto
+     mais perto. Fica o maior dos dois — encostar um tubo já aceso
+     pela bobina não o apaga. */
+  const acende = (i) => {
+    const luz = Math.max(desceu[i] >= TUBO_QUEDA - .5 ? 1 : 0, perto[i]);
+    gs[i].querySelector('.luz').setAttribute('opacity', luz.toFixed(2));
+    gs[i].classList.toggle('aceso', luz > .15);
+    return luz;
+  };
   const poe = (i) => {
     gs[i].setAttribute('transform', 'translate(0,' + desceu[i].toFixed(1) + ')');
-    const aceso = desceu[i] >= TUBO_QUEDA - .5;
-    gs[i].querySelector('.luz').setAttribute('opacity', aceso ? '1' : '0');
-    gs[i].classList.toggle('aceso', aceso);
-    return aceso;
+    return acende(i);
   };
   const faisca = (i, liga) => {
     if (!liga){ gFaiscas.innerHTML = ''; return; }
@@ -8043,35 +8120,105 @@ function acordaTubos(w){
     gFaiscas.innerHTML = '<g filter="url(#nb-faisca)">' + d + '</g>';
   };
 
-  gs.forEach((_, i) => poe(i));
+  /* o campo da bobina: o toroide onde ele está agora, e a conta da
+     distância a cada ampola */
+  const toroide = () => ({ x: BOB_X + bdx, y: BOB_TOPO + bdy });
+  function campo(){
+    const o = toroide();
+    let algum = false, arcos = '';
+    TUBOS.forEach((t, i) => {
+      const cy = TUBO_TOPO + TUBO_ALT/2 + desceu[i];
+      const d = Math.hypot(t.x - o.x, cy - o.y);
+      const f = d < BOB_ALCANCE ? Math.pow(1 - d/BOB_ALCANCE, 1.3) : 0;
+      perto[i] = f;
+      if (f > .18){
+        algum = true;
+        arcos += serpentina(o, { x: t.x + TUBO_W/2, y: cy + (Math.random()-.5)*80 }, t);
+      }
+      acende(i);
+    });
+    gArcos.innerHTML = arcos;
+    bobina.classList.toggle('viva', algum);
+    return algum;
+  }
+  /* a serpentina: a linha aos tombos que salta do toroide para o vidro */
+  function serpentina(a, b, t){
+    let s = '';
+    for (let k = 0; k < 2; k++){
+      const n = 5;
+      let d = 'M' + a.x.toFixed(0) + ',' + a.y.toFixed(0);
+      for (let i = 1; i <= n; i++){
+        const u = i / n;
+        d += ' L' + (a.x + (b.x-a.x)*u + (Math.random()-.5)*30).toFixed(0) + ',' +
+                    (a.y + (b.y-a.y)*u + (Math.random()-.5)*30).toFixed(0);
+      }
+      s += '<path d="' + d + '" fill="none" stroke="' + (k ? t.core : '#FFFFFF') +
+           '" stroke-width="' + (k ? 3.2 : 1.4) + '" opacity="' + (k ? .5 : .95) + '"/>';
+    }
+    return '<g filter="url(#nb-faisca)">' + s + '</g>';
+  }
 
-  /* o dedo pega no tubo e SÓ O DESCE: um tubo na estante não anda de
-     lado, e deixá-lo andar dava a impressão de que se podia tirá-lo */
+  /* As serpentinas não podem ficar quietas: relâmpago parado não é
+     relâmpago. Enquanto houver alguma ampola no campo, um laço leve
+     redesenha-as; sem ninguém no campo, o laço pára sozinho. */
+  /* o laço mora fora da função, e não numa variável desta cena: sem
+     isso ele continuava a correr depois de o mundo fechar, a
+     redesenhar serpentinas num desenho que já ninguém vê */
+  function dança(){
+    cancelAnimationFrame(nbAnim);
+    let n = 0;
+    (function passo(){
+      if (++n % 4 === 0 && !campo()){ nbAnim = null; return; }
+      nbAnim = requestAnimationFrame(passo);
+    })();
+  }
+
+  gs.forEach((_, i) => poe(i));
+  campo();
+
+  /* o dedo pega no tubo — e SÓ O DESCE, que um tubo na estante não
+     anda de lado — ou pega na bobina, que anda para onde quiser */
   mundoAberto.gesto = {
     desce: (p) => {
+      const o = toroide();
+      if (Math.abs(p.x - o.x) < 74 && p.y > o.y - 34 && p.y < o.y + 240){
+        pegue = { bob:true, x0:p.x, y0:p.y, dx0:bdx, dy0:bdy };
+        return;
+      }
       const i = TUBOS.findIndex(t => Math.abs(p.x - t.x) < TUBO_W/2 + 12 &&
                                      p.y > TUBO_TOPO - 10 && p.y < BASE_Y + 10);
-      if (i < 0) return;
-      pegue = { i, y0: p.y, d0: desceu[i] };
+      if (i >= 0) pegue = { i, y0: p.y, d0: desceu[i] };
     },
     anda: (p) => {
       if (!pegue) return;
+      if (pegue.bob){
+        bdx = Math.max(-700, Math.min(120, pegue.dx0 + (p.x - pegue.x0)));
+        bdy = Math.max(-120, Math.min(90,  pegue.dy0 + (p.y - pegue.y0)));
+        bobina.setAttribute('transform', 'translate(' + bdx.toFixed(1) + ',' + bdy.toFixed(1) + ')');
+        if (campo() && !nbAnim) dança();
+        const q = perto.reduce((a,b,i2) => b > perto[a] ? i2 : a, 0);
+        if (dica) dica.textContent = perto[q] > .18
+          ? TUBOS[q].nome + ' no campo da bobina' : 'Aproxime a bobina de uma ampola';
+        return;
+      }
       const i = pegue.i;
       desceu[i] = Math.max(0, Math.min(TUBO_QUEDA, pegue.d0 + (p.y - pegue.y0)));
-      const aceso = poe(i);
-      faisca(i, aceso);
-      if (dica && aceso) dica.textContent = TUBOS[i].nome + ' sob descarga';
+      const luz = poe(i);
+      faisca(i, desceu[i] >= TUBO_QUEDA - .5);
+      if (dica && luz >= 1) dica.textContent = TUBOS[i].nome + ' sob descarga';
     },
     larga: () => {
       if (!pegue) return;
-      /* larga-se e o tubo volta a subir: a descarga dura o que durar o
-         contacto, e a cena fica pronta para o gás seguinte */
-      const i = pegue.i;
+      /* a bobina fica onde a puseram — é uma peça de bancada. O tubo
+         volta a subir: a descarga dura o que durar o contacto. */
+      if (!pegue.bob){
+        const i = pegue.i;
+        desceu[i] = 0;
+        poe(i);
+        faisca(i, false);
+        if (dica) dica.textContent = 'Baixe um tubo até o metal, ou aproxime a bobina';
+      }
       pegue = null;
-      desceu[i] = 0;
-      poe(i);
-      faisca(i, false);
-      if (dica) dica.textContent = 'Baixe um tubo até o metal';
     }
   };
 }
@@ -8209,6 +8356,7 @@ function fechaMundo(){
   dormeEletro();
   dormeMalha();
   dormeFio();
+  dormeTubos();
   el.classList.remove('on');
   stage.classList.remove('no-mundo');
   setTimeout(() => el.remove(), 900);
