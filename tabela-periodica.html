@@ -9421,7 +9421,17 @@ function poeSemDeslizar(c, x, y){
   void c.offsetWidth;
   if (tr) c.style.transition = tr; else c.style.removeProperty('transition');
 }
+/* Corta o voo que ainda estiver a correr.
+   O arco desloca a carta a contar do lugar onde ela ficou; arrancada
+   dali para casa no meio do voo — que é o que acontece quando o dedo
+   procura outro elemento —, ela continuaria a ser deslocada por um voo
+   que já não tem sentido, e apareceria ao lado da casa dela até a
+   animação acabar sozinha. */
+function paraVoo(c){
+  if (c._voo){ c._voo.cancel(); c._voo = null; }
+}
 function arcoAte(c, x, y, dur){
+  paraVoo(c);
   const dx = parseFloat(c.style.left) - x;
   const dy = parseFloat(c.style.top)  - y;
   poeSemDeslizar(c, x, y);
@@ -9433,7 +9443,8 @@ function arcoAte(c, x, y, dur){
     quadros.push({ translate: (u*u*dx + 2*u*t*cx).toFixed(1) + 'px ' +
                               (u*u*dy + 2*u*t*cy).toFixed(1) + 'px', offset: i/N });
   }
-  c.animate(quadros, { duration: dur, easing: 'linear' });
+  c._voo = c.animate(quadros, { duration: dur, easing: 'linear' });
+  c._voo.onfinish = () => { c._voo = null; };
 }
 /* o buraco da tabela: colunas 3 a 12, linhas 1 a 3 */
 function vazioDaTabela(){
@@ -9453,6 +9464,7 @@ function devolveSalto(voando){
   }
   /* sem caminho de volta: a transição do miolo é calada por um quadro
      para o encolher não ficar a acontecer no lugar novo */
+  paraVoo(c);
   miolo.style.transition = 'none';
   poeSemDeslizar(c, x0, y0);
   miolo.style.setProperty('--sc', '1');
@@ -9472,33 +9484,6 @@ function saltaElemento(mesa, c){
   c.firstElementChild.style.setProperty('--sc', '2');
   arcoAte(c, alvo.x, alvo.y, 620);
 }
-/* ---- e quem manda saltar é o dedo parado meio segundo ----
-   O clique voltou a ser só o que sempre foi: marca o elemento e acende
-   a cruz da linha com a coluna. Saltar é gesto de propósito — meio
-   segundo de dedo parado em cima —, e só acontece com a tabela junta:
-   aberta em linhas ou em colunas, o vazio acima dos metais de transição
-   não existe, e o elemento não teria para onde ir. Já fora, ele volta
-   com um clique simples.
-   Disparado o salto, o toque é dado por gasto (toqueMesa = null): o
-   dedo já disse o que queria, e o soltar não vai marcar mais nada. */
-const PRESSO_SALTO = 500;
-let pressoSalto = null;
-
-function armaSalto(mesa, ev){
-  desarmaSalto();
-  if (atual !== 1 || quizAtivo || modoMesa !== 'junta') return;
-  const c = ev.target.closest && ev.target.closest('.pc');
-  if (!c || (saltado && saltado.c === c)) return;
-  pressoSalto = setTimeout(() => {
-    pressoSalto = null;
-    toqueMesa = null;
-    saltaElemento(mesa, c);
-  }, PRESSO_SALTO);
-}
-function desarmaSalto(){
-  if (pressoSalto){ clearTimeout(pressoSalto); pressoSalto = null; }
-}
-
 /* ---- o elemento tocado cresce ----
    Só um de cada vez: o anterior volta ao tamanho antes de o novo
    crescer, esteja ele na mesma faixa ou noutra. */
@@ -9771,7 +9756,6 @@ stage.addEventListener('pointerdown', (ev) => {
     houvePinca = false;
     toqueMesa = {id:ev.pointerId, x:ev.clientX, y:ev.clientY,
                  t:Date.now(), alvo:ev.target};
-    armaSalto(m, ev);
   }
   ancoraMesa(m);
   try { stage.setPointerCapture(ev.pointerId); } catch(_){}
@@ -9781,10 +9765,6 @@ document.addEventListener('pointermove', (ev) => {
   const m = mesaPronta();
   if (!m) return;
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  /* dedo que anda não é dedo parado: o salto perde a vez */
-  if (pressoSalto && toqueMesa &&
-      Math.hypot(ev.clientX - toqueMesa.x, ev.clientY - toqueMesa.y) > 8)
-    desarmaSalto();
   const agora = centroDe(dedosMesa), b = baseMesa;
   let zoom = b.zoom;
   if (dedosMesa.size > 1 && b.d > 12)
@@ -9797,7 +9777,6 @@ document.addEventListener('pointermove', (ev) => {
 });
 function largaMesa(ev){
   if (!dedosMesa.has(ev.pointerId)) return;
-  desarmaSalto();               /* subiu antes do meio segundo: era clique */
   /* toque é o dedo que sobe onde desceu, depressa e sozinho — o que
      sobra depois de descontar a pinça e o arrasto */
   const foiToque = toqueMesa && ev.pointerId === toqueMesa.id && !houvePinca &&
@@ -9930,21 +9909,15 @@ function largaMesa(ev){
 
     const carta = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
     if (carta){
-      /* O clique marca. Quem manda o elemento para o vazio da tabela é
-         o dedo parado meio segundo (ver armaSalto); ao clique sobra
-         trazê-lo de volta, e arrumar a casa quando o dedo procura
-         outro elemento — o que estava fora some dali e reaparece em
-         casa no mesmo instante, sem fazer o caminho de volta. */
-      const voltando = saltado && saltado.c === carta;
-      if (voltando) saltaElemento(m, carta);
-      else {
-        if (saltado) devolveSalto(false);
-        escolheCarta(m, carta);
-      }
+      /* No slide dos critérios o toque manda o elemento para o vazio da
+         tabela — mas só com ela junta: aberta em linhas ou em colunas o
+         vazio acima dos metais de transição não existe, e aí o toque só
+         marca, como nos outros slides. */
+      if (atual === 1 && modoMesa === 'junta') saltaElemento(m, carta);
+      else escolheCarta(m, carta);
       /* a faixa existe com a tabela aberta, ou numerada nos dois eixos;
          junta e sem números, o elemento cresce sozinho */
-      if (!voltando &&
-          (modoMesa !== 'junta' || m.classList.contains('numerada')))
+      if (modoMesa !== 'junta' || m.classList.contains('numerada'))
         realceFaixa(m, carta);
     }
     else passoAdiante();
