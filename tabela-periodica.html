@@ -43,7 +43,10 @@
   --cat-alcterrosos: #C58A0E;
   --cat-transicao:   #2E7BAE;
   --cat-metais:      #1E8F7D;
-  --cat-semimetais:  #6F8C1E;
+  /* A coluna 13 não tem nome próprio de família, e esta cor era a dos
+     semimetais — categoria que a tabela já não usa. O tom fica, agora
+     como o da família do boro; o nome antigo é que saiu. */
+  --fam-boro:        #6F8C1E;
   --cat-ametais:     #2E9450;
   --cat-halogenios:  #C13757;
   --cat-nobres:      #5B4BD6;
@@ -2711,9 +2714,17 @@ function familiaDe(col, row){
   if (col === 18) return 'nobres';
   if (col === 17) return 'halogenios';
   const k = col + '-' + row;
-  if (['14-2','15-2','16-2','15-3','16-3','16-4'].includes(k)) return 'ametais';
-  if (['13-2','14-3','14-4','15-4','15-5','16-5'].includes(k)) return 'semimetais';
-  return 'metais';
+  /* O SISTEMA MODERNO NÃO TEM SEMIMETAIS: há metais, ametais e gases
+     nobres, e mais nada. Os seis que costumavam ocupar a categoria do
+     meio repartiram-se — boro, silício, arsênio e telúrio ficaram do
+     lado dos ametais; germânio e antimônio, do lado dos metais, que é
+     onde o brilho e o comportamento deles os põem. Estão nas duas
+     listas abaixo, e é aqui que se trocam se um livro pedir outra
+     divisão. */
+  if (['14-2','15-2','16-2','15-3','16-3','16-4',   /* C N O P S Se */
+       '13-2','14-3','15-4','16-5'].includes(k))    /* B Si As Te   */
+    return 'ametais';
+  return 'metais';                                  /* e aqui caem Ge e Sb */
 }
 
 (function desenhaTabela(){
@@ -3601,21 +3612,20 @@ function posDe(z){
    porque é o que ele é na tabela: um ametal sentado em cima dos metais
    alcalinos, sem pertencer ao bloco de ninguém. */
 const NOMES_TIPO = {
-  metais:'Metais', semimetais:'Semimetais', ametais:'Ametais',
+  metais:'Metais', ametais:'Ametais',
   nobres:'Gases Nobres', hidrogenio:'Hidrogênio'
 };
 /* a cor de cada tipo é a da família que melhor o representa — três
    delas são exatas, e os metais tomam a dos de transição, que são a
    maior parte deles */
 const CORES_TIPO = {
-  metais:'transicao', semimetais:'semimetais', ametais:'ametais',
+  metais:'transicao', ametais:'ametais',
   nobres:'nobres', hidrogenio:'ametais'
 };
 function tipoDe(z){
   if (z === 1) return 'hidrogenio';
   const f = familiaDoZ(z);
   if (f === 'nobres')     return 'nobres';
-  if (f === 'semimetais') return 'semimetais';
   if (f === 'ametais' || f === 'halogenios') return 'ametais';
   return 'metais';
 }
@@ -4238,7 +4248,6 @@ function montaRoteiro4(){
     t.dataset.mont = 'regra4';
     t.innerHTML = '<span class="regra-in">Tipos de elemento estão organizados em blocos: ' +
       '<em ' + cor('metais')     + '>Metais</em>, ' +
-      '<em ' + cor('semimetais') + '>Semimetais</em>, ' +
       '<em ' + cor('ametais')    + '>Ametais</em> e ' +
       '<em ' + cor('nobres')     + '>Gases Nobres</em></span>';
     cena.appendChild(t);
@@ -4311,7 +4320,7 @@ const CABECA_GRUPO = {
    são. */
 const COR_COLUNA = {
   1:'--cat-alcalinos',   2:'--cat-alcterrosos',
-  13:'--cat-semimetais', 14:'--cat-metais',      15:'--cat-ametais',
+  13:'--fam-boro',       14:'--cat-metais',      15:'--cat-ametais',
   16:'--cat-calcogenios', 17:'--cat-halogenios', 18:'--cat-nobres'
 };
 function corDaColuna(col){
