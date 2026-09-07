@@ -337,6 +337,16 @@ body{
   100% {rotate:y 0deg}
 }
 .pc.virando .pc-in{animation:viraCarta .6s ease-in-out}
+/* voltando de slide, a carta gira para o outro lado: a volta e o
+   contrario da ida, e uma carta que girasse sempre no mesmo sentido
+   diria que a aula continua a andar para a frente */
+@keyframes viraCartaVolta{
+  0%   {rotate:y 0deg}
+  49.9%{rotate:y -90deg}
+  50%  {rotate:y 90deg}
+  100% {rotate:y 0deg}
+}
+.pc.virando.volta .pc-in{animation:viraCartaVolta .6s ease-in-out}
 
 /* ---------- o número do tópico, à esquerda do título ---------- */
 .num{
@@ -3136,6 +3146,7 @@ function go(i, dir){
   /* o mundo quântico é de um bloco de um slide: mudou o slide, ele fecha */
   if (typeof mundoAberto !== 'undefined' && mundoAberto) fechaMundo();
   dir = dir || (i > atual ? 'next' : 'prev');
+  sentidoDaPassagem = dir === 'prev' ? 'prev' : 'next';
 
   const de    = atual;
   const sai   = slides[atual];
@@ -3243,13 +3254,29 @@ const FUNDO_FACE2 = 'linear-gradient(145deg,#DCD7F3,#C0B8E8)';
 
 /* a carta vira: no fio da meia-volta, quando ela está de perfil e não
    se vê nada, a cara é trocada */
+/* PARA QUE LADO A AULA ESTÁ A ANDAR.
+   O go() anota aqui o sentido antes de trocar de slide, e quem anima
+   pergunta: voltando, o giro das cartas e a cascata dos números vêm ao
+   contrário. Uma animação que corresse sempre para o mesmo lado diria
+   que a aula segue em frente mesmo quando ela volta. */
+let sentidoDaPassagem = 'next';
+
+/* A onda atravessa a tabela na diagonal, do canto de cima à esquerda
+   para o de baixo à direita. Na volta ela vem do canto oposto: 25 é a
+   soma máxima de coluna com linha (18 + 7), e é dela que se desconta
+   para virar a ordem do avesso. */
+const SOMA_MAX = 25;
+
 function viraCartas(mesa, face, slide){
+  const volta = sentidoDaPassagem === 'prev';
   mesa.querySelectorAll('.pc').forEach(c => {
     const z = +c.dataset.z, p = posDe(z);
-    const atraso = (p.col + p.row) * 11;      /* a onda atravessa na diagonal */
+    const soma = p.col + p.row;
+    const atraso = (volta ? SOMA_MAX - soma : soma) * 11;
     const miolo = c.firstElementChild;
     miolo.style.animationDelay = atraso + 'ms';
     c.classList.add('virando');
+    if (volta) c.classList.add('volta');
     setTimeout(() => {
       /* quem tem cor própria neste slide vira já mostrando essa cor:
          pintar depois a faria piscar na cor da face antes */
@@ -3263,7 +3290,7 @@ function viraCartas(mesa, face, slide){
       }
     }, atraso + 300);
     setTimeout(() => {
-      c.classList.remove('virando');
+      c.classList.remove('virando', 'volta');
       miolo.style.removeProperty('animation-delay');
     }, atraso + 640);
   });
@@ -3430,6 +3457,17 @@ function estadoMesaPara(mesa, i){
   /* os números dos eixos são do slide das coordenadas, onde é deles
      que se fala. No das famílias a conta é outra, e eles só somariam
      ruído em volta da coluna que sobe. */
+  /* A CASCATA DOS NÚMEROS DOS GRUPOS SEGUE O SENTIDO DA VIAGEM.
+     Eles caem um atrás do outro, da coluna 1 para a 18. Voltando de
+     slide, a aula anda para o outro lado e eles caem da 18 para a 1:
+     o olho vem da direita, e a cascata tem de vir com ele. O atraso é
+     escrito ANTES de os números entrarem em cena — é a mudança de
+     display que dispara a animação, e o atraso já tem de estar lá. */
+  mesa.querySelectorAll('.cn').forEach(nu => {
+    const col = +nu.dataset.col;
+    const ordem = sentidoDaPassagem === 'prev' ? (18 - col) : (col - 1);
+    nu.style.setProperty('--atraso', ordem*22 + 'ms');
+  });
   mesa.classList.toggle('numerada', i === 2);
   /* os blocos só se soltam depois que a frase do slide 4 os anunciou */
   mesa.classList.toggle('blocos', i === 3 && !!slides[3].querySelector('.regra'));
