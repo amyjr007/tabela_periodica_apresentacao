@@ -10897,6 +10897,13 @@ function poeLetrasAB(mesa, entra){
 /* ---- abrir e fechar ---- */
 function abreQuiz(){
   if (quizAtivo || !temQuiz(atual)) return;
+  /* Onde a aula estava, para o Sair do cartão saber para onde voltar.
+     Anotado ANTES de restaurar, que é justamente quem apaga isto. */
+  const rAntes = ROTEIROS[atual];
+  const mAntes = slides[atual] && slides[atual].querySelector('.mesa');
+  quizVoltaPara = { slide: atual, i: rAntes ? rAntes.i : 0,
+                    montada: !!(mAntes && mAntes.classList.contains('pronta') &&
+                                slides[atual].querySelector('.pc.na-tabela')) };
   /* a tabela esquece a aula: o quiz começa com o slide como ele nasce */
   restauraSlide();
   quizAtivo = true; quizSlide = atual;
@@ -10961,6 +10968,37 @@ function acendeBreuDoQuiz(sl, entra, preto){
     veu.classList.remove('on');
     setTimeout(() => veu.remove(), 620);
   } else sl.classList.remove('quiz-escuro');
+}
+
+/* ---- sair do quiz e voltar para onde a aula estava ----
+   Entrar no quiz apaga a cena — "o quiz começa com o slide como ele
+   nasce" —, e por isso a volta não é um estado guardado: é o mesmo
+   caminho andado outra vez, passo por passo, até o ponto anotado na
+   entrada. Um passo que ainda não pode acontecer (a frase que espera
+   a tabela ter visto as colunas, por exemplo) para a fila ali mesmo:
+   melhor voltar até onde dá do que insistir contra a cena. */
+let quizVoltaPara = null;
+
+function sairDoQuiz(){
+  const volta = quizVoltaPara;
+  fechaQuiz();
+  refazEstagio(volta);
+}
+function refazEstagio(volta){
+  quizVoltaPara = null;
+  if (!volta || volta.slide !== atual) return;
+  /* a tabela montada não é passo de roteiro nenhum: quem a põe de pé é
+     o botão "todos", e aqui é preciso dizê-lo à mão. Vem primeiro
+     porque as frases do slide 2 esperam por ela. */
+  if (volta.montada && atual === 1 && ROTEIROS[1] && ROTEIROS[1].garanteMontada)
+    ROTEIROS[1].garanteMontada();
+  const r = ROTEIROS[atual];
+  let guarda = 0, antes = -1;
+  while (r && r.i < volta.i && r.i !== antes && ++guarda < 60){
+    antes = r.i;
+    if (!passoAdiante()) break;
+  }
+  atualizaPista();
 }
 
 function recomecaQuiz(){
@@ -11736,7 +11774,8 @@ function poeCartaoDaMemoria(nota){
     '<em class="acerto">' + memPares + '</em> pares · ' +
     '<em class="erro">' + memErros + '</em> enganos · ' + memPontos + ' pontos',
     memAberto,
-    () => { fechaMemoria(); setTimeout(abreMemoria, 520); });
+    () => { fechaMemoria(); setTimeout(abreMemoria, 520); },
+    () => fechaMemoria());
 }
 function atualizaBotaoMemoria(){
   const b = document.getElementById('quiz2-btn');
@@ -11776,7 +11815,7 @@ function fimDoQuiz(){
    e tempo — muda a linha do meio, e mais nada. */
 /* onde: a cena do quiz, ou a folha de outro jogo que queira o mesmo
    cartão. refazer: o que o botão Refazer faz, quando não for o quiz. */
-function poeCartaoDoQuiz(nota, contaHTML, onde, refazer){
+function poeCartaoDoQuiz(nota, contaHTML, onde, refazer, sair){
   const cena = onde || quizCena();
   if (!cena) return;
   const bom = nota >= 5;
@@ -11801,7 +11840,8 @@ function poeCartaoDoQuiz(nota, contaHTML, onde, refazer){
     '</div>' +
     '<div class="conta">' + contaHTML + '</div>' +
     '<div class="recado">' + recado + '</div>' +
-    '<div class="botoes"><button type="button" class="forte refaz">Refazer</button></div>';
+    '<div class="botoes"><button type="button" class="forte refaz">Refazer</button>' +
+      '<button type="button" class="sair">Sair</button></div>';
   cena.appendChild(c);
   revela(c, 'on');
   tocaSom('placar');
@@ -11809,6 +11849,16 @@ function poeCartaoDoQuiz(nota, contaHTML, onde, refazer){
   quizEspera(120, () => {
     const arco = c.querySelectorAll('circle')[1];
     if (arco) arco.setAttribute('stroke-dashoffset', (volta * (1 - nota/10)).toFixed(1));
+  });
+  /* Sair fecha o que estiver aberto e devolve o slide ao ponto em que
+     a aula estava quando o quiz abriu. Sem um Sair aqui, o cartão do
+     fim era um beco: para voltar à aula era preciso lembrar que o
+     mesmo botão do painel que abriu o quiz também o fecha. */
+  c.querySelector('.sair').addEventListener('click', () => {
+    c.classList.remove('on');
+    setTimeout(() => c.remove(), 400);
+    if (sair){ sair(); return; }
+    sairDoQuiz();
   });
   c.querySelector('.refaz').addEventListener('click', () => {
     c.classList.remove('on');
