@@ -10452,19 +10452,19 @@ const QUIZ = {
   /* slide 2 · Os critérios de Organização */
   1: {eixos:true, perguntas:[
     {q:'Toque no elemento cujo número atômico é 17', ok:z => z === 17,
-     dica:'O número atômico é o número que fica em cima do símbolo. Os elementos estão em ordem crescente, da esquerda para a direita.',
+     dica:'O número atômico é o número que fica em cima do símbolo.<br>Os elementos estão em ordem crescente, da esquerda para a direita.',
      pista:{linha:3}},
     {q:'Toque no elemento imediatamente posterior ao número atômico 10', ok:z => z === 11,
      dica:'O elemento posterior ao 10 é o 11. É o primeiro elemento da terceira linha.',
      pista:{linha:3}},
     {q:'Toque no primeiro elemento da segunda linha', ok:z => z === 3,
-     dica:'As linhas são horizontais, da esquerda para a direita. Ache a linha 2 e toque no primeiro elemento dela.',
+     dica:'As linhas são horizontais, da esquerda para a direita.<br>Ache a linha 2 e toque no primeiro elemento dela.',
      pista:{linha:2}},
     {q:'Toque no último elemento da quinta linha', ok:z => z === 54,
-     dica:'As linhas são horizontais, da esquerda para a direita. Ache a quinta linha e toque no último elemento dela.',
+     dica:'As linhas são horizontais, da esquerda para a direita.<br>Ache a quinta linha e toque no último elemento dela.',
      pista:{linha:5}},
     {q:'Qual elemento é semelhante ao chumbo, 82?', ok:z => [6,14,32,50,114].indexOf(z) >= 0,
-     dica:'Numa mesma coluna todos são quimicamente semelhantes. Toque em qualquer elemento da coluna do chumbo, menos ele.',
+     dica:'Numa mesma coluna todos são quimicamente semelhantes.<br>Toque em qualquer elemento da coluna do chumbo, menos ele.',
      pista:{coluna:14}}
   ]},
 
@@ -10980,6 +10980,18 @@ function erraQuiz(carta, perg){
    slide e o número da pergunta. */
 const dicaPos = {};
 const chaveDaDica = () => quizSlide + ':' + quizPasso;
+/* Os lugares que o professor escolheu, um por pergunta: x é o centro
+   da caixa e y o meio dela, em px do palco — a mesma língua da
+   etiqueta que aparece ao arrastar e do Ctrl+C. Arrastar uma dica em
+   aula manda nela pelo tempo da sessão; recarregada a página, ela
+   volta para o lugar de baixo. */
+const DICA_LUGAR = {
+  '1:0': {x:571, y:352},
+  '1:1': {x:518, y:360},
+  '1:2': {x:560, y:356},
+  '1:3': {x:562, y:358},
+  '1:4': {x:561, y:360}
+};
 
 function poeDica(texto){
   const cena = quizCena();
@@ -10988,10 +11000,16 @@ function poeDica(texto){
   const d = document.createElement('div');
   d.className = 'quiz-dica';
   d.innerHTML = '<b>Dica:</b> ' + texto;
-  const posto = dicaPos[chaveDaDica()];
-  if (posto){ d.style.left = posto.x + 'px'; d.style.top = posto.y + 'px'; }
   arrastaDica(d);
   cena.appendChild(d);
+  /* posta em cena primeiro, medida depois: o y guardado é o MEIO da
+     caixa, e o 'top' quer o alto dela — a altura só se sabe com o
+     texto já montado */
+  const posto = dicaPos[chaveDaDica()] || DICA_LUGAR[chaveDaDica()];
+  if (posto){
+    d.style.left = posto.x + 'px';
+    d.style.top  = Math.round(posto.y - d.offsetHeight/2) + 'px';
+  }
   revela(d, 'on');
 }
 function arrastaDica(d){
@@ -11026,18 +11044,15 @@ function arrastaDica(d){
     const y = Math.round(Math.max(0, Math.min(720 - d.offsetHeight, leva.y + (e.clientY - leva.py)/fitScale)));
     d.style.left = x + 'px';
     d.style.top  = y + 'px';
-    dicaPos[chave] = { x, y };
+    dicaPos[chave] = { x, y: Math.round(y + d.offsetHeight/2) };
     marca(x, y);
   });
   const solta = () => {
     if (!leva) return;
     leva = null;
     d.classList.remove('levando');
-    const p = dicaPos[chave];
-    if (p){
-      const [cx, cy] = centro(p.x, p.y);
-      navigator.clipboard?.writeText('dica ' + numero + ': x: ' + cx + ', y: ' + cy).catch(()=>{});
-    }
+    const p = dicaPos[chave];      /* já guardado pelo meio da caixa */
+    if (p) navigator.clipboard?.writeText('dica ' + numero + ': x: ' + p.x + ', y: ' + p.y).catch(()=>{});
     some = setTimeout(() => eti.classList.remove('on'), 5000);
   };
   d.addEventListener('pointerup', solta);
