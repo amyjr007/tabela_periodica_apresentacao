@@ -68,6 +68,19 @@
      O verde é o dos naturais; o âmbar aceso, das duas exceções que
      moram no meio deles. */
   --natural: #1F9D55;
+  /* o azul do subnível de maior energia — o slide 10 */
+  --energetico: #1F6FEB;
+
+  /* ---- os quatro blocos: s, p, d, f ----
+     Três delas a tabela já usava naquelas mesmas casas, e por isso
+     ficaram: o laranja é o dos alcalinos, e o bloco s é a coluna
+     deles; o azul é o dos elementos de transição, que são o bloco d
+     inteiro; o roxo é o das séries. Só o p precisou de cor nova — as
+     seis famílias que ele cobre não têm uma cor em comum. */
+  --bl-s: #D2591F;
+  --bl-p: #2E9450;
+  --bl-d: #2E7BAE;
+  --bl-f: #8B3FBE;
   /* o vermelho neon: um vermelho quente com brilho em volta, para as
      palavras que a aula quer que a turma leve daqui */
   --neon: #FF2E4C;
@@ -513,6 +526,390 @@ body{
 }
 .rot-tipo.on{opacity:1}
 
+/* ============================================================
+   O MUNDO QUÂNTICO DOS TIPOS
+   Dois toques num bloco JÁ SOLTO e a câmera mergulha nele: o slide
+   apaga-se atrás de um breu que nasce no próprio bloco, e o que há
+   dentro cresce daquele mesmo ponto. É o mergulho do app de ligações
+   químicas, na paleta desta aula e na cor do tipo que se abriu.
+
+   Por enquanto lá dentro há o nome do tipo e a porta de volta, e mais
+   nada: o que cada tipo mostra vem depois, um de cada vez. A camada é
+   só uma folha por cima — a tabela continua exatamente como estava
+   debaixo dela, e por isso voltar é apagar a folha, sem desfazer nada.
+   ============================================================ */
+.mundo{
+  position:absolute;inset:0;z-index:50;
+  pointer-events:auto;opacity:0;transition:opacity .45s ease;
+}
+.mundo.on{opacity:1}
+/* opaco de verdade: nada do slide atravessa */
+.mundo-breu{
+  position:absolute;inset:0;
+  background:radial-gradient(circle at var(--ox,50%) var(--oy,50%),
+             #17133C 0%, #0C0A26 48%, #06051A 100%);
+}
+/* A aurora é a cor do próprio tipo, lavada por cima do breu — e é
+   PARADA. No app de ligações ela girava, e um retângulo em rotação
+   varre os cantos da tela justo quando o olho deveria estar na
+   matéria; lá se aprendeu, aqui já nasce quieta. */
+.mundo-aurora{
+  position:absolute;inset:0;mix-blend-mode:screen;
+  background:conic-gradient(from 0deg at var(--ox,50%) var(--oy,50%),
+    color-mix(in srgb, var(--cor) 18%, transparent),
+    rgba(76,63,191,.14),
+    color-mix(in srgb, var(--ouro-luz) 9%, transparent),
+    color-mix(in srgb, var(--cor) 18%, transparent));
+}
+/* o pó do vácuo: pontos que derivam devagar. É o que faz aquilo ser um
+   lugar, e não uma folha preta */
+.mundo-po{position:absolute;inset:0;overflow:hidden}
+.mundo-po i{
+  position:absolute;width:var(--s,3px);height:var(--s,3px);border-radius:50%;
+  background:color-mix(in srgb, var(--cor) 55%, #FFFFFF);
+  opacity:var(--o,.5);
+  animation:poDeriva var(--fd,9s) var(--dl,0s) ease-in-out infinite alternate;
+}
+@keyframes poDeriva{
+  from{translate:0 0}
+  to  {translate:var(--fx,20px) var(--fy,-40px)}
+}
+/* A CÂMERA
+   Tudo o que é conteúdo do mundo mora aqui dentro, e cresce do ponto
+   do mergulho: é isto que vira o movimento de câmera. Sair é a mesma
+   coisa ao contrário — tirada a classe, ele encolhe de volta para o
+   bloco de onde veio. */
+.mundo-zoom{
+  position:absolute;inset:0;pointer-events:none;
+  transform-origin:var(--ox,50%) var(--oy,50%);
+  transform:scale(.26);opacity:0;
+  transition:transform .85s cubic-bezier(.2,.82,.28,1), opacity .5s ease;
+}
+.mundo.on .mundo-zoom{transform:scale(1);opacity:1}
+/* o nome do tipo, no alto: mono, caixa alta e espaçado — a voz dos
+   rótulos de dentro do mundo, e não a do cabeçalho da aula */
+.mundo-tit{
+  position:absolute;left:50%;top:76px;transform:translateX(-50%);
+  font-family:var(--mono);font-weight:500;font-size:26px;
+  letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;
+  /* A cor do tipo, CLAREADA. Crua ela serve à carta, que é clara por
+     baixo; sobre o vácuo o índigo dos nobres quase some, e o nome do
+     mundo é a última coisa que pode ficar ilegível ao fundo da sala.
+     O tom puro volta no halo, que é o que guarda a identidade. */
+  color:color-mix(in srgb, var(--cor) 50%, #FFFFFF);
+  text-shadow:0 2px 26px rgba(6,5,26,.92),
+              0 0 38px color-mix(in srgb, var(--cor) 55%, transparent);
+  opacity:0;translate:0 -14px;
+  transition:opacity .5s ease .35s, translate .6s cubic-bezier(.2,.86,.26,1) .35s;
+}
+.mundo.on .mundo-tit{opacity:1;translate:0 0}
+/* a única porta de saída */
+.mundo-voltar{
+  position:absolute;left:38px;top:30px;z-index:3;
+  padding:11px 22px 11px 16px;border-radius:999px;cursor:pointer;
+  font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  color:#F5F1E6;border:1px solid rgba(226,162,43,.55);
+  background:linear-gradient(180deg,#3A2C10 0%,#221806 100%);
+  box-shadow:0 0 22px rgba(226,162,43,.2);
+  opacity:0;
+  transition:opacity .4s ease .5s, border-color .2s, box-shadow .2s, transform .2s;
+}
+.mundo.on .mundo-voltar{opacity:1}
+.mundo-voltar:hover{
+  border-color:var(--ouro-luz);box-shadow:0 0 30px rgba(226,162,43,.45);transform:scale(1.05);
+}
+.mundo-voltar:active{transform:scale(.97)}
+/* A pista mora no palco, e não no slide: nenhum z-index de dentro do
+   mundo a alcança. Some enquanto se estiver mergulhado — um ponto a
+   pulsar por cima do vácuo pareceria coisa de outro mundo, e é
+   exatamente o que seria. */
+#stage.no-mundo #pista{opacity:0}
+
+/* ---------- O CUBO ----------
+   O cubo É o mundo: abre com ele, e não depois de um clique. Chega
+   dando voltas e pousa quase de frente — um resto de inclinação, o
+   bastante para se ver que é um cubo e não um quadro. Cada clique
+   adiante vira-o um quarto de volta, e a face que chega traz a frase
+   dela no alto: a lista dos metais lê-se andando à roda da peça.
+   Pousado, a face da frente é onde se mexe. */
+.cubo-cx{
+  position:absolute;left:50%;top:436px;width:440px;height:440px;
+  margin:-220px 0 0 -220px;perspective:1600px;pointer-events:none;
+}
+.cubo{
+  position:absolute;inset:0;transform-style:preserve-3d;
+  /* --volta é o quarto de volta em que o cubo está; a inclinação de
+     repouso vive à parte para o giro não a apagar */
+  transform:rotateX(var(--tomba,-6deg))
+            rotateY(calc(var(--volta,-9deg) - 1080deg)) scale(.16);
+  opacity:0;
+  transition:transform 2.4s cubic-bezier(.14,.72,.18,1), opacity .7s ease;
+}
+.cubo.pousado{
+  /* --volta e --tomba são os ângulos INTEIROS em que o cubo fica, e
+     não acrescentos a uma inclinação de repouso. Somados a um resto
+     fixo, a face de cima chegava torta: ver POSE_FACE. */
+  transform:rotateX(var(--tomba,-6deg)) rotateY(var(--volta,-9deg)) scale(1);
+  opacity:1;
+}
+/* virar de face é mais curto do que chegar: a chegada é uma entrada, a
+   virada é uma consulta */
+.cubo.pousado.virando{transition:transform 1s cubic-bezier(.3,.78,.28,1)}
+.cubo .face{
+  position:absolute;inset:0;overflow:hidden;
+  background:linear-gradient(150deg,#232046 0%,#171436 45%,#100E28 100%);
+  border:1px solid rgba(207,198,245,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),
+             inset 0 0 60px rgba(76,63,191,.22);
+}
+/* Só a face que está de frente responde ao dedo, e só depois de o cubo
+   pousar: mexer numa parede que ainda gira é gesto perdido. Quem diz
+   qual é a da frente é a classe 'à-frente', posta pelo giro. */
+.cubo.pousado .face.a-frente{pointer-events:auto}
+/* A face que não está de frente RECUA PARA O ESCURO. Sem isto, a
+   parede vizinha aparece de esguelha — uma barra de metal esticada na
+   quina do cubo — e rouba o olho de quem devia estar a olhar a face da
+   frente. Apagada, ela lê-se como o que é: a lateral da peça. */
+.cubo .face{transition:filter .8s ease}
+.cubo .face:not(.a-frente){filter:brightness(.34) saturate(.5)}
+.cubo .face.f1{transform:translateZ(220px)}
+.cubo .face.f2{transform:rotateY( 90deg) translateZ(220px)}
+.cubo .face.f3{transform:rotateY(180deg) translateZ(220px)}
+.cubo .face.f4{transform:rotateY(-90deg) translateZ(220px)}
+.cubo .face.f5{transform:rotateX( 90deg) translateZ(220px)}
+.cubo .face.f6{transform:rotateX(-90deg) translateZ(220px)}
+/* o número da face, bem apagado: é o mapa de onde ainda não há nada */
+.face-n{
+  position:absolute;right:18px;bottom:12px;
+  font-family:var(--mono);font-size:56px;font-weight:500;
+  color:rgba(207,198,245,.09);pointer-events:none;
+}
+/* A FRASE DA FACE, no alto dela e dentro do cubo.
+   Ela mora na parede, e não no mundo: virando o cubo, a frase vira
+   com a face a que pertence. */
+.face-frase{
+  position:absolute;left:26px;top:20px;width:388px;
+  text-align:center;pointer-events:none;
+  font-family:var(--display);font-weight:600;font-size:19px;line-height:1.32;
+  color:#EDE8FA;text-shadow:0 2px 14px rgba(6,5,26,.85);
+}
+.face-frase b{color:var(--ouro-luz);font-weight:800;margin-right:7px}
+.face-frase em{font-style:normal;color:#CFD8E2;font-weight:700}
+
+/* ---------- os três lingotes, na face 1 ---------- */
+.lingotes{position:absolute;left:24px;top:96px;width:392px;
+  display:flex;gap:16px;pointer-events:none}
+.lingote{display:block}
+.nomes-metal{
+  position:absolute;left:24px;top:186px;width:392px;
+  display:flex;gap:16px;pointer-events:none;
+}
+/* os nomes, bem discretos: quem tem de falar alto é o metal */
+.nomes-metal span{
+  width:120px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);
+}
+
+/* ---------- o mercúrio ----------
+   A poça mora numa caixa própria porque ela é a única coisa da face 1
+   que pega o dedo — e o clique nela não pode virar o cubo. O SVG
+   recebe o toque em coordenada dele mesmo (offsetX), e é por isso que
+   a face pode estar inclinada sem a conta sair torta. */
+.hg-cx{
+  position:absolute;left:50px;top:212px;width:340px;height:180px;
+  pointer-events:auto;cursor:grab;touch-action:none;
+}
+.hg-cx:active{cursor:grabbing}
+.hg{display:block;width:100%;height:100%;overflow:visible}
+.hg-nome{
+  position:absolute;left:0;right:0;top:396px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);pointer-events:none;
+}
+
+
+/* ---------- A FACE 2: O FOGO E A INCANDESCÊNCIA ----------
+   A face inteira pega o dedo, porque o fogo nasce onde o dedo estiver
+   — e não só sobre a barra. Encostado o fogo na barra, o calor entra
+   nela por ali e espalha-se: é a frase da face a acontecer. */
+.face2-cx{
+  position:absolute;inset:0;pointer-events:auto;cursor:crosshair;
+  touch-action:none;overflow:hidden;
+}
+.barra-cx{position:absolute;left:50px;top:184px;width:340px;height:120px;
+  pointer-events:none}
+.barra-cx svg{display:block;width:100%;height:100%}
+.barra-nome{
+  position:absolute;left:0;right:0;top:322px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);pointer-events:none;
+}
+
+/* O FOGO
+   Fogo de verdade não tem beirada: tem um miolo branco, um corpo
+   laranja e um halo vermelho que se desfaz no ar. Por isso ele é
+   feito de camadas borradas em modo 'screen' — luz somada ao que está
+   por baixo — e não de uma forma recortada. Cada língua tem o seu
+   tempo e a sua inclinação; é o desencontro delas que faz o bruxulear.
+   O conjunto anda com o dedo, com a base assente nele. */
+.fogo{
+  position:absolute;width:120px;height:190px;margin:-172px 0 0 -60px;
+  pointer-events:none;mix-blend-mode:screen;
+  opacity:0;transition:opacity .22s ease;
+}
+.fogo.on{opacity:1}
+/* o halo quente no chão, que é o que acende o que está em volta */
+.fogo u{
+  position:absolute;left:50%;bottom:-34px;width:240px;height:120px;
+  margin-left:-120px;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 50%,
+    rgba(255,186,96,.68) 0%, rgba(232,96,14,.34) 44%, rgba(226,59,11,0) 72%);
+  animation:brasa 1.5s ease-in-out infinite alternate;
+}
+.fogo i{
+  position:absolute;bottom:0;left:50%;display:block;
+  width:var(--w);height:var(--h);margin-left:calc(var(--w) / -2);
+  border-radius:50% 50% 44% 44% / 66% 66% 34% 34%;
+  filter:blur(var(--b,7px));
+  background:radial-gradient(ellipse at 50% 82%,
+    var(--c1) 0%, var(--c2) 38%, var(--c3) 64%, rgba(226,59,11,0) 82%);
+  animation:labareda var(--d) ease-in-out infinite alternate;
+  animation-delay:var(--dl);
+}
+@keyframes labareda{
+  0%  {transform:translateY(4px) scale(1,.94)   rotate(calc(var(--r) * -1))}
+  100%{transform:translateY(-16px) scale(.84,1.2) rotate(var(--r))}
+}
+@keyframes brasa{
+  0%{opacity:.72;transform:scale(.9)} 100%{opacity:1;transform:scale(1.08)}
+}
+/* as fagulhas que sobem e se apagam: pouca coisa, e é o que tira o
+   fogo do desenho animado */
+.fogo b{
+  position:absolute;bottom:18px;left:50%;width:3px;height:3px;border-radius:50%;
+  background:#FFD79A;margin-left:var(--x);
+  animation:fagulha var(--fd) linear var(--dl) infinite;
+}
+@keyframes fagulha{
+  0%  {opacity:0;transform:translate(0,0) scale(1)}
+  16% {opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),-150px) scale(.4)}
+}
+
+/* ---------- A FACE 3: O CHOQUE ----------
+   Uma barra que se arrasta e um fio descascado. Encostada a barra no
+   cobre nu, ela fecha o circuito — e é isso que a face demonstra: o
+   metal conduz. Enquanto os dois se tocarem, o cubo sacode, o arco
+   estala entre eles e as fagulhas saltam; separados, tudo pára. */
+.face3-cx{
+  position:absolute;inset:0;pointer-events:auto;touch-action:none;overflow:hidden;
+}
+.eletro{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* a barra que anda: quem a leva é o dedo, e ela é a única coisa da
+   face que se pega */
+.barra-mov{
+  position:absolute;width:170px;height:56px;margin:-28px 0 0 -85px;
+  cursor:grab;pointer-events:none;
+}
+.face3-cx.pegando .barra-mov{cursor:grabbing}
+.barra-mov svg{display:block;width:100%;height:100%;overflow:visible}
+/* aceso pela corrente: o metal ganha um halo azul-branco */
+.barra-mov.viva{filter:drop-shadow(0 0 14px rgba(150,225,255,.95))
+                       drop-shadow(0 0 34px rgba(90,170,255,.6))}
+.face3-dica{
+  position:absolute;left:0;right:0;top:392px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);pointer-events:none;
+}
+
+/* O CUBO SACODE.
+   Vai na propriedade 'translate', e não no transform: o transform do
+   cubo é a inclinação e o quarto de volta em que ele está, e as duas
+   coisas cancelar-se-iam. Quem sacode é a caixa da perspetiva, que
+   não tem transform nenhum seu. */
+@keyframes balancaCubo{
+  0%,100%{translate:0 0}
+  10%{translate:-9px 3px}  22%{translate:8px -4px}
+  35%{translate:-7px -3px} 48%{translate:6px 4px}
+  61%{translate:-5px 2px}  74%{translate:4px -2px}  87%{translate:-2px 1px}
+}
+.cubo-cx.chocando{animation:balancaCubo .34s linear infinite}
+
+/* ---------- A FACE 4: A MALEABILIDADE ----------
+   O metal ocupa a face inteira para o dedo, porque o que se amassa é
+   ele — e amassar é um gesto que se arrasta, não um clique. */
+.face4-cx{
+  position:absolute;inset:0;pointer-events:auto;touch-action:none;
+  overflow:hidden;cursor:pointer;
+}
+.face4-dica{
+  position:absolute;left:0;right:0;top:392px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);pointer-events:none;
+}
+/* e um clarão azul lava a face inteira, no ritmo do estalo */
+
+/* ---------- A FACE 5: A DUCTILIDADE ---------- */
+.face5-cx{
+  position:absolute;inset:0;pointer-events:auto;touch-action:none;
+  overflow:hidden;cursor:grab;
+}
+.face5-cx:active{cursor:grabbing}
+.face5-dica{
+  position:absolute;left:0;right:0;top:392px;text-align:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);pointer-events:none;
+}
+
+/* ---------- as duas oficinas: o martelo e a fieira ----------
+   O número ao lado é parte da demonstração, e não decoração: é ele
+   que mostra a espessura a cair para metade a cada pancada e os
+   metros de fio a subir. */
+.face4-conta, .face5-conta{
+  position:absolute;left:0;right:0;top:96px;text-align:center;pointer-events:none;
+  font-family:var(--mono);color:var(--ouro-luz);
+}
+/* o martelo varre o meio da face: o número da espessura mora à
+   esquerda, fora do caminho dele */
+.face4-conta{left:26px;right:auto;top:84px;text-align:left}
+.face5-conta{top:112px}
+.face4-conta b, .face5-conta b{
+  display:block;font-size:30px;font-weight:500;letter-spacing:.04em;
+  text-shadow:0 2px 18px rgba(6,5,26,.9);
+}
+.face4-conta i, .face5-conta i{
+  font-style:normal;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(226,222,240,.42);
+}
+.oficina, .bancada{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* o martelo pendura de um pino: a martelada é um giro em torno dele */
+/* O pino fica em coordenada do DESENHO (o padrão dos elementos SVG),
+   e não na caixa da forma: com transform-box:fill-box a conta era
+   sobre a caixa do grupo e o martelo girava em torno do sítio errado
+   — ou, como aconteceu, nem girava. */
+.martelo{transform-origin:220px 96px;transform:rotate(-52deg)}
+.martelo.bate{animation:martelada .56s cubic-bezier(.3,.05,.2,1)}
+@keyframes martelada{
+  0%{transform:rotate(-52deg)}  26%{transform:rotate(-62deg)}  /* arma */
+  50%{transform:rotate(0deg)}   60%{transform:rotate(-7deg)}    /* bate e ressalta */
+  100%{transform:rotate(-52deg)}
+}
+/* o metal cede à pancada, e cede com mola: metal batido salta um
+   pouco antes de assentar */
+.lamina{transform-origin:220px 322px;
+  transition:transform .3s cubic-bezier(.2,1.5,.4,1), opacity .3s ease}
+.flash{transition:opacity .12s ease}
+/* e a face toda leva o safanão da pancada */
+.face4-cx.bateu{animation:safanao .22s ease-out}
+@keyframes safanao{0%{translate:0 0} 35%{translate:0 4px} 100%{translate:0 0}}
+.face3-cx .lampejo{
+  position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse 70% 50% at var(--lx,50%) var(--ly,42%),
+    rgba(198,238,255,.5) 0%, rgba(96,168,255,.22) 40%, rgba(30,60,140,0) 72%);
+}
+.face3-cx.chocando .lampejo{animation:lampeja .16s steps(2,end) infinite}
+@keyframes lampeja{0%{opacity:.25} 50%{opacity:1} 100%{opacity:.45}}
 /* ---------- as famílias do slide 5 ----------
    Aqui o tabuleiro é de uma cor só, e a cor tem outro trabalho: ela é
    o que marca a família escolhida. Antes de qualquer toque, as cinco
@@ -708,6 +1105,324 @@ body{
 .buraco.on{opacity:1}
 .buraco:hover{background:color-mix(in srgb,var(--indigo) 16%,transparent)}
 
+/* ============================================================
+   O QUIZ
+   Outro modo, e não mais uma camada da aula: a tabela esquece o que
+   estava a mostrar e passa a responder a uma pergunta de cada vez.
+   Por isso a cena dele tem cor própria — o âmbar do botão que a abre.
+   ============================================================ */
+/* O TROPEÇO SACODE A TELA
+   O palco treme e um vermelho entra pelas beiradas — pelas beiradas, e
+   não por cima de tudo, para a tabela continuar legível debaixo dele.
+   O tremor vai na propriedade 'translate', e não no transform, porque
+   o transform do palco é a escala que faz a cena caber na tela. */
+@keyframes treme-tela{
+  0%,100%{translate:0 0}
+  12%{translate:-14px 0}  28%{translate:12px 0}
+  46%{translate:-9px 0}   64%{translate:6px 0}   82%{translate:-3px 0}
+}
+#stage.erro-treme{animation:treme-tela .5s cubic-bezier(.36,.07,.19,.97)}
+#veu-erro{
+  position:fixed;inset:0;z-index:200;pointer-events:none;
+  background:radial-gradient(ellipse 78% 72% at 50% 50%,
+             rgba(255,46,76,0) 40%, rgba(255,46,76,.16) 72%, rgba(255,46,76,.5) 100%);
+  opacity:0;transition:opacity .2s ease;
+}
+#veu-erro.on{opacity:1}
+
+/* O ACERTO FAZ O CONTRÁRIO
+   O tropeço sacode a tela em vermelho; o acerto solta os confetes da
+   festa da montagem e acende a tabela inteira de verde por um
+   instante — um anel fino em cada casa e um halo por baixo dele. A
+   carta certa não é apagada por isto: a regra dela tem mais peso e
+   continua com o brilho forte. */
+.mesa.brilha-acerto .pc .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),
+             0 0 0 2px rgba(31,157,85,.82),
+             0 0 16px 3px rgba(31,157,85,.4);
+  transition:box-shadow .22s ease;
+}
+
+/* O ESCURO DO QUIZ
+   Entrar no quiz apaga a sala: um véu escuro cobre o slide inteiro, em
+   fade, e sair acende de volta. É o sinal de que aquilo ali não é mais
+   a aula — e é o mesmo recurso do modo Pauling, agora do tamanho da
+   tela toda. O véu é o PRIMEIRO filho do slide, e por isso fica atrás
+   de tudo o que vem depois dele: a tabela, o cabeçalho e a pergunta
+   continuam por cima, acesos. */
+.breu-quiz{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 92% 82% at 50% 46%,
+             rgba(20,17,46,.93) 0%, rgba(11,9,30,.975) 62%, rgba(7,6,22,.99) 100%);
+  opacity:0;transition:opacity .55s ease;
+}
+.breu-quiz.on{opacity:1}
+
+/* e o cabeçalho clareia junto: no escuro, a letra escura some */
+.slide.quiz-escuro .title{color:#F3F0FB}
+.slide.quiz-escuro .subtitle{color:var(--ouro-luz)}
+.slide.quiz-escuro .num{color:#CFC6F5;opacity:.42}
+.slide.quiz-escuro .regua button{border-color:rgba(207,198,245,.4)}
+.slide.quiz-escuro .regua button.feito{background:rgba(207,198,245,.5)}
+.slide.quiz-escuro .title,
+.slide.quiz-escuro .subtitle,
+.slide.quiz-escuro .num,
+.slide.quiz-escuro .regua button{transition:color .5s ease, background .5s ease, border-color .5s ease}
+
+/* Os botões da aula não vivem no quiz: o de separar a tabela, o de
+   montar tudo, o de Pauling, o de subnível, o do full e o de refazer
+   os grupos saem de cena enquanto ele durar — e o do quiz, que é o
+   único que faz falta ali, fica. */
+.cena.em-quiz #botao-mesa,
+.cena.em-quiz #botao-todos,
+.cena.em-quiz .botao-pauling,
+.cena.em-quiz .botao-subnivel,
+.cena.em-quiz .botao-full,
+.cena.em-quiz .botao-refaz{display:none}
+
+/* na cena do quiz a tabela inteira responde, sem o apagado que cada
+   slide põe nela */
+.mesa.quiz .pc{pointer-events:auto;opacity:1;cursor:pointer}
+/* A carta escolhida cresce e acende: o anel, um halo em volta e a
+   sombra funda. Ela passa por cima das vizinhas enquanto está grande —
+   sem isso, crescida, ela ficaria por baixo de quem vem depois dela na
+   ordem do documento. */
+.mesa.quiz .pc.certa,
+.mesa.quiz .pc.errada{z-index:26}
+.mesa.quiz .pc.certa .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),
+             0 0 0 3.5px var(--natural),
+             0 0 26px 8px rgba(31,157,85,.62),
+             0 16px 38px rgba(31,157,85,.45);
+}
+.mesa.quiz .pc.errada .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),
+             0 0 0 3.5px var(--neon),
+             0 0 26px 8px rgba(255,46,76,.6),
+             0 16px 38px rgba(255,46,76,.42);
+}
+.mesa.quiz .pc.errada{animation:treme-carta .42s ease}
+
+/* O GIRO DA TROCA
+   Trocada a pergunta, a tabela inteira dá uma volta sobre si mesma —
+   uma carta pouco depois da vizinha, na mesma diagonal da onda verde
+   do fim da montagem, e com o mesmo --onda. Encolhe um pouco no meio
+   da volta, que é o que dá graça ao giro. Gira na propriedade
+   'rotate', e não no transform, porque o transform do miolo é a
+   inclinação e o salto da carta, que continuam valendo. */
+@keyframes giraCarta{
+  0%  {rotate:0deg;   scale:1}
+  50% {rotate:180deg; scale:.82}
+  100%{rotate:360deg; scale:1}
+}
+.mesa.girando .pc .pc-in{
+  animation:giraCarta .72s var(--onda,0ms) cubic-bezier(.42,0,.36,1);
+}
+@keyframes treme-carta{
+  0%,100%{translate:0 0} 20%{translate:-7px 0} 45%{translate:6px 0}
+  70%{translate:-4px 0} 88%{translate:2px 0}
+}
+
+/* A PERGUNTA, NA CAIXA DELA
+   Ela não é mais uma frase solta no alto do slide: mora numa caixa de
+   âmbar — a cor do quiz —, com o número numa placa à esquerda. E a
+   caixa anda como uma esteira: a pergunta vencida sai pela direita da
+   tela no mesmo instante em que a seguinte entra pela esquerda, e é
+   assim que se vê uma dar lugar à outra. Quem sai leva a classe 'sai';
+   quem entra nasce fora da tela, à esquerda, e só então recebe o 'on'.
+   O palco corta o que passa das beiradas, e por isso a viagem inteira
+   acontece dentro dele. */
+.quiz-pergunta{
+  /* Presa pelo CENTRO, e não pela beirada: a pergunta curta e a
+     comprida caem no mesmo eixo do palco. O 'left' aqui já é o centro
+     — quem desconta a metade da largura é o transform. E ele não pode
+     ser o 'translate', que é a esteira da entrada e da saída: são duas
+     propriedades distintas, e por isso as duas cabem na mesma peça. */
+  position:absolute;left:50%;top:97px;z-index:40;
+  transform:translateX(-50%);
+  max-width:1090px;pointer-events:auto;cursor:grab;touch-action:none;
+  padding:12px 24px 13px 19px;border-radius:14px;
+  font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01em;
+  line-height:1.3;color:var(--tinta);
+  background:linear-gradient(180deg,rgba(226,162,43,.2),rgba(226,162,43,.08));
+  border:1.5px solid rgba(226,162,43,.5);border-left:5px solid var(--ouro-luz);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 14px 34px rgba(20,17,46,.3);
+  opacity:0;translate:-1240px 0;
+  transition:opacity .3s ease, translate .52s cubic-bezier(.24,.84,.3,1);
+}
+.quiz-pergunta.on{opacity:1;translate:0 0}
+.quiz-pergunta.sai{
+  /* a caixa de saída varre a tabela inteira no caminho: se ainda
+     pegasse o dedo, roubaria o toque da carta por meio segundo */
+  pointer-events:none;
+  opacity:0;translate:1240px 0;
+  transition:opacity .46s ease .14s, translate .5s cubic-bezier(.45,.02,.62,1);
+}
+.cena.em-quiz .quiz-pergunta{
+  color:#F8F1E2;
+  background:linear-gradient(180deg,rgba(226,162,43,.19),rgba(226,162,43,.06));
+  border-color:rgba(226,162,43,.55);
+}
+/* o número numa placa, e não solto na frase */
+.quiz-pergunta b{
+  display:inline-block;min-width:30px;margin-right:12px;
+  padding:1px 8px 2px;border-radius:9px;vertical-align:2px;
+  font-family:var(--display);font-size:17px;font-weight:800;line-height:1.3;
+  text-align:center;background:var(--ouro-luz);color:#2C1C05;
+}
+.quiz-pergunta sup{font-size:.6em;vertical-align:.5em}
+.quiz-pergunta.levando{cursor:grabbing}
+
+/* a etiqueta da medida: enquanto se arrasta a caixa, ela diz em que
+   ponto do palco a caixa está — é o número que se anota para o lugar
+   ficar fixo no CSS depois. Mora fora da caixa, embaixo dela — e vira
+   para cima quando a caixa desce demais e não sobra espaço lá. Some
+   sozinha depois de dar tempo de ler. */
+.quiz-medida{
+  position:absolute;left:0;top:calc(100% + 8px);
+  padding:4px 10px 5px;border-radius:8px;white-space:nowrap;pointer-events:none;
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.03em;
+  background:rgba(20,17,46,.88);color:var(--ouro-luz);
+  border:1px solid rgba(226,162,43,.45);
+  opacity:0;transition:opacity .22s ease;
+}
+.quiz-medida.on{opacity:1}
+.quiz-medida.acima{top:auto;bottom:calc(100% + 8px)}
+
+/* a dica, que só vem depois do segundo tropeço */
+.quiz-dica{
+  /* debaixo da caixa da pergunta, no mesmo eixo dela */
+  position:absolute;left:50%;top:164px;z-index:40;
+  transform:translateX(-50%);
+  max-width:760px;pointer-events:none;
+  font-family:var(--body);font-size:17px;line-height:1.45;
+  color:var(--tinta-dim);
+  padding:9px 14px;border-radius:10px;
+  background:var(--ouro-dim);border:1px solid rgba(226,162,43,.5);
+  opacity:0;translate:0 -8px;
+  transition:opacity .35s ease, translate .4s cubic-bezier(.2,.86,.26,1);
+}
+.quiz-dica.on{opacity:1;translate:0 0}
+.cena.em-quiz .quiz-dica{
+  color:#EFE4CE;background:rgba(226,162,43,.14);border-color:rgba(226,162,43,.55);
+}
+.cena.em-quiz .quiz-dica b{color:var(--ouro-luz)}
+.quiz-dica b{color:var(--ouro);font-weight:700}
+
+/* o placar, no canto: quantas já foram e quantas acertou */
+.quiz-placar{
+  position:absolute;right:26px;top:70px;z-index:40;pointer-events:none;
+  display:flex;align-items:baseline;gap:7px;
+  font-family:var(--display);font-weight:700;
+  color:var(--tinta-dim);opacity:0;transition:opacity .4s ease;
+}
+.quiz-placar.on{opacity:1}
+.cena.em-quiz .quiz-placar{color:rgba(243,240,251,.62)}
+.cena.em-quiz .quiz-placar b{color:#F3F0FB}
+.quiz-placar b{font-size:26px;color:var(--tinta)}
+.quiz-placar i{font-style:normal;font-size:15px}
+
+/* a faixa que pisca quando o erro se repete */
+.quiz-faixa{
+  position:absolute;z-index:8;pointer-events:none;border-radius:8px;
+  background:rgba(226,162,43,.16);border:2px solid var(--ouro-luz);
+  box-shadow:0 0 16px rgba(226,162,43,.55);
+  opacity:0;transition:opacity .35s ease;
+}
+.quiz-faixa.on{opacity:1}
+
+/* o cartão do resultado */
+.quiz-cartao{
+  position:absolute;left:640px;top:380px;z-index:60;
+  transform:translate(-50%,-50%) scale(.86);
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  min-width:280px;padding:22px 30px 20px;
+  background:var(--fundo-alto);border:1.5px solid var(--indigo-dim);
+  border-radius:20px;box-shadow:0 22px 60px rgba(32,28,66,.34);
+  font-family:var(--display);text-align:center;pointer-events:auto;
+  opacity:0;transition:opacity .45s ease, transform .5s cubic-bezier(.2,1.3,.4,1);
+}
+.quiz-cartao.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.quiz-cartao .trofeu{font-size:44px;line-height:1}
+.quiz-cartao .chapeu{
+  font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--tinta-faint);
+}
+.quiz-cartao .anel{position:relative;width:118px;height:118px}
+.quiz-cartao .anel svg{width:100%;height:100%;transform:rotate(-90deg)}
+.quiz-cartao .anel .miolo{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;line-height:1;
+}
+.quiz-cartao .anel .miolo span{font-size:10px;color:var(--tinta-faint);font-weight:600}
+.quiz-cartao .anel .miolo b{font-size:34px;color:var(--tinta);font-weight:800}
+.quiz-cartao .conta{font-size:15px;color:var(--tinta-dim);font-weight:600}
+.quiz-cartao .conta em{font-style:normal;font-weight:800}
+.quiz-cartao .conta em.acerto{color:var(--natural)}
+.quiz-cartao .conta em.erro{color:var(--neon)}
+.quiz-cartao .recado{font-size:17px;color:var(--tinta);font-weight:600;max-width:270px}
+.quiz-cartao .botoes{display:flex;gap:10px;margin-top:6px}
+.quiz-cartao button{
+  font-family:var(--display);font-weight:700;font-size:14px;
+  padding:9px 18px;border-radius:11px;cursor:pointer;
+  border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);
+  transition:background .2s,color .2s,transform .15s;
+}
+.quiz-cartao button:hover{background:var(--indigo);color:#fff}
+.quiz-cartao button:active{transform:scale(.95)}
+.quiz-cartao button.forte{background:var(--indigo);color:#fff}
+.quiz-cartao button.forte:hover{background:var(--tinta)}
+
+/* a única pergunta que se responde escrevendo, e não tocando */
+.quiz-escrita{
+  /* no eixo do meio, como a pergunta: ali a primeira linha da tabela
+     é vazia — só o hidrogênio e o hélio, um em cada ponta */
+  position:absolute;left:50%;top:216px;z-index:41;pointer-events:auto;
+  transform:translateX(-50%);
+  display:flex;align-items:center;gap:12px;
+  opacity:0;translate:0 -8px;
+  transition:opacity .35s ease, translate .4s cubic-bezier(.2,.86,.26,1);
+}
+.quiz-escrita.on{opacity:1;translate:0 0}
+.quiz-escrita .atomos{display:flex;gap:9px}
+.quiz-escrita .atomo{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:58px;height:48px;border-radius:9px;line-height:1.1;
+  background:var(--fundo-2);border:1.5px solid var(--indigo-dim);
+  font-family:var(--display);color:var(--tinta);
+}
+.quiz-escrita .atomo i{font-style:normal;font-family:var(--mono);font-size:11px;opacity:.66}
+.quiz-escrita .atomo b{font-size:20px;font-weight:700}
+.quiz-escrita input{
+  width:96px;padding:9px 12px;border-radius:10px;
+  border:1.5px solid var(--indigo-dim);background:#fff;color:var(--tinta);
+  font-family:var(--display);font-weight:700;font-size:19px;text-align:center;
+}
+.quiz-escrita input:focus{outline:none;border-color:var(--indigo)}
+.quiz-escrita button{
+  font-family:var(--display);font-weight:700;font-size:14px;
+  padding:10px 18px;border-radius:11px;cursor:pointer;
+  border:1.5px solid var(--indigo);background:var(--indigo);color:#fff;
+  transition:background .2s,transform .15s;
+}
+.quiz-escrita button:hover{background:var(--tinta)}
+.quiz-escrita button:active{transform:scale(.95)}
+
+/* o botão de sair, no canto de baixo */
+.quiz-sair{
+  position:absolute;right:26px;bottom:18px;z-index:40;pointer-events:auto;
+  font-family:var(--display);font-weight:700;font-size:13px;
+  padding:10px 18px;border-radius:12px;cursor:pointer;
+  border:1.5px solid var(--indigo-dim);background:rgba(255,255,255,.92);
+  color:var(--tinta-dim);
+  transition:background .2s,color .2s,border-color .2s;
+}
+.quiz-sair:hover{border-color:var(--indigo);color:var(--indigo)}
+.cena.em-quiz .quiz-sair{
+  background:rgba(255,255,255,.09);border-color:rgba(207,198,245,.34);color:#DDD6F5;
+}
+.cena.em-quiz .quiz-sair:hover{background:rgba(255,255,255,.18);border-color:#CFC6F5;color:#fff}
+
 /* ---------- a natureza dos elementos, no slide 8 ----------
    A carta acende ao ser alcançada pela varredura: um salto curto, o
    bastante para o olho seguir a onda subindo pelos números. É a
@@ -887,11 +1602,15 @@ body{
    linha, e o vão que ela deixa embaixo é o que faz a família saltar
    aos olhos. Nos outros slides a subida continua curta, de vinte e
    quatro: lá ela só destaca, aqui ela separa. */
-.mesa.valencia .pc{transition:translate .5s ease, opacity .45s ease}
+.mesa.valencia .pc,
+.mesa.subnivel .pc{transition:translate .5s ease, opacity .45s ease}
 .mesa.valencia .pc:not(.repr){opacity:.26;pointer-events:none}
 /* a tabela só responde depois da frase: antes dela é a ilustração da
    cena, como em todos os outros slides */
 .mesa.valencia.viva .pc.repr{cursor:pointer}
+/* no slide do subnível não há família a levantar: a tabela inteira
+   responde, e o dedo pega sempre um elemento */
+.mesa.subnivel.viva .pc{cursor:pointer}
 .mesa.valencia .pc.no-alto{translate:0 -54px;z-index:18}
 .mesa.valencia .pc.no-alto .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
@@ -912,16 +1631,88 @@ body{
    para fora dela. Da metade para a esquerda vem da direita; da metade
    para a direita, ao contrário. */
 .rot-val{
-  position:absolute;z-index:11;transform:translate(-50%,-50%);
-  pointer-events:none;white-space:nowrap;
-  font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01em;
-  color:var(--bloco-a);opacity:0;
+  /* o lugar e o corpo que ele achou na mão: 781,187 e fonte 24,4 —
+     que é o 25 de origem vezes 0,976 */
+  position:absolute;left:781px;top:187px;transform:translate(-50%,-50%);
+  z-index:11;pointer-events:none;white-space:nowrap;
+  font-family:var(--display);font-weight:600;letter-spacing:-.01em;
+  font-size:calc(25px * var(--kv,.976));
+  /* o mesmo vermelho neon das palavras que ela responde na frase */
+  color:var(--neon);
+  text-shadow:0 0 9px rgba(255,46,76,.5), 0 0 20px rgba(255,46,76,.3);
+  opacity:0;
   transition:opacity .42s ease, translate .55s cubic-bezier(.2,.86,.26,1);
 }
 .rot-val.de-dir{translate: 56px 0}
 .rot-val.de-esq{translate:-56px 0}
 .rot-val.on{opacity:1;translate:0 0}
 .rot-val b{font-weight:700;font-size:1.24em}
+
+/* AS QUATRO LETRAS DOS SUBNÍVEIS
+   Elas ainda procuram lugar: um dedo leva, dois em pinça mudam o
+   tamanho, a roda do mouse faz o mesmo no PC. Cada uma anda por conta
+   dela, e o que a mão achar fica guardado — quando ele mandar a folha
+   do Ctrl+C, elas ficam onde ficaram e a mão sai daqui. */
+.rot-sub{
+  /* o mesmo tijolo das cartas: canto redondo, a luz em cima e a sombra
+     embaixo. O corpo é uma variável só, e o resto — o vão e o canto —
+     vai em em, para o tijolo inteiro crescer junto com a letra. */
+  position:absolute;transform:translate(-50%,-50%);
+  z-index:14;white-space:nowrap;
+  padding:.16em .34em .2em;border-radius:.28em;
+  /* O anel claro é o que o separa do bloco: postos em cima de cartas da
+     mesma cor, sem ele o tijolo se dissolveria no fundo. A sombra funda
+     completa o serviço — ele fica visivelmente ACIMA da tabela. */
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),
+             0 0 0 .055em rgba(255,255,255,.94),
+             0 10px 26px rgba(32,28,66,.5);
+  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+  font-size:calc(38px * var(--kb,1));line-height:1;
+  color:#fff;
+  opacity:0;transition:opacity .45s ease;
+  pointer-events:auto;cursor:grab;touch-action:none;
+  user-select:none;-webkit-user-select:none;
+}
+/* quantos elétrons cabem ali, na mesma notação da distribuição */
+.rot-sub sup{font-size:.54em;vertical-align:.52em;font-weight:700;margin-left:.04em}
+
+/* OS FILHOTES
+   Tocado o tijolo, ele atira para fora, em arco, um chip pequeno para
+   cada família daquele bloco — e cada um pára em cima da sua. O arco
+   não é enfeite: é o que faz o olho seguir de onde saiu até onde
+   parou. Cada chip nasce já no lugar de chegada e voa de trás para a
+   frente; assim, se a animação não correr, ele ainda está certo. */
+.chip-mini sup{font-size:.56em;vertical-align:.5em;font-weight:700;margin-left:.03em}
+.chip-mini{
+  position:absolute;transform:translate(-50%,-50%);
+  z-index:15;white-space:nowrap;pointer-events:none;
+  padding:.14em .3em .18em;border-radius:.3em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),
+             0 0 0 1.5px rgba(255,255,255,.94),
+             0 7px 16px rgba(32,28,66,.45);
+  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+  font-size:22px;line-height:1;color:#fff;
+  /* achada a distância, eles voltam a ser desenho: não pegam o dedo,
+     que na fila do bloco f estava a engolir o toque das cartas de
+     pilha, logo debaixo deles */
+  pointer-events:none;
+  animation:voa-chip .62s cubic-bezier(.22,.68,.3,1) both;
+}
+@keyframes voa-chip{
+  0%   {translate:var(--dx) var(--dy);scale:.45;opacity:0}
+  20%  {opacity:1}
+  58%  {translate:calc(var(--dx) * .42) calc(var(--dy) * .42 - 82px)}
+  100% {translate:0 0;scale:1;opacity:1}
+}
+.chip-mini.pousou{animation:none;transition:opacity .45s ease}
+.chip-mini.volta{animation:volta-chip .5s cubic-bezier(.4,0,.72,.55) both}
+@keyframes volta-chip{
+  0%   {translate:0 0;scale:1;opacity:1}
+  45%  {translate:calc(var(--dx) * .42) calc(var(--dy) * .42 - 60px)}
+  100% {translate:var(--dx) var(--dy);scale:.45;opacity:0}
+}
+.rot-sub.on{opacity:1}
+.rot-sub.na-mao{cursor:grabbing}
 
 /* ---- o modo Pauling ----
    A mesma tabela deixa de falar de famílias e passa a falar de um
@@ -940,6 +1731,29 @@ body{
   transition:opacity .45s ease, background .2s, color .2s, transform .16s;
 }
 .cena.valencia-viva .botao-pauling{opacity:1;pointer-events:auto}
+
+/* O irmão menor, logo acima: acende e apaga os tijolos dos subníveis.
+   Um quinto menor que o de baixo, e centrado com ele — os dois lêem-se
+   como uma coluna de botões, e não como dois avulsos. */
+.botao-subnivel{
+  position:absolute;right:32px;bottom:94px;z-index:12;
+  opacity:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  width:51px;height:51px;border-radius:50%;
+  border:1.5px solid var(--indigo);background:#fff;color:var(--indigo);cursor:pointer;
+  font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.01em;
+  box-shadow:0 6px 16px rgba(32,28,66,.2);
+  transition:opacity .45s ease, background .2s, color .2s, transform .16s;
+}
+.cena.valencia-viva .botao-subnivel{opacity:1;pointer-events:auto}
+.botao-subnivel:hover{background:var(--indigo);color:#fff}
+.botao-subnivel:active{transform:scale(.94)}
+.botao-subnivel.aceso{background:var(--indigo);color:#fff}
+
+/* escondidos por ele, tijolos e filhotes saem em fade e ficam
+   guardados: o toque seguinte devolve a cena como ela estava */
+.mesa.subnivel.sem-subs .rot-sub,
+.mesa.subnivel.sem-subs .chip-mini{opacity:0;pointer-events:none}
 .botao-pauling:hover{background:var(--indigo);color:#fff}
 .botao-pauling:active{transform:scale(.94)}
 .botao-pauling.aceso{background:var(--indigo);color:#fff}
@@ -948,7 +1762,20 @@ body{
    não se fala mais de família, e elas só disputariam o olho com a
    distribuição. */
 .mesa.valencia.pauling .rot-a{opacity:0}
-.mesa.valencia .pc.aceso{z-index:22}
+
+/* E no slide do subnível o modo apaga tudo o que não for o elemento
+   escolhido: os tijolos e os filhotes saem em fade, a tabela recua
+   para o escuro, e no fim ficam em cena só ele e a distribuição dele.
+   Nada é removido — saindo o modo, tudo volta como estava. */
+.mesa.subnivel .rot-sub{transition:opacity .45s ease}
+.mesa.subnivel.pauling .rot-sub,
+.mesa.subnivel.pauling .chip-mini{opacity:0;pointer-events:none}
+.mesa.subnivel.pauling .pc{transition:opacity .5s ease}
+.mesa.subnivel.pauling .pc:not(.aceso){opacity:.3}
+.mesa.subnivel.pauling .buraco,
+.mesa.subnivel.pauling .rot-serie{opacity:0;pointer-events:none;transition:opacity .45s ease}
+.mesa.valencia .pc.aceso,
+.mesa.subnivel .pc.aceso{z-index:22}
 
 /* O BREU DO MODO PAULING
    Da altura das frases para baixo o palco escurece, e o elemento aceso
@@ -989,16 +1816,6 @@ body{
 }
 .diagrama-pauling.on{opacity:1}
 
-/* A frase deste slide é de pegar enquanto o professor a arruma: um
-   dedo a leva, dois em pinça mudam o tamanho. Ela já vive por left,
-   top e --esc, que são as mesmas três coisas que a montagem usa — e
-   por isso a folha do Ctrl+C sabe ler o que a mão fizer aqui. */
-#deck .slide.is-active [data-mont="regra9"]{
-  pointer-events:auto;cursor:grab;touch-action:none;
-  user-select:none;-webkit-user-select:none;
-}
-#deck .slide.is-active [data-mont="regra9"].na-mao{cursor:grabbing}
-
 /* o nome dele, logo acima — no escuro do modo Pauling, em letra clara */
 .rot-diagrama{
   position:absolute;left:387px;top:362px;transform:translate(-50%,-50%);
@@ -1036,6 +1853,12 @@ body{
   transition:opacity .4s ease, translate .45s cubic-bezier(.2,.86,.26,1);
 }
 .dist-val.on{opacity:1;translate:0 0}
+/* No slide do subnível a tabela sobe uma casa e meia, e a distribuição,
+   que mora dentro dela, subiria junto — iria parar em cima da frase.
+   Ela ganha de volta os 81 px: o lugar dela é medido contra o palco e a
+   frase, e não contra a tabela. O diagrama não: aquele mora no buraco
+   do bloco d, e tem de subir com ele. */
+.mesa.subnivel.subida .dist-val{top:275px}
 .dist-val .cam{
   display:inline-block;position:relative;margin:0 11px;
   white-space:nowrap;text-align:center;vertical-align:top;
@@ -1053,8 +1876,17 @@ body{
   color:var(--indigo);
 }
 .dist-val sup{font-size:.62em;vertical-align:.42em;font-weight:400}
-.dist-val .cam:last-child,
-.dist-val .cam:last-child .lb{color:var(--natural)}
+.mesa.valencia .dist-val .cam:last-child,
+.mesa.valencia .dist-val .cam:last-child .lb{color:var(--natural)}
+/* No slide do subnível quem se pinta é outro: o último a ser
+   PREENCHIDO, que nem sempre é o último a ser escrito. O ferro acaba a
+   linha em 4s², mas o de maior energia dele é o 3d⁶ — e é esse que
+   fica azul, sozinho. */
+/* a fila da energia tem mais peças que a das camadas — o ferro escreve
+   sete, e não quatro —, e por isso os vãos entre elas apertam */
+.mesa.subnivel .dist-val .cam{margin:0 6px}
+.mesa.subnivel .dist-val .ult{color:var(--energetico);font-weight:700}
+.mesa.subnivel .dist-val .quem{color:var(--energetico)}
 /* o símbolo do elemento, à frente da distribuição */
 .dist-val .quem{
   display:inline-block;margin-right:16px;vertical-align:top;
@@ -1064,6 +1896,15 @@ body{
 /* o elemento escolhido: cresce e passa por cima dos vizinhos */
 .pc.escolhida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),
   0 8px 20px rgba(80,40,0,.34), 0 0 0 2px rgba(226,162,43,.85)}
+
+/* e o gás nobre de onde a distribuição dele parte: um anel índigo e
+   meio passo à frente. Anel de outra cor de propósito — ele não é
+   parte da cruz, é outra coisa que a cena está dizendo ao mesmo
+   tempo —, e não apaga com o resto quando a cruz acende. */
+.pc.nobre-perto{z-index:19}
+.mesa.tem-realce .pc.nobre-perto{opacity:1}
+.pc.nobre-perto .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),
+  0 8px 20px rgba(32,28,66,.34), 0 0 0 2.5px var(--indigo)}
 
 /* os números: das linhas à esquerda, das colunas em cima */
 .ln,.cn{
@@ -1168,15 +2009,24 @@ body{
    Ele nasce junto com o brilho verde da tabela pronta, no canto de
    baixo à direita, e diz sempre o que o próximo toque vai fazer:
    separar as linhas, juntar, separar as colunas, juntar, e recomeça. */
+/* Uma bola com uma cruz de setas, e não mais uma frase: o braço aceso
+   é o SENTIDO EM QUE A TABELA VAI SE ABRIR — em pé quando são as
+   linhas que se separam, porque são elas que se afastam de cima para
+   baixo; deitado quando são as colunas. Juntar não acende nenhum dos
+   dois, que é justamente o que ele faz. */
 #botao-mesa{
   position:absolute;right:26px;bottom:18px;z-index:12;pointer-events:auto;
-  display:none;align-items:center;gap:9px;padding:9px 17px 9px 14px;
-  border-radius:22px;border:1.5px solid var(--indigo);background:#fff;
+  display:none;align-items:center;justify-content:center;
+  width:60px;height:60px;border-radius:50%;
+  border:1.5px solid var(--indigo);background:#fff;
   color:var(--indigo);cursor:pointer;
-  font-family:var(--display);font-weight:600;font-size:14px;
   box-shadow:0 7px 20px rgba(32,28,66,.2);
   transition:background .2s,color .2s,transform .16s,box-shadow .2s;
 }
+#botao-mesa g{opacity:.3;transition:opacity .28s ease, stroke .28s ease}
+#botao-mesa.eixo-junta g{opacity:.85}
+#botao-mesa.eixo-linhas  .vt,
+#botao-mesa.eixo-colunas .hz{opacity:1;stroke:var(--ouro-luz);stroke-width:2.8}
 /* Ele entra depois do brilho verde, subindo com um pequeno excesso, e
    pisca duas vezes em âmbar: nasce no meio da festa dos confetes, e sem
    isso passaria despercebido justamente na hora em que aparece.
@@ -1256,6 +2106,7 @@ body{
 /* o neon acende de verdade: a cor sozinha, num texto escuro sobre
    papel claro, não passa de um vermelho — o que faz neon é a luz que
    ele espalha em volta */
+.regra em.azul{color:var(--energetico);font-weight:700}
 .regra em.neon{
   color:var(--neon);font-weight:700;
   text-shadow:0 0 9px rgba(255,46,76,.55), 0 0 20px rgba(255,46,76,.32);
@@ -1438,6 +2289,16 @@ body.montagem .slide.is-active .solto.pego{
 #bar .btn:hover{background:rgba(76,63,191,.12);color:var(--indigo)}
 #bar .btn.on{background:rgba(226,162,43,.26);color:var(--ouro)}
 #bar .btn[hidden]{display:none}
+/* O quiz é o único botão escrito, e o único âmbar: ele não faz mais
+   uma coisa na aula — ele troca o que a tela é. Sem quiz no slide,
+   fica à vista mas sem resposta, para o lugar dele não dançar. */
+#bar .btn-quiz{
+  font-family:var(--display);font-weight:800;font-size:13.5px;letter-spacing:.01em;
+  color:var(--ouro);
+}
+#bar .btn-quiz:hover{background:rgba(226,162,43,.16);color:var(--ouro)}
+#bar .btn-quiz.on{background:var(--ouro-luz);color:#fff}
+#bar .btn-quiz[disabled]{opacity:.3;cursor:default;background:transparent;color:var(--ouro)}
 #bar .sep{width:1px;height:22px;background:var(--indigo-dim);margin:0 3px}
 #counter{font-family:var(--mono);font-size:13px;color:var(--tinta-dim);
   min-width:58px;text-align:center;user-select:none}
@@ -1598,15 +2459,22 @@ body.montagem .slide.is-active .solto.pego{
   <button class="btn" id="laser-btn" title="Apontar com o laser (L)" aria-label="Apontar com o laser">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M5.4 5.4l2.3 2.3M16.3 16.3l2.3 2.3M18.6 5.4l-2.3 2.3M7.7 16.3l-2.3 2.3"/></svg>
   </button>
-  <button class="btn" id="quadro-btn" title="Abrir o quadro (Q)" aria-label="Abrir o quadro">
+  <!-- a seta curva: o slide volta ao estado em que a aula o encontra -->
+  <button class="btn" id="restaura-btn" title="Restaurar este slide (R)" aria-label="Restaurar este slide">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 12a8.4 8.4 0 1 0 2.5-6"/><path d="M3.2 4.8v4.7h4.7"/></svg>
+  </button>
+  <button class="btn" id="quadro-btn" title="Abrir o quadro (Q)" aria-label="Abrir o quadro" hidden>
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12.5" rx="1.5"/><path d="M6.5 19.5h11"/><path d="M7 8.5h7M7 12h4.5"/></svg>
   </button>
+  <!-- o quiz do slide: de outra cor, porque é outro modo, e não mais
+       uma ferramenta da aula. Apagado nos slides que não têm quiz. -->
+  <button class="btn btn-quiz" id="quiz-btn" title="Quiz deste slide" aria-label="Quiz deste slide">quiz</button>
   <div class="sep"></div>
   <!-- a montagem: fora da aula, é aqui que a cena se arruma -->
-  <button class="btn" id="mont-btn" title="Modo montagem: arrastar e redimensionar (G)" aria-label="Modo montagem">
+  <button class="btn" id="mont-btn" title="Modo montagem: arrastar e redimensionar (G)" aria-label="Modo montagem" hidden>
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5v19M2.5 12h19"/><path d="M12 2.5l-2.6 2.8M12 2.5l2.6 2.8M12 21.5l-2.6-2.8M12 21.5l2.6-2.8"/><path d="M2.5 12l2.8-2.6M2.5 12l2.8 2.6M21.5 12l-2.8-2.6M21.5 12l-2.8 2.6"/></svg>
   </button>
-  <button class="btn" id="copia-btn" title="Copiar posições e tamanhos (Ctrl+C)" aria-label="Copiar posições e tamanhos">
+  <button class="btn" id="copia-btn" title="Copiar posições e tamanhos (Ctrl+C)" aria-label="Copiar posições e tamanhos" hidden>
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M15 5.5A2.5 2.5 0 0012.5 3H5.5A2.5 2.5 0 003 5.5v7A2.5 2.5 0 005.5 15"/></svg>
   </button>
   <div class="sep"></div>
@@ -1725,7 +2593,7 @@ const SLIDES = [
   { title:'A Tabela e os Elétrons de Valência',
     subtitle:'' },
 
-  { title:'A Tabela e o Diagrama de Pauling',
+  { title:'A Tabela e o Subnível mais Energético',
     subtitle:'' },
 
   { title:'A Tabela e a Distribuição Eletrônica',
@@ -1929,6 +2797,8 @@ let atual = 0, andando = false;
 function go(i, dir){
   i = Math.max(0, Math.min(SLIDES.length-1, i));
   if (i === atual || andando) return;
+  /* o mundo quântico é de um bloco de um slide: mudou o slide, ele fecha */
+  if (typeof mundoAberto !== 'undefined' && mundoAberto) fechaMundo();
   dir = dir || (i > atual ? 'next' : 'prev');
 
   const de    = atual;
@@ -1937,9 +2807,9 @@ function go(i, dir){
   /* Entre a capa e o slide 2 a passagem é o cubo girando. Entre o 2 e o
      3 nada desliza: o cabeçalho gira e a tabela vira a face — ver
      giraCabecalhos(). Do resto, o empurrão lateral. */
-  /* a tabela atravessa os slides 2 a 9 sem sair de cena: entre eles a
+  /* a tabela atravessa os slides 2 a 11 sem sair de cena: entre eles a
      passagem é o giro, e não o empurrão */
-  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 8 && i >= 1 && i <= 8;
+  const gira = Math.abs(de - i) === 1 && de >= 1 && de <= 10 && i >= 1 && i <= 10;
   const fx  = (atual === 0 || i === 0) ? 'cube' : (gira ? 'gira' : 'desl');
   const dur = fx === 'cube' ? 880 : (fx === 'gira' ? 1000 : 640);
 
@@ -1983,6 +2853,9 @@ function go(i, dir){
   }, dur);
 
   atual = i;
+  /* o quiz é de um slide só: mudou o slide, ele sai de cena */
+  if (typeof quizAtivo !== 'undefined' && quizAtivo) fechaQuiz();
+  if (typeof atualizaBotaoQuiz === 'function') atualizaBotaoQuiz();
   pinta();
 }
 function limpaFx(el){
@@ -2101,6 +2974,10 @@ function faceDe(i){
      a natureza dos elementos — nas três a cor tem outro trabalho */
   if (i === 2 || i === 4 || i === 7) return 'face2';
   if (i === 5 || i === 6 || i === 8) return 'ab';   /* grupos A e B, séries, valência */
+  /* O slide do subnível pinta a tabela pelos QUATRO BLOCOS: é deles
+     que ele fala, e é com essas mesmas quatro cores que os tijolos
+     s, p, d e f se apresentam. O da distribuição herda a mesma mesa. */
+  if (i === 9 || i === 10) return 'spdf';
   return 'familia';
 }
 /* A face diz a cor de toda a tabela; alguns slides põem uma cor por
@@ -2142,7 +3019,22 @@ function pintaExtras(mesa, i){
     c.firstElementChild.style.background = fundoDe(cor);
   });
 }
+/* ---- o bloco de cada elemento ----
+   É o subnível que ele acaba de preencher que dá o nome do bloco. O
+   hélio é a exceção que se explica sozinha: ele é 1s², e mora na
+   coluna 18 por causa da química dele, não do preenchimento. */
+function blocoSPDF(z){
+  if (serieDe(z)) return 'f';
+  if (z === 2)    return 's';
+  const col = posDe(z).col;
+  if (col <= 2)  return 's';
+  if (col >= 13) return 'p';
+  return 'd';
+}
+const corDoSubnivel = z => 'var(--bl-' + blocoSPDF(z) + ')';
+
 function fundoDaFace(c, face){
+  if (face === 'spdf')  return fundoDe(corDoSubnivel(+c.dataset.z));
   if (face === 'ab')    return fundoDe(corDoBloco(+c.dataset.col));
   if (face === 'face2') return FUNDO_FACE2;
   return c.classList.contains('encaixada') ? fundoFamilia : fundoCinza(+c.dataset.z);
@@ -2163,6 +3055,17 @@ const viuEixo = {linhas:false, colunas:false};
 
 function estadoMesaPara(mesa, i){
   limpaRealce(mesa);
+  /* AS DUAS CENAS DA DISTRIBUIÇÃO SÃO INDEPENDENTES
+     Chegar ao slide do subnível ou ao da distribuição é chegar a um
+     slide novo: os tijolos que o outro pôs, os filhotes que ele soltou
+     e as séries que ele abriu ficam para trás. Sem isto os dois
+     partilhavam a mesma mesa e a mesma memória, e o segundo abria já
+     com a cena do primeiro montada. */
+  const veioDe = +mesa.dataset.dist;
+  if ((i === 9 || i === 10) && veioDe !== i){
+    esqueceSubniveis();
+    Object.keys(SERIES).forEach(k => fechaSerie(mesa, k, false));
+  }
   poeModo(mesa, 'junta');
   if (mesa.classList.contains('viu-linhas'))  viuEixo.linhas  = true;
   if (mesa.classList.contains('viu-colunas')) viuEixo.colunas = true;
@@ -2171,7 +3074,7 @@ function estadoMesaPara(mesa, i){
   /* no slide dos grupos, só a numeração das linhas: as colunas já
      dizem o nome delas, e um número em cima de "1A" seria dizer duas
      vezes a mesma coisa com dois nomes diferentes */
-  mesa.classList.toggle('so-linhas', i === 5);
+  mesa.classList.toggle('so-linhas', i === 5 || i === 9 || i === 10);
   /* o que foi arrancado no slide dos blocos volta para a estrutura: os
      outros slides falam da tabela inteira, e não de pedaços dela */
   if (i !== 3 && descolados.size) refazBlocos(mesa);
@@ -2192,26 +3095,42 @@ function estadoMesaPara(mesa, i){
   if (i === 5) poeGrupos(mesa);
   /* o slide das séries: a tabela sobe uma casa para caber a fila que
      vai nascer embaixo dela, e fora dali as séries voltam para a pilha */
-  mesa.classList.toggle('subida', i === 6 || i === 7);
+  /* a mesma altura do slide das séries: sobe uma casa e meia */
+  mesa.classList.toggle('subida', i === 6 || i === 7 || i === 9 || i === 10);
   mesa.classList.toggle('series', i === 6 && !!slides[6].querySelector('[data-mont="regra7b"]'));
-  arrumaSeries(mesa, i === 6, i === 7);
+  /* o slide do subnível também as guarda como estão: abertas por ele,
+     abertas continuam ao voltar */
+  arrumaSeries(mesa, i === 6 || i === 9 || i === 10, i === 7);
   /* e no slide da natureza a tabela não responde ao dedo a não ser
      no urânio, que é quem dá a partida */
   mesa.classList.toggle('natureza', i === 7);
   apagaNaturais(mesa);
   if (i === 7) poeNaturais(mesa);
-  /* e o slide da valência: os representativos acesos, o resto apagado,
-     e as letras dos grupos no lugar dos números */
-  if (i !== 8) apagaValencia(mesa);
+  /* e os dois slides da distribuição: o da valência, com as letras dos
+     grupos e só os representativos acesos, e o do subnível, em que a
+     tabela inteira responde. O botão do canto é o mesmo nos dois. */
+  /* três cenas dividem esta mesa: a da valência, a do subnível e a da
+     distribuição. As duas últimas são a mesma tabela, com os mesmos
+     dois botões — muda o que o dedo faz nela. */
+  const cenaDist = (i === 8 || i === 9 || i === 10);
+  /* muda de cena — inclusive de uma destas para a outra: o que a
+     anterior deixou na mesa sai antes de a nova se montar */
+  if (!cenaDist || +mesa.dataset.dist !== i) apagaValencia(mesa);
+  mesa.dataset.dist = cenaDist ? i : '';
   mesa.classList.toggle('valencia', i === 8);
+  mesa.classList.toggle('subnivel', i === 9 || i === 10);
   marcaRepresentativos(mesa, i === 8);
-  if (i === 8){
-    const cena = cenaDe(slides[8]);
-    poeLetrasA(mesa);
-    poeBotaoPauling(cena, slides[8]);
+  if (cenaDist){
+    const sl = slides[i], cena = cenaDe(sl);
+    if (i === 8) poeLetrasA(mesa);
+    poeBotaoPauling(cena, sl);
+    if (i === 9 || i === 10) poeBotaoSubnivel(cena, sl);
     /* a cena só responde depois da frase — e o que já foi dito continua
        dito ao voltar ao slide */
-    const dita = !!slides[8].querySelector('[data-mont="regra9"]');
+    /* a cena da distribuição ainda não tem frase: nasce viva */
+    const dita = i === 10 ? true
+               : !!sl.querySelector(i === 8 ? '[data-mont="regra9"]'
+                                            : '[data-mont="regra10"]');
     mesa.classList.toggle('viva', dita);
     cena.classList.toggle('valencia-viva', dita);
     /* O canto tem de dizer o que a tabela é agora. Ao trocar de slide a
@@ -2223,8 +3142,23 @@ function estadoMesaPara(mesa, i){
     if (modoPauling) poeDiagrama(mesa); else tiraDiagrama(mesa);
     const b = cena.querySelector('.botao-pauling');
     if (b) b.classList.toggle('aceso', modoPauling);
+    const bs = cena.querySelector('.botao-subnivel');
+    if (bs) bs.classList.toggle('aceso', subniveisDitos && !subsEscondidos);
+    /* e o que já foi dito continua dito: as letras voltam onde a mão
+       as deixou */
+    if ((i === 9 || i === 10) && subniveisDitos){
+      poeSubniveis(mesa);
+      mesa.classList.toggle('sem-subs', subsEscondidos);
+      /* e os blocos que a aula já abriu tornam a atirar o tanto que
+         tinham atirado */
+      Object.keys(chipsFora).forEach(q => {
+        const big = mesa.querySelector('.rot-sub[data-q="'+q+'"]');
+        if (chipsFora[q] && big && !mesa.querySelector('.chip-mini[data-q="'+q+'"]'))
+          jogaChips(mesa, big, chipsFora[q]);
+      });
+    }
   }
-  if (i === 2 || i === 5) mesa.querySelectorAll('.ln, .cn').forEach(n => {
+  if (i === 2 || i === 5 || i === 9 || i === 10) mesa.querySelectorAll('.ln, .cn').forEach(n => {
     n.style.left = n.dataset.col
                  ? xDaColuna(+n.dataset.col, 'junta').toFixed(0)+'px'
                  : (xDaColuna(1,'junta') - CARTA_W/2 - 32).toFixed(0)+'px';
@@ -2240,8 +3174,8 @@ function estadoMesaPara(mesa, i){
    ou da régua —, que chega com ela já pronta, sem encenação. */
 function levaMesaPara(i, comGiro){
   const mesa = deck.querySelector('.mesa');
-  if (!mesa || i < 1 || i > 8) return mesa;
-  /* os slides 3 a 9 falam de uma tabela: ela chega neles montada,
+  if (!mesa || i < 1 || i > 10) return mesa;
+  /* os slides 3 a 11 falam de uma tabela: ela chega neles montada,
      mesmo que a aula não tenha passado pela montagem */
   const r2 = ROTEIROS[1];
   if (i >= 2 && r2 && r2.garanteMontada) r2.garanteMontada();
@@ -2309,10 +3243,22 @@ function atualizaMarca(){
   stage.classList.toggle('sem-marca', cheio);
 }
 
-const avanca = () => { if (!passoAdiante()) go(atual+1, 'next'); };
+/* MERGULHADO, ADIANTE É DENTRO DO MUNDO.
+   Estas duas são a única porta por onde se troca de slide sem ser à
+   mão — a seta do teclado e os botões da barra passam por aqui, e a
+   barra é fixa: mora POR CIMA do mundo, sobre a parte de baixo do
+   cubo. Sem esta guarda, um toque ali levava a aula embora com o
+   professor ainda mergulhado. Do mundo só se sai pelo Voltar. */
+const avanca = () => {
+  if (typeof mundoAberto !== 'undefined' && mundoAberto){ viraCubo(1); return; }
+  if (!passoAdiante()) go(atual+1, 'next');
+};
 /* voltar é, primeiro, desfazer o que se fez aqui; só quando não há mais
    o que desfazer é que se volta de slide */
-const volta  = () => { if (!passoAtras()) go(atual-1, 'prev'); };
+const volta  = () => {
+  if (typeof mundoAberto !== 'undefined' && mundoAberto){ viraCubo(-1); return; }
+  if (!passoAtras()) go(atual-1, 'prev');
+};
 
 slides[0].classList.add('is-active');
 
@@ -2343,7 +3289,7 @@ function montaMiniaturas(){
        miniatura mostrar o que CADA slide tem, ela é copiada para os
        oito que a usam, cada cópia na cara daquele slide. */
     const mesaViva = deck.querySelector('.mesa');
-    if (mesaViva && i >= 1 && i <= 8){
+    if (mesaViva && i >= 1 && i <= 10){
       let m = copia.querySelector('.mesa');
       if (!m){
         /* a tabela mora noutro slide: esta cópia recebe a sua */
@@ -2425,11 +3371,40 @@ function revela(el, classe){
    slide. É o mesmo caminho, ao contrário: a carta volta pelo arco, a
    regra sai pela esquerda por onde entrou, a tabela se desmonta. */
 function passoAtras(){
+  if (quizAtivo) return false;      /* a aula fica parada onde estava */
+  if (typeof mundoAberto !== 'undefined' && mundoAberto) return false;
   const r = ROTEIROS[atual];
   if (!r || !r.desfazer || !r.desfazer.length) return false;
   r.desfazer.pop()();
   atualizaPista();
   return true;
+}
+
+/* ---- restaurar o slide ----
+   Desfaz os passos do roteiro de trás para a frente, até não haver
+   mais o que desfazer, e depois arruma o que não é passo: o realce que
+   o dedo deixou e as séries que a aula abriu. É o mesmo caminho da
+   seta para trás, andado até o começo — e não um estado novo, que
+   teria de ser mantido em dia com cada cena que se acrescenta. */
+function restauraSlide(){
+  let guarda = 0;
+  while (passoAtras() && ++guarda < 60){}
+  const m = slides[atual] && slides[atual].querySelector('.mesa');
+  if (m){
+    limpaRealce(m);
+    /* recolhidas SEM encenação: restaurar não é uma cena, e a volta
+       animada deixa temporizadores no ar que ainda estão a esconder
+       cartas quando o slide seguinte já as quer à vista */
+    Object.keys(SERIES).forEach(k => fechaSerie(m, k, false));
+    /* E a mesa volta a CHEGAR. Desfazer os passos não bastava num
+       slide sem passo nenhum — o da distribuição não tem roteiro, e o
+       botão não tinha o que desfazer nele. Fingindo que ela vem de
+       outro slide, ela refaz o estado de quem entra pela primeira vez:
+       os tijolos, os filhotes, o modo e os botões todos do começo. */
+    m.dataset.dist = '';
+    estadoMesaPara(m, atual);
+  }
+  atualizaPista();
 }
 
 /* O passo que o próximo clique vai soltar, se houver um pronto.
@@ -2454,6 +3429,10 @@ function atualizaPista(){
 }
 
 function passoAdiante(){
+  if (quizAtivo) return false;      /* a aula fica parada onde estava */
+  /* e o mundo quântico é paralelo à aula: mergulhado, nada do que se
+     faz lá dentro mexe no que está cá fora */
+  if (typeof mundoAberto !== 'undefined' && mundoAberto) return false;
   const r = ROTEIROS[atual];
   if (!r) return false;
   /* a cena está à espera de um toque numa peça: a seta faz por ele —
@@ -2664,7 +3643,7 @@ function reiniciaCena2(){
   /* A história recomeça do zero: a tabela pode ter ficado morando no
      slide 3 ou no 4, e as cenas de lá guardam as frases já ditas. Sem
      esta limpeza, a aula seguinte teria duas tabelas na tela. */
-  for (let i = 1; i <= 8; i++){
+  for (let i = 1; i <= 10; i++){
     const c = slides[i] && slides[i].querySelector('.cena');
     if (c) c.remove();
   }
@@ -2675,6 +3654,7 @@ function reiniciaCena2(){
   if (typeof montaRoteiro7 === 'function') montaRoteiro7();
   if (typeof montaRoteiro8 === 'function') montaRoteiro8();
   if (typeof montaRoteiro9 === 'function') montaRoteiro9();
+  if (typeof montaRoteiro10 === 'function') montaRoteiro10();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
   gruposDitos.clear();               /* e sem nome de grupo dito */
   blocosNomeados = false;
@@ -3046,7 +4026,11 @@ function reiniciaCena2(){
      história nenhuma para encenar. */
   r.garanteMontada = () => {
     if (!cartas.size){ r.passos[0](); r.i = Math.max(r.i, 1); }
-    if (mesa.classList.contains('pronta')) return;
+    /* A marca sozinha não prova nada: desfeita a cena, as cartas são
+       destruídas e nascem de novo no monte, e a marca pode ter ficado
+       de uma montagem anterior. Só desiste quem vê carta na tabela. */
+    if (mesa.classList.contains('pronta') && cena.querySelector('.pc.na-tabela')) return;
+    mesa.classList.remove('pronta');
     montandoTudo = true;
     apagaConvite();
     cena.querySelectorAll('.pc').forEach(c => {
@@ -4008,6 +4992,7 @@ function abreSerie(mesa, chave){
   poeBuraco(mesa, chave);
   atualizaBotaoFull(mesa);
   atualizaPisca(mesa);
+  levaChipsF(mesa, true, false);      /* os chips do f saem com elas */
   /* o nome vem quando a última pousa */
   setTimeout(() => nomeiaSerie(mesa, chave), 14*55 + 480);
 }
@@ -4022,6 +5007,9 @@ function fechaSerie(mesa, chave, animada){
   tiraNome(mesa, chave);
   atualizaBotaoFull(mesa);
   atualizaPisca(mesa);
+  /* e entram com elas: primeiro a mudança de estado, depois o voo, para
+     os chips já saberem para onde ir */
+  setTimeout(() => levaChipsF(mesa, animada, true), 0);
   const s = SERIES[chave];
   for (let z = s.ate; z >= s.de; z--){
     const c = mesa.querySelector('.pc[data-z="'+z+'"]');
@@ -4299,15 +5287,40 @@ const CAMADAS = ['K','L','M','N','O','P','Q'];
 
 function distDe(z){
   const por = {};                     /* número da camada -> subníveis */
-  let resto = z;
+  let resto = z, ultimo = null;
   for (const sub of AUFBAU){
     if (resto <= 0) break;
     const n = +sub[0], q = Math.min(CABE[sub[1]], resto);
     resto -= q;
-    (por[n] = por[n] || []).push(sub + '<sup>' + q + '</sup>');
+    const fila = (por[n] = por[n] || []);
+    fila.push(sub + '<sup>' + q + '</sup>');
+    ultimo = {fila, k: fila.length - 1};
   }
+  /* O de maior energia é o ÚLTIMO A SER PREENCHIDO, e não o último a
+     ser escrito: reagrupada por camada, a distribuição do ferro acaba
+     a linha em 4s², mas quem entrou por último foi o 3d⁶. Fica marcado
+     aqui, onde a ordem de energia ainda se sabe; quem quiser pintá-lo
+     pinta pela marca. */
+  if (ultimo) ultimo.fila[ultimo.k] = '<span class="ult">' + ultimo.fila[ultimo.k] + '</span>';
   return Object.keys(por).map(Number).sort((a,b) => a-b)
     .map(n => [CAMADAS[n-1], por[n].join(' ')]);
+}
+
+/* A MESMA CONTA, NA ORDEM DA ENERGIA
+   distDe() reagrupa por camada, que é como a aula lê a valência. Aqui
+   os subníveis ficam na ordem em que se preenchem — a diagonal de
+   Pauling —, e por isso o de MAIOR energia é, literalmente, o último
+   da linha. É essa a leitura do slide do subnível. */
+function distEnergia(z){
+  const fila = [];
+  let resto = z;
+  for (const sub of AUFBAU){
+    if (resto <= 0) break;
+    const q = Math.min(CABE[sub[1]], resto);
+    resto -= q;
+    fila.push(sub + '<sup>' + q + '</sup>');
+  }
+  return fila;
 }
 
 let modoPauling = false;
@@ -4361,15 +5374,41 @@ function sobeColuna(mesa, col){
   /* o mesmo sentido do nome da família no slide 5: a conta entra vindo
      de dentro da tabela e sai para fora dela */
   r.className = 'rot-val ' + (col <= 9 ? 'de-dir' : 'de-esq');
+  r.dataset.mont = 'conta';
   r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons');
-  /* Acima da letra do grupo, e com folga: a letra sobe uma casa
-     inteira junto com a coluna, e as duas escritas ficariam encostadas
-     se a conta estivesse logo acima do lugar de repouso dela. Nas
-     pontas a frase se encolhe para dentro, para não sair pela borda. */
-  r.style.left = Math.max(180, Math.min(1100, xDaColuna(col, 'junta'))).toFixed(0) + 'px';
-  r.style.top  = '104px';
+  /* O lugar é da conta, e não de cada coluna: ele a arrumou uma vez,
+     no alto e à direita, e é dali que todas as famílias falam. O
+     sentido da entrada é que continua sendo de cada uma. */
   mesa.appendChild(r);
   revela(r, 'on');
+}
+
+/* ---- o gás nobre de onde a distribuição parte ----
+   O ANTERIOR mais próximo, e não o mais próximo em módulo: é dele que
+   a distribuição de um elemento parte quando se escreve pelo cerne. O
+   cloro é [Ne] 3s² 3p⁵ — o argônio está mais perto dele na conta, mas
+   vem depois, e não serve de ponto de partida. */
+const NOBRES = [2, 10, 18, 36, 54, 86, 118];
+function nobreDe(z){
+  let g = 0;
+  for (const n of NOBRES) if (n < z) g = n;
+  return g;
+}
+function desmarcaNobre(mesa){
+  mesa.querySelectorAll('.pc.nobre-perto').forEach(c => {
+    c.classList.remove('nobre-perto');
+    if (!c.classList.contains('escolhida'))
+      c.firstElementChild.style.setProperty('--sc', '1');
+  });
+}
+function marcaNobre(mesa, z){
+  desmarcaNobre(mesa);
+  const g = nobreDe(z);
+  if (!g) return;                      /* o hidrogênio e o hélio não têm */
+  const c = mesa.querySelector('.pc[data-z="'+g+'"]');
+  if (!c) return;
+  c.classList.add('nobre-perto');
+  c.firstElementChild.style.setProperty('--sc', '1.18');
 }
 
 /* ---- a segunda leitura: o elemento e a distribuição dele ---- */
@@ -4379,7 +5418,10 @@ function apagaElemento(mesa){
     if (c){
       c.classList.remove('aceso');
       c.firstElementChild.style.removeProperty('--sc');
-      c.firstElementChild.style.background = fundoDe(corDoBloco(+c.dataset.col));
+      /* a cor de volta é a da face daquele slide, e não a dos blocos:
+         no slide do subnível a tabela está pintada por família */
+      c.firstElementChild.style.background =
+        fundoDaFace(c, faceDe(mesa.classList.contains('subnivel') ? 9 : 8));
     }
     elementoAceso = null;
   }
@@ -4398,7 +5440,10 @@ function acendeElemento(mesa, carta){
 
   carta.classList.add('aceso');
   carta.firstElementChild.style.setProperty('--sc', '1.5');
-  carta.firstElementChild.style.background = fundoDe('var(--natural)');
+  /* verde no slide da valência, azul no do subnível: a mesma cena com
+     duas cores, porque são duas leituras */
+  carta.firstElementChild.style.background =
+    fundoDe(mesa.classList.contains('subnivel') ? 'var(--energetico)' : 'var(--natural)');
   elementoAceso = z;
 
   const d = document.createElement('div');
@@ -4410,62 +5455,24 @@ function acendeElemento(mesa, carta){
      subníveis dela */
   const conta = sub => [...sub.matchAll(/<sup>(\d+)<\/sup>/g)]
     .reduce((a, m) => a + (+m[1]), 0);
-  d.innerHTML = '<span class="quem">' + SIMBOLOS[z-1] + '</span>' +
-    distDe(z).map(([, sub]) =>
-      '<span class="cam">' + sub +
-        '<span class="br"></span><span class="lb">' + conta(sub) + '</span></span>').join('');
+  if (mesa.classList.contains('subnivel')){
+    /* na ordem da energia não há camada a agrupar: os subníveis vêm em
+       fila, sem chave e sem total, e o último é o de maior energia */
+    const fila = distEnergia(z);
+    d.innerHTML = '<span class="quem">' + SIMBOLOS[z-1] + '</span>' +
+      fila.map((sub, i) =>
+        '<span class="cam' + (i === fila.length - 1 ? ' ult' : '') + '">' +
+        sub + '</span>').join('');
+  } else {
+    d.innerHTML = '<span class="quem">' + SIMBOLOS[z-1] + '</span>' +
+      distDe(z).map(([, sub]) =>
+        '<span class="cam">' + sub +
+          '<span class="br"></span><span class="lb">' + conta(sub) + '</span></span>').join('');
+  }
   mesa.appendChild(d);
   cabeNaTela(d);
   revela(d, 'on');
 }
-
-/* ---- a frase, e a mão que a arruma ----
-   Só enquanto ele procura o lugar dela: quando mandar a folha, isto
-   sai e ela fica onde ficou, como saiu a mão da distribuição e a do
-   diagrama. */
-let fraseNaMao = null;
-
-/* A conta é a mesma da montagem, e por isso mexe nas MEDIDAS e não nos
-   estilos: é de lá que a folha do Ctrl+C tira o que escreve. Mexendo
-   só no estilo, a peça andava na tela e a folha continuava dizendo o
-   lugar antigo. */
-function ancoraFrase(){
-  const b = fraseNaMao, m = MEDIDAS.get(b.f);
-  b.base = centroDe(b.ptr);
-  b.x0 = m ? m.cx  : parseFloat(b.f.style.left) || 0;
-  b.y0 = m ? m.cy  : parseFloat(b.f.style.top)  || 0;
-  b.k0 = m ? m.esc : 1;
-}
-function comecaFrase(mesa, f, ev){
-  fraseNaMao = { f, ptr: new Map(),
-                 k: 1 / (fitScale * (leMesa(mesa).zoom || 1)) };
-  fraseNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  ancoraFrase();
-  f.classList.add('na-mao');
-  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
-}
-document.addEventListener('pointermove', (ev) => {
-  const b = fraseNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-  const agora = centroDe(b.ptr), m = MEDIDAS.get(b.f);
-  if (!m) return;
-  if (b.ptr.size > 1 && b.base.d > 12)
-    m.esc = Math.max(.4, Math.min(2.5, b.k0 * (agora.d / b.base.d)));
-  m.cx = b.x0 + (agora.cx - b.base.cx) * b.k;
-  m.cy = b.y0 + (agora.cy - b.base.cy) * b.k;
-  aplicaEl(b.f);
-});
-function soltaFrase(ev){
-  const b = fraseNaMao;
-  if (!b || !b.ptr.has(ev.pointerId)) return;
-  b.ptr.delete(ev.pointerId);
-  if (b.ptr.size){ ancoraFrase(); return; }
-  b.f.classList.remove('na-mao');
-  fraseNaMao = null;
-}
-document.addEventListener('pointerup', soltaFrase);
-document.addEventListener('pointercancel', soltaFrase);
 
 /* ---- o diagrama, que entra e sai com o modo ---- */
 function poeDiagrama(mesa){
@@ -4541,6 +5548,31 @@ function poeBotaoPauling(cena, sl){
     /* cada leitura recomeça limpa: o que a outra deixou sai de cena */
     baixaColuna(m);
     apagaElemento(m);
+    limpaRealce(m);
+  });
+  cena.appendChild(b);
+}
+
+function poeBotaoSubnivel(cena, sl){
+  if (cena.querySelector('.botao-subnivel')) return;
+  const b = document.createElement('button');
+  b.className = 'botao-subnivel';
+  b.type = 'button';
+  b.textContent = 'Subnível';
+  b.title = 'Mostrar ou esconder os tijolos dos subníveis';
+  b.addEventListener('click', () => {
+    const m = sl.querySelector('.mesa');
+    if (!m) return;
+    /* Da primeira vez ele põe os quatro em cena; depois é só acender e
+       apagar. Nada sai: o que ele esconde continua onde estava, e volta
+       como estava — inclusive os filhotes já soltos. */
+    if (!subniveisDitos){
+      subniveisDitos = true;
+      subsEscondidos = false;
+      poeSubniveis(m);
+    } else subsEscondidos = !subsEscondidos;
+    m.classList.toggle('sem-subs', subsEscondidos);
+    b.classList.toggle('aceso', subniveisDitos && !subsEscondidos);
   });
   cena.appendChild(b);
 }
@@ -4550,7 +5582,7 @@ function apagaValencia(mesa){
   baixaColuna(mesa);
   apagaElemento(mesa);
   modoPauling = false;
-  mesa.classList.remove('pauling', 'viva');
+  mesa.classList.remove('pauling', 'viva', 'sem-subs');
   const cena = mesa.parentNode;
   if (cena){
     const breu = cena.querySelector('.breu');
@@ -4558,8 +5590,8 @@ function apagaValencia(mesa){
     const b = cena.querySelector('.botao-pauling');
     if (b) b.classList.remove('aceso');
   }
-  mesa.querySelectorAll('.rot-a, .rot-val, .dist-val, .diagrama-pauling, .rot-diagrama')
-      .forEach(e => e.remove());
+  mesa.querySelectorAll('.rot-a, .rot-val, .dist-val, .diagrama-pauling,' +
+                        ' .rot-diagrama, .rot-sub, .chip-mini').forEach(e => e.remove());
   mesa.querySelectorAll('.pc').forEach(c => c.classList.remove('repr', 'aceso'));
 }
 
@@ -4595,6 +5627,297 @@ function montaRoteiro9(){
       const m = sl.querySelector('.mesa');
       if (m){ apagaValencia(m); m.classList.remove('viva'); }
       cena.classList.remove('valencia-viva');
+    });
+  });
+}
+
+/* ============================================================
+   SLIDE 10 · A TABELA E O SUBNÍVEL MAIS ENERGÉTICO
+   A mesma cena do slide anterior, com o mesmo botão no canto — mas
+   aqui a tabela inteira responde, e não só os representativos: o
+   subnível de maior energia é o que dá nome ao bloco, e a pergunta
+   vale tanto para o d quanto para o f.
+
+   O elemento tocado cresce em azul, e na distribuição dele fica azul
+   um subnível só: o último da ordem de Pauling, que é o de maior
+   energia. Ver distDe(), que é onde ele se marca.
+   ============================================================ */
+/* ---- as quatro letras dos subníveis ----
+   Onde cada bloco começa é o que elas vêm dizer. O lugar de fábrica é
+   o meio de cada bloco; o de verdade é o que a mão achar. */
+/* A cor de cada tijolo é a do bloco dele na tabela — a mesma tinta,
+   para o olho fazer a ligação sem que ninguém precise dizer. E o
+   expoente é a lotação do subnível: quantos elétrons cabem nele. */
+/* O lugar de partida é o que ele arrumou na mão: os quatro em fila na
+   faixa vazia do 1º período. A folha do Ctrl+C dá coordenadas do
+   PALCO, e a mesa deste slide está subida 81 px — por isso o y de cá é
+   o de lá mais 81. E o corpo é a fonte dele dividida pelos 38 de
+   origem. Nada disto tranca nada: eles continuam de pegar. */
+const BLOCOS_SUB = [
+  {q:'s', max: 2, x:323, y:196, k:1.453},
+  {q:'p', max: 6, x:461, y:199, k:1.418},
+  {q:'d', max:10, x:604, y:200, k:1.418},
+  {q:'f', max:14, x:729, y:202, k:1.495}
+];
+/* As famílias de cada bloco, pela coluna em que estão. O f são catorze
+   — uma por par lantanídeo/actinídeo —, e as colunas dele só existem
+   com as séries abertas: recolhidas, os catorze chips ficam em cima
+   das duas cartas de pilha, sete em cada. */
+const FAMILIAS_DO_BLOCO = {s:[1,2], p:[13,14,15,16,17,18],
+                           d:[3,4,5,6,7,8,9,10,11,12],
+                           f:[1,2,3,4,5,6,7,8,9,10,11,12,13,14]};
+/* O chip pára logo acima da PRIMEIRA carta da coluna dele, e não numa
+   linha única no alto: o bloco d começa no 4º período, e um rótulo lá
+   em cima ficaria longe do que nomeia. Doze pixels de folga entre um e
+   outro — a mesma que os do bloco f têm sobre a fila deles. */
+/* A distância do filhote à carta que ele nomeia, achada na mão: 60 px
+   acima do centro dela — pouco mais de uma linha. É uma regra só para
+   os quatro blocos, e os três filhotes que ele arrumou (s¹, p¹ e p⁶,
+   em linhas diferentes da tabela) deram os três o mesmo número. */
+const ACIMA_DA_CARTA = 60;
+/* quantos filhotes de cada bloco já saíram */
+const chipsFora = {s:0, p:0, d:0, f:0};
+
+/* a primeira linha ocupada de uma coluna: no grupo 2 é o berílio, no
+   13 é o boro, nos de transição é o escândio */
+function linhaDoTopo(mesa, col){
+  let topo = 7;
+  mesa.querySelectorAll('.pc[data-col="'+col+'"]').forEach(c => {
+    const l = +c.dataset.linha;
+    if (l >= 1 && l <= 7 && l < topo) topo = l;
+  });
+  return topo;
+}
+/* o que a mão já achou, para o refazer não perder o trabalho dele */
+const ondeOsSubs = {};
+/* os tijolos já foram postos em cena alguma vez, e estão escondidos ou
+   não: quem manda nos dois é o botão "Subnível", e não o roteiro */
+let subniveisDitos = false;
+let subsEscondidos = false;
+
+/* o restaurar do slide passa por aqui: a cena esquece que os pôs */
+function esqueceSubniveis(){
+  subniveisDitos = false;
+  subsEscondidos = false;
+  Object.keys(chipsFora).forEach(q => chipsFora[q] = 0);
+}
+
+function poeSubniveis(mesa){
+  BLOCOS_SUB.forEach(b => {
+    if (mesa.querySelector('.rot-sub[data-q="'+b.q+'"]')) return;
+    const r = document.createElement('div');
+    r.className = 'rot-sub';
+    r.dataset.q = b.q;
+    r.dataset.mont = 'sub-' + b.q;      /* nome próprio para a folha do Ctrl+C */
+    r.innerHTML = b.q + '<sup>' + b.max + '</sup>';
+    r.style.background = fundoDe('var(--bl-' + b.q + ')');
+    const j = ondeOsSubs[b.q];
+    if (j){
+      r.style.left = j.x.toFixed(0) + 'px';
+      r.style.top  = j.y.toFixed(0) + 'px';
+      r.style.setProperty('--kb', j.k.toFixed(3));
+    } else {
+      r.style.left = b.x + 'px';
+      r.style.top  = b.y + 'px';
+      r.style.setProperty('--kb', b.k.toFixed(3));
+    }
+    mesa.appendChild(r);
+    revela(r, 'on');
+  });
+}
+function tiraSubniveis(mesa){
+  Object.keys(chipsFora).forEach(q => recolheChips(mesa, q));
+  mesa.querySelectorAll('.rot-sub').forEach(e => {
+    e.classList.remove('on');
+    setTimeout(() => e.remove(), 500);
+  });
+}
+
+/* ---- os filhotes, e o arco que eles fazem ---- */
+/* O chip do f segue a série: aberta, ele vai para cima da coluna dele;
+   recolhida, para cima da carta de pilha onde a coluna está guardada.
+   A primeira carta da fila é o La (ou o Ac), que é do bloco d — por
+   isso a conta começa no seguinte. */
+function posDoChipF(mesa, i){
+  const chave = seriesAbertas.has('la') ? 'la'
+              : (seriesAbertas.has('ac') ? 'ac' : null);
+  if (chave){
+    const v = vagaDaSerie(SERIES[chave].de + 1 + i);
+    return {x: v.x, y: v.y - ACIMA_DA_CARTA};
+  }
+  const c = mesa.querySelector('.pc[data-z="' + (i < 7 ? 71 : 103) + '"]');
+  return c ? {x:parseFloat(c.style.left), y:parseFloat(c.style.top)} : null;
+}
+function alvoDoChip(mesa, q, i){
+  if (q === 'f') return posDoChipF(mesa, i);
+  const col = FAMILIAS_DO_BLOCO[q][i];
+  return {x: xDaColuna(col, 'junta'),
+          y: yDaLinha(linhaDoTopo(mesa, col), 'junta') - ACIMA_DA_CARTA};
+}
+/* e quando a série sai ou entra, os chips dela viajam junto, com o
+   mesmo compasso das cartas */
+function levaChipsF(mesa, animada, inverso){
+  const chips = [...mesa.querySelectorAll('.chip-mini[data-q="f"]')];
+  chips.forEach((ch, k) => {
+    const i = +ch.dataset.i;
+    const alvo = posDoChipF(mesa, i);
+    if (!alvo) return;
+    if (animada){
+      const atraso = (inverso ? (chips.length - k) : (k + 1)) * 55;
+      ch.style.transition = 'left .44s cubic-bezier(.25,.95,.3,1) ' + atraso + 'ms,' +
+                            ' top .44s cubic-bezier(.25,.95,.3,1) ' + atraso + 'ms';
+      ch.getBoundingClientRect();
+    } else ch.style.removeProperty('transition');
+    ch.style.left = alvo.x.toFixed(0) + 'px';
+    ch.style.top  = alvo.y.toFixed(0) + 'px';
+  });
+}
+/* um filhote, o de índice i, atirado de onde o tijolo estiver */
+function jogaChip(mesa, big, i, atraso){
+  const q = big.dataset.q;
+  const alvo = alvoDoChip(mesa, q, i);
+  if (!alvo) return;
+  const x0 = parseFloat(big.style.left), y0 = parseFloat(big.style.top);
+  const ch = document.createElement('div');
+  ch.className = 'chip-mini';
+  ch.dataset.q = q;
+  ch.dataset.i = i;
+  ch.dataset.mont = 'chip-' + q + (i + 1);   /* nome próprio na folha */
+  /* a letra e o número da família dentro do bloco: s¹ s², p¹…p⁶,
+     d¹…d¹⁰, f¹…f¹⁴ — que é a conta do preenchimento ideal */
+  ch.innerHTML = q + '<sup>' + (i + 1) + '</sup>';
+  ch.style.background = fundoDe('var(--bl-' + q + ')');
+  ch.style.left = alvo.x.toFixed(0) + 'px';
+  ch.style.top  = alvo.y.toFixed(0) + 'px';
+  ch.style.setProperty('--dx', (x0 - alvo.x).toFixed(0) + 'px');
+  ch.style.setProperty('--dy', (y0 - alvo.y).toFixed(0) + 'px');
+  ch.style.animationDelay = (atraso || 0) + 'ms';
+  mesa.appendChild(ch);
+  setTimeout(() => ch.classList.add('pousou'), 640 + (atraso || 0));
+  chipsFora[q] = Math.max(chipsFora[q], i + 1);
+}
+/* e a fila inteira, para quando a aula volta ao slide e o que já saiu
+   torna a sair */
+function jogaChips(mesa, big, quantos){
+  for (let i = 0; i < quantos; i++) jogaChip(mesa, big, i, i * 55);
+}
+function recolheChips(mesa, q){
+  chipsFora[q] = 0;
+  /* o tijolo pode ter andado desde o arremesso, e a série pode ter
+     aberto: a volta parte de onde cada um está agora */
+  const big = mesa.querySelector('.rot-sub[data-q="'+q+'"]');
+  const x0 = big ? parseFloat(big.style.left) : 0;
+  const y0 = big ? parseFloat(big.style.top)  : 0;
+  mesa.querySelectorAll('.chip-mini[data-q="'+q+'"]').forEach((ch, i) => {
+    if (big){
+      ch.style.removeProperty('transition');
+      ch.style.setProperty('--dx', (x0 - parseFloat(ch.style.left)).toFixed(0) + 'px');
+      ch.style.setProperty('--dy', (y0 - parseFloat(ch.style.top )).toFixed(0) + 'px');
+    }
+    ch.style.animationDelay = (i * 40) + 'ms';
+    ch.classList.add('volta');
+    setTimeout(() => ch.remove(), 620 + i*40);
+  });
+}
+/* Cada toque no tijolo solta o PRÓXIMO filhote — um por clique, para a
+   aula ir dizendo o nome de cada família. Soltos todos, o toque
+   seguinte chama a fila inteira de volta. */
+function alternaChips(mesa, big){
+  const q = big.dataset.q;
+  const fora = mesa.querySelectorAll('.chip-mini[data-q="'+q+'"]').length;
+  if (fora >= FAMILIAS_DO_BLOCO[q].length) recolheChips(mesa, q);
+  else jogaChip(mesa, big, fora, 0);
+}
+
+let subNaMao = null;
+function guardaSub(r){
+  ondeOsSubs[r.dataset.q] = {
+    x: parseFloat(r.style.left),
+    y: parseFloat(r.style.top),
+    k: parseFloat(r.style.getPropertyValue('--kb')) || 1
+  };
+}
+function ancoraSub(){
+  const b = subNaMao;
+  b.base = centroDe(b.ptr);
+  b.x0 = parseFloat(b.r.style.left) || 0;
+  b.y0 = parseFloat(b.r.style.top)  || 0;
+  b.k0 = parseFloat(b.r.style.getPropertyValue('--kb')) || 1;
+}
+function comecaSub(mesa, r, ev){
+  subNaMao = { r, mesa, ptr: new Map(), t0: Date.now(),
+               tx: ev.clientX, ty: ev.clientY, andou: false,
+               k: 1 / (fitScale * (leMesa(mesa).zoom || 1)) };
+  subNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  ancoraSub();
+  r.classList.add('na-mao');
+  try { stage.setPointerCapture(ev.pointerId); } catch(_){}
+}
+document.addEventListener('pointermove', (ev) => {
+  const b = subNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if (Math.hypot(ev.clientX - b.tx, ev.clientY - b.ty) > 8) b.andou = true;
+  const agora = centroDe(b.ptr);
+  if (b.ptr.size > 1 && b.base.d > 12)
+    b.r.style.setProperty('--kb',
+      Math.max(.3, Math.min(4, b.k0 * (agora.d / b.base.d))).toFixed(3));
+  b.r.style.left = Math.max(20, Math.min(1260,
+    b.x0 + (agora.cx - b.base.cx) * b.k)).toFixed(0) + 'px';
+  b.r.style.top  = Math.max(20, Math.min(760,
+    b.y0 + (agora.cy - b.base.cy) * b.k)).toFixed(0) + 'px';
+});
+function soltaSub(ev){
+  const b = subNaMao;
+  if (!b || !b.ptr.has(ev.pointerId)) return;
+  b.ptr.delete(ev.pointerId);
+  if (b.ptr.size){ ancoraSub(); return; }
+  b.r.classList.remove('na-mao');
+  guardaSub(b.r);
+  /* dedo que sobe onde desceu, depressa e sozinho, é toque: o tijolo
+     atira os filhotes dele, ou os chama de volta */
+  if (!b.andou && b.ptr.size === 0 && Date.now() - b.t0 < 600)
+    alternaChips(b.mesa, b.r);
+  subNaMao = null;
+}
+document.addEventListener('pointerup', soltaSub);
+document.addEventListener('pointercancel', soltaSub);
+
+function montaRoteiro10(){
+  const sl = slides[9];
+  const r = { i:0, espera:null, passos:[], desfazer:[] };
+  ROTEIROS[9] = r;
+  const cena = cenaDe(sl);
+  poeBotaoPauling(cena, sl);
+
+  r.passos.push(() => {
+    const cena = cenaDe(sl);
+    const t = document.createElement('div');
+    t.className = 'regra';
+    t.dataset.mont = 'regra10';
+    t.innerHTML = '<span class="regra-in">Pela posição é possível determinar o ' +
+      '<em class="azul">subnível de maior energia</em></span>';
+    cena.appendChild(t);
+    aplicaLayout(9);
+    revela(t, 'posta');
+
+    /* dita a frase, a tabela responde ao dedo e o botão do canto
+       aparece — a mesma classe do slide da valência, porque é a mesma
+       cena com outra leitura */
+    const mesa = sl.querySelector('.mesa');
+    if (mesa) mesa.classList.add('viva');
+    cena.classList.add('valencia-viva');
+
+    r.desfazer.push(() => {
+      r.i = 0;
+      t.classList.remove('posta');
+      setTimeout(() => t.remove(), 950);
+      const m = sl.querySelector('.mesa');
+      if (m){ apagaValencia(m); m.classList.remove('viva'); }
+      cena.classList.remove('valencia-viva');
+      esqueceSubniveis();
+      const bs = cena.querySelector('.botao-subnivel');
+      if (bs) bs.classList.remove('aceso');
     });
   });
 }
@@ -5102,6 +6425,8 @@ const descolados = new Set();            /* os tipos que já saíram da estrutur
    escorrega antes da hora desiste, e nada se move: é isso que separa
    arrancar de esbarrar. */
 let esperaBloco = null;
+/* o primeiro dos dois toques que abrem o mundo quântico */
+let toqueBloco = null;
 
 /* Um bloco só precisa ser arrancado enquanto estiver preso a algum
    outro. Tirados os vizinhos, ele fica sozinho na estrutura — não há
@@ -5278,7 +6603,7 @@ function soltaBloco(ev){
 /* a roda do mouse faz o que a pinça faz */
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
-  if (!m || !m.classList.contains('blocos')) return;
+  if (!m || quizAtivo || !m.classList.contains('blocos')) return;
   const c = ev.target.closest && ev.target.closest('.pc');
   if (!c) return;
   const tipo = tipoDe(+c.dataset.z);
@@ -5306,6 +6631,1239 @@ stage.addEventListener('wheel', (ev) => {
 }, {passive:false});
 
 /* ---- refazer: os blocos voltam para a estrutura ---- */
+
+/* ============================================================
+   O MUNDO QUÂNTICO DOS TIPOS
+   Dois toques num bloco já solto e mergulha-se nele. Quem abre é o
+   ouvinte da mesa, no slide dos tipos; aqui está o que acontece
+   depois — a folha que cobre o slide, o ponto de onde ela nasce e a
+   porta de volta. A tabela debaixo não é tocada: sair é apagar a
+   folha, e o bloco está onde o professor o deixou.
+   ============================================================ */
+let mundoAberto = null;
+
+/* o pó do vácuo, sorteado a cada mergulho */
+function poDoMundo(){
+  let s = '';
+  for (let i = 0; i < 44; i++){
+    s += '<i style="left:' + (Math.random()*1280).toFixed(0) + 'px' +
+         ';top:'  + (Math.random()*720).toFixed(0) + 'px' +
+         ';--s:'  + (1.5 + Math.random()*3).toFixed(1) + 'px' +
+         ';--fx:' + (Math.random()*90 - 45).toFixed(0) + 'px' +
+         ';--fy:' + (-20 - Math.random()*70).toFixed(0) + 'px' +
+         ';--o:'  + (.25 + Math.random()*.5).toFixed(2) +
+         ';--fd:' + (7 + Math.random()*7).toFixed(1) + 's' +
+         /* atraso negativo: cada ponto já entra no meio da deriva dele,
+            senão os 44 partiriam juntos e o pó pulsaria em bloco */
+         ';--dl:' + (-Math.random()*10).toFixed(1) + 's"></i>';
+  }
+  return s;
+}
+
+
+/* ============================================================
+   OS METAIS DO CUBO
+   Não há fotografia nenhuma no projeto, e metal desenhado com um
+   degradê chapado lê-se como plástico. O que faz o olho dizer "metal"
+   é o REFLEXO DO MUNDO na peça: escuro no alto (o céu longe), uma
+   banda clara no meio (a linha do horizonte), escuro embaixo (o chão)
+   e de novo um fio claro na base (a luz que volta do chão). É essa
+   banda do meio que cada lingote tem na frente, e é dela que vem a
+   impressão de superfície polida.
+
+   Os quatro tons de cada metal: o clarão do brilho, o claro, o meio e
+   o escuro. Trocar estes quatro valores troca o metal.
+   ============================================================ */
+const METAIS_CUBO = [
+  { id:'au', nome:'Ouro',
+    spec:'#FFFBEA', claro:'#FFD75E', medio:'#C98F12', escuro:'#6B4104', noite:'#2A1900' },
+  { id:'cu', nome:'Cobre',
+    spec:'#FFEEE2', claro:'#F49A62', medio:'#A85526', escuro:'#4E230A', noite:'#1F0C02' },
+  { id:'al', nome:'Alumínio',
+    spec:'#FFFFFF', claro:'#EDF2F7', medio:'#98A4B0', escuro:'#414A55', noite:'#171C22' }
+];
+
+function lingote(m){
+  const g = 'lg-' + m.id;
+  return '<svg class="lingote" viewBox="0 0 150 112" width="112" height="84"' +
+         ' aria-label="' + m.nome + '" role="img">' +
+    '<defs>' +
+      /* O topo vê o céu, e vê-o de viés: o degradê corre na diagonal
+         para a face não ficar de uma cor só. */
+      '<linearGradient id="' + g + 't" x1="0" y1="0" x2=".72" y2="1">' +
+        '<stop offset="0"   stop-color="' + m.spec  + '"/>' +
+        '<stop offset=".26" stop-color="' + m.claro + '"/>' +
+        '<stop offset=".62" stop-color="' + m.medio + '"/>' +
+        '<stop offset="1"   stop-color="' + m.escuro + '"/>' +
+      '</linearGradient>' +
+      /* A FRENTE, E É AQUI QUE SE GANHA OU SE PERDE O METAL.
+         Um degradê macio de claro a escuro dá plástico; o que dá metal
+         é o salto: quase-preto encostado em quase-branco, numa banda
+         estreita no meio — a linha do horizonte refletida na peça —, e
+         um fio claro na base, que é a luz que volta do chão. */
+      '<linearGradient id="' + g + 'f" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="' + m.noite  + '"/>' +
+        '<stop offset=".16" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".31" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".37" stop-color="' + m.spec   + '"/>' +
+        '<stop offset=".45" stop-color="' + m.claro  + '"/>' +
+        '<stop offset=".60" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".80" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".93" stop-color="' + m.noite  + '"/>' +
+        '<stop offset="1"   stop-color="' + m.claro  + '"/>' +
+      '</linearGradient>' +
+      /* a lateral está de costas para a luz, e só a quina de cima
+         apanha alguma coisa */
+      '<linearGradient id="' + g + 'l" x1="0" y1="0" x2=".3" y2="1">' +
+        '<stop offset="0"   stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".22" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".6"  stop-color="' + m.escuro + '"/>' +
+        '<stop offset="1"   stop-color="' + m.noite  + '"/>' +
+      '</linearGradient>' +
+      /* a sombra de contacto: sem ela a peça flutua */
+      '<radialGradient id="' + g + 's" cx=".5" cy=".5" r=".5">' +
+        '<stop offset="0" stop-color="rgba(0,0,0,.55)"/>' +
+        '<stop offset="1" stop-color="rgba(0,0,0,0)"/>' +
+      '</radialGradient>' +
+    '</defs>' +
+    '<ellipse cx="86" cy="101" rx="58" ry="9" fill="url(#' + g + 's)"/>' +
+    '<polygon points="30,26 106,16 140,38 58,52"  fill="url(#' + g + 't)"/>' +
+    '<polygon points="58,52 140,38 140,80 58,96"  fill="url(#' + g + 'f)"/>' +
+    '<polygon points="30,26 58,52 58,96 30,68"    fill="url(#' + g + 'l)"/>' +
+    /* o clarão que corre no topo, e o fio aceso na quina de cima: são
+       os dois detalhes que dizem que a superfície é polida */
+    '<polygon points="34,27 100,18 116,29 52,41" fill="' + m.spec + '" opacity=".34"/>' +
+    '<path d="M58,52 L140,38" stroke="' + m.spec + '" stroke-width="1.6" opacity=".75" fill="none"/>' +
+    '<path d="M30,26 L106,16" stroke="' + m.spec + '" stroke-width="1.2" opacity=".5" fill="none"/>' +
+    /* o risco do laminado, quase invisível, que quebra a superfície
+       lisa demais */
+    '<g opacity=".16" stroke="' + m.spec + '" stroke-width=".8">' +
+      '<path d="M62,58 L136,45"/><path d="M62,66 L136,53"/>' +
+      '<path d="M62,86 L136,72"/>' +
+    '</g>' +
+  '</svg>';
+}
+
+/* ============================================================
+   O MERCÚRIO
+   O metal que a frase excetua, e o único do cubo que se pega.
+
+   O truque de o líquido se fundir é o filtro "goo": borra-se o
+   desenho e depois espreme-se o canal alfa (o 22/-10 da matriz), o
+   que transforma o borrão em silhueta dura — e duas gotas que se
+   aproximam ganham um pescoço entre elas, como mercúrio de verdade.
+   Por cima da silhueta volta o desenho nítido (o feComposite atop),
+   senão o brilho de cada gota vinha borrado junto.
+
+   A física é simples e é o que convence: cada gota tem uma mola que a
+   puxa para o lugar de descanso, e o dedo EMPURRA — quanto mais perto,
+   mais forte. Pôr o dedo espalha as gotas; tirar, as molas trazem
+   tudo de volta e o goo funde outra vez. A gota também se estica na
+   direção em que corre: gota que corre depressa não é redonda.
+   ============================================================ */
+const HG_N = 7;                     /* a mãe e mais seis */
+const HG_CX = 170, HG_CY = 92;      /* o centro da poça, no viewBox */
+
+function mercurioSVG(){
+  let gotas = '', luzes = '';
+  for (let i = 0; i < HG_N; i++){
+    gotas += '<ellipse class="gota" data-i="' + i + '" fill="url(#hg-corpo)"></ellipse>';
+    luzes += '<ellipse class="luz" data-i="' + i + '" fill="#FFFFFF"></ellipse>';
+  }
+  return '<svg class="hg" viewBox="0 0 340 180">' +
+    '<defs>' +
+      '<filter id="hg-goo" x="-40%" y="-40%" width="180%" height="180%">' +
+        '<feGaussianBlur in="SourceGraphic" stdDeviation="9" result="borrao"/>' +
+        '<feColorMatrix in="borrao" mode="matrix" result="goo"' +
+        ' values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"/>' +
+        '<feComposite in="SourceGraphic" in2="goo" operator="atop" result="corpo"/>' +
+        /* A BORDA ESCURA, e é ela que decide se aquilo é mercúrio ou uma
+           pérola. Onde a superfície se curva para longe do olho ela
+           deixa de refletir e escurece — todo metal líquido tem esse
+           anel. Tira-se da própria silhueta fundida: encolhe-se a
+           silhueta e subtrai-se uma da outra, o que sobra é o anel, e
+           ele acompanha os pescoços entre as gotas que se separam. */
+        '<feMorphology in="goo" operator="erode" radius="3" result="dentro"/>' +
+        '<feComposite in="goo" in2="dentro" operator="out" result="anel"/>' +
+        '<feFlood flood-color="#161C23" flood-opacity=".78" result="tinta"/>' +
+        '<feComposite in="tinta" in2="anel" operator="in" result="borda"/>' +
+        '<feMerge><feMergeNode in="corpo"/><feMergeNode in="borda"/></feMerge>' +
+      '</filter>' +
+      /* O SOMBREADO É DA POÇA, E NÃO DE CADA GOTA.
+         Em coordenada do desenho (userSpaceOnUse), e não da caixa de
+         cada elipse: assim as sete gotas partilham o MESMO degradê, e
+         onde duas se sobrepõem não há emenda nenhuma — o que se vê é
+         um corpo só. Dado a cada gota o seu próprio degradê radial, a
+         poça em repouso lia-se como dois ovos encostados.
+         E é vertical porque a luz vem de cima: claro no alto, quase
+         preto na barriga de baixo. */
+      '<linearGradient id="hg-corpo" gradientUnits="userSpaceOnUse"' +
+      ' x1="0" y1="36" x2="0" y2="146">' +
+        '<stop offset="0"   stop-color="#FFFFFF"/>' +
+        '<stop offset=".14" stop-color="#EDF3F9"/>' +
+        '<stop offset=".30" stop-color="#B3BFCA"/>' +
+        '<stop offset=".47" stop-color="#6F7A85"/>' +
+        '<stop offset=".64" stop-color="#39424B"/>' +
+        '<stop offset=".79" stop-color="#1E242B"/>' +
+        /* o fio aceso na barriga de baixo: é a luz que volta do chão, e
+           é ele que separa o metal líquido de uma pérola */
+        '<stop offset=".87" stop-color="#93A0AC"/>' +
+        '<stop offset="1"   stop-color="#3E4750"/>' +
+      '</linearGradient>' +
+      '<radialGradient id="hg-sombra" cx=".5" cy=".5" r=".5">' +
+        '<stop offset="0" stop-color="rgba(0,0,0,.5)"/>' +
+        '<stop offset="1" stop-color="rgba(0,0,0,0)"/>' +
+      '</radialGradient>' +
+    '</defs>' +
+    '<ellipse cx="' + HG_CX + '" cy="152" rx="112" ry="13" fill="url(#hg-sombra)"/>' +
+    '<g filter="url(#hg-goo)">' + gotas + '</g>' +
+    /* os brilhos ficam FORA do filtro: são eles que dizem "molhado", e
+       borrados não diriam nada */
+    '<g class="hg-luzes" opacity=".82">' + luzes + '</g>' +
+  '</svg>';
+}
+
+/* o desenho e a conta de cada quadro */
+let hgAnim = null;
+function acordaMercurio(cx){
+  const svg = cx.querySelector('.hg');
+  if (!svg) return;
+  const gotas = [...svg.querySelectorAll('.gota')];
+  const luzes = [...svg.querySelectorAll('.luz')];
+  /* a mãe é grande e pesada; as outras vão diminuindo. O descanso não
+     é o mesmo ponto para todas: um cacho apertado dá à poça um contorno
+     de líquido, e não de círculo perfeito */
+  const est = gotas.map((el, i) => {
+    const a = (i / (HG_N - 1)) * Math.PI * 2;
+    /* em descanso as gotas fazem um cacho apertado e DEITADO: mercúrio
+       pousado espalha-se, e uma poça alta como uma bola não existe */
+    /* O cacho de descanso cabe INTEIRO dentro da mãe: uma gota que
+       sobressaia faz um calombo na beirada, e poça de mercúrio parada
+       não tem calombo. */
+    const r = i === 0 ? 0 : 10 + (i % 3) * 5;
+    const px = HG_CX + Math.cos(a) * r * 1.5;
+    const py = HG_CY + Math.sin(a) * r * .45;
+    const raio = i === 0 ? 42 : 25 - (i % 3) * 4;
+    return {
+      el, luz: luzes[i],
+      /* a mãe é uma poça, e não uma esfera: mais larga que alta */
+      rx0: i === 0 ? raio * 1.28 : raio,
+      ry0: i === 0 ? raio * .86  : raio * .94,
+      mae: i === 0,
+      massa: i === 0 ? 2.6 : 1,
+      /* metade das gotas contorna o dedo por um lado, metade pelo
+         outro — ver o empurrão, mais abaixo */
+      giro: i % 2 ? 1 : -1,
+      rx: px, ry: py, x: px, y: py, vx: 0, vy: 0
+    };
+  });
+
+  let dedo = null;
+  const local = (ev) => {
+    /* offsetX/offsetY vêm na coordenada do próprio SVG, e é o navegador
+       que faz a conta da face inclinada do cubo — daí a poça funcionar
+       certa mesmo com o cubo pousado de lado */
+    const k = 340 / (svg.clientWidth || 340);
+    return { x: ev.offsetX * k, y: ev.offsetY * k };
+  };
+  cx.addEventListener('pointerdown', (ev) => {
+    dedo = local(ev);
+    mexeuNaFace();
+    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
+    ev.preventDefault();
+    ev.stopPropagation();
+  });
+  cx.addEventListener('pointermove', (ev) => { if (dedo) dedo = local(ev); });
+  const larga = () => { dedo = null; };
+  cx.addEventListener('pointerup', larga);
+  cx.addEventListener('pointercancel', larga);
+  cx.addEventListener('pointerleave', larga);
+
+  /* AS CONSTANTES, E O PORQUÊ DE CADA UMA.
+     Só com empurrão radial o dedo não parte a poça: empurra-a inteira
+     para o lado oposto e ela empilha-se na parede, como quem varre.
+     O que faz partir é o GIRO — uma parcela de força perpendicular ao
+     dedo, para um lado nas gotas pares e para o outro nas ímpares:
+     elas contornam o dedo por lados diferentes, e a poça abre-se em
+     dois. O empurrão é fraco de propósito, e a mola forte: as gotas
+     não chegam à parede, e largar o dedo traz tudo de volta ao lugar
+     exato de onde saiu. */
+  const MOLA = .08, ATRITO = .87, EMPURRA = 110, ALCANCE = 96, GIRO = .9;
+  function quadro(){
+    est.forEach(g => {
+      let ax = (g.rx - g.x) * MOLA, ay = (g.ry - g.y) * MOLA;
+      if (dedo){
+        const dx = g.x - dedo.x, dy = g.y - dedo.y;
+        const d = Math.hypot(dx, dy) || .01;
+        if (d < ALCANCE){
+          /* quanto mais perto do dedo, mais forte o empurrão — e a mãe,
+             que é pesada, cede menos que as gotas */
+          const f = EMPURRA * (1 - d / ALCANCE) / (d * g.massa);
+          ax += dx * f;                 ay += dy * f;                  /* para longe */
+          ax += -dy * f * GIRO * g.giro; ay += dx * f * GIRO * g.giro;  /* e ao redor */
+        }
+      }
+      g.vx = (g.vx + ax) * ATRITO;
+      g.vy = (g.vy + ay) * ATRITO;
+      g.x += g.vx; g.y += g.vy;
+      /* A poça não sai do prato — e em altura anda menos ainda: as
+         gotas ficam na FAIXA da poça. Duas razões, e as duas contam.
+         Mercúrio numa superfície escorrega, não salta; e o sombreado
+         é um degradê vertical PARTILHADO por todas — é o que faz a
+         poça não ter emendas —, e nele a altura decide o tom: uma gota
+         que subisse muito sairia pálida, como uma pérola, enquanto a
+         poça ao lado dela estaria escura. Presas à faixa, todas ficam
+         no tom do corpo de onde saíram. */
+      g.x = Math.max(g.rx0 + 4, Math.min(340 - g.rx0 - 4, g.x));
+      g.y = Math.max(HG_CY - 8, Math.min(HG_CY + 40, g.y));
+
+      /* gota que corre estica-se na direção da corrida */
+      const v = Math.hypot(g.vx, g.vy);
+      const s = Math.min(.34, v * .035);
+      const ang = v > .2 ? Math.atan2(g.vy, g.vx) * 180 / Math.PI : 0;
+      const arx = g.rx0 * (1 + s), ary = g.ry0 * (1 - s * .8);
+      g.el.setAttribute('cx', g.x.toFixed(1));
+      g.el.setAttribute('cy', g.y.toFixed(1));
+      g.el.setAttribute('rx', arx.toFixed(1));
+      g.el.setAttribute('ry', ary.toFixed(1));
+      g.el.setAttribute('transform', 'rotate(' + ang.toFixed(1) + ' ' +
+                        g.x.toFixed(1) + ' ' + g.y.toFixed(1) + ')');
+      /* o brilho anda com a gota, no alto à esquerda, como o de uma
+         esfera iluminada de cima */
+      g.luz.setAttribute('cx', (g.x - arx * .3).toFixed(1));
+      g.luz.setAttribute('cy', (g.y - ary * .44).toFixed(1));
+      g.luz.setAttribute('rx', (arx * .26).toFixed(1));
+      g.luz.setAttribute('ry', (ary * .2).toFixed(1));
+      /* E O BRILHO SÓ EXISTE ENQUANTO A GOTA FOR UMA GOTA.
+         Fundida na poça ela não tem superfície própria, e sete brilhos
+         dentro de uma poça só faziam aquilo parecer uma bola de golfe.
+         Some quando encosta na mãe e acende quando se afasta — que é
+         exatamente quando ela passa a ser uma gota à parte. */
+      if (!g.mae){
+        const d = Math.hypot(g.x - est[0].x, g.y - est[0].y);
+        const o = Math.max(0, Math.min(1, (d - est[0].rx0 * .62) / 38));
+        g.luz.setAttribute('opacity', o.toFixed(2));
+      }
+    });
+    hgAnim = requestAnimationFrame(quadro);
+  }
+  cancelAnimationFrame(hgAnim);
+  quadro();
+}
+function dormeMercurio(){
+  cancelAnimationFrame(hgAnim);
+  hgAnim = null;
+}
+
+/* ============================================================
+   O MUNDO DOS METAIS
+   O cubo É o mundo dos metais: abre com ele já em cena, e cada frase
+   mora na face a que pertence. O clique adiante vira o cubo um quarto
+   de volta, e a face que chega traz a sua frase e a sua matéria — a
+   lista dos metais lê-se andando à roda da peça.
+   ============================================================ */
+const FACES_METAIS = [
+  { n:1, frase:'<b>1.</b> Exceto o <em>mercúrio</em>, são sólidos a temperatura ambiente',
+    corpo: () =>
+      '<div class="lingotes">' + METAIS_CUBO.map(lingote).join('') + '</div>' +
+      '<div class="nomes-metal">' +
+        METAIS_CUBO.map(m => '<span>' + m.nome + '</span>').join('') +
+      '</div>' +
+      '<div class="hg-cx">' + mercurioSVG() + '</div>' +
+      '<div class="hg-nome">Mercúrio</div>' },
+
+  { n:2, frase:'<b>2.</b> Conduzem calor com facilidade',
+    corpo: () =>
+      '<div class="face2-cx">' +
+        '<div class="barra-cx">' + barraSVG() + '</div>' +
+        '<div class="barra-nome">Encoste o fogo na barra</div>' +
+        '<div class="fogo">' + fogoHTML() + '</div>' +
+      '</div>' },
+
+  { n:3, frase:'<b>3.</b> São bons condutores de eletricidade',
+    corpo: () =>
+      '<div class="face3-cx">' +
+        fioSVG() +
+        '<span class="lampejo"></span>' +
+        '<div class="barra-mov">' + barraMovelSVG() + '</div>' +
+        '<div class="face3-dica">Arraste a barra até o fio descascado</div>' +
+      '</div>' },
+
+  { n:4, frase:'<b>4.</b> São maleáveis',
+    corpo: () =>
+      '<div class="face4-cx">' + martelaSVG() +
+        '<div class="face4-conta"></div>' +
+        '<div class="face4-dica">Toque para martelar</div>' +
+      '</div>' },
+
+  { n:5, frase:'<b>5.</b> São dúcteis — formam fios',
+    corpo: () =>
+      '<div class="face5-cx">' + fieiraSVG() +
+        '<div class="face5-conta"></div>' +
+        '<div class="face5-dica">Passe o dedo para puxar o fio</div>' +
+      '</div>' }
+];
+
+function cuboDosMetais(w){
+  const cx = document.createElement('div');
+  cx.className = 'cubo-cx';
+  let faces = '';
+  for (let i = 1; i <= 6; i++){
+    const d = FACES_METAIS.find(f => f.n === i);
+    faces += '<div class="face f' + i + (i === 1 ? ' a-frente' : '') + '">' +
+      (d ? '<div class="face-frase">' + d.frase + '</div>' + d.corpo()
+         : '<span class="face-n">' + i + '</span>') +
+      '</div>';
+  }
+  cx.innerHTML = '<div class="cubo">' + faces + '</div>';
+  w.querySelector('.mundo-zoom').appendChild(cx);
+  const cubo = cx.querySelector('.cubo');
+  revela(cubo, 'pousado');
+  /* A matéria de uma face só ganha vida quando a face está de frente e
+     o cubo parado: mexer numa parede em movimento é gesto perdido, e
+     duas simulações a correr ao mesmo tempo é conta paga à toa. */
+  setTimeout(() => acordaFace(cubo, 1), 2400);
+  return cubo;
+}
+
+/* ---- de face em face ---- */
+/* acender a face é uma coisa; dar-lhe vida é outra. A que chega
+   acende assim que o cubo começa a virar — é ela que o olho segue —,
+   mas a simulação dela só arranca quando o cubo pára. */
+function acendeFace(cubo, n){
+  cubo.querySelectorAll('.face').forEach(f => f.classList.remove('a-frente'));
+  const face = cubo.querySelector('.face.f' + n);
+  if (face) face.classList.add('a-frente');
+}
+function acordaFace(cubo, n){
+  dormeMercurio();
+  dormeCalor();
+  dormeEletro();
+  dormeMalha();
+  dormeFio();
+  acendeFace(cubo, n);
+  const face = cubo.querySelector('.face.f' + n);
+  if (!face) return;
+  if (n === 1) acordaMercurio(face.querySelector('.hg-cx'));
+  if (n === 2) acordaCalor(face);
+  if (n === 3) acordaEletro(face);
+  if (n === 4) acordaMalha(face);
+  if (n === 5) acordaFio(face);
+}
+/* Onde pôr o cubo para cada face ficar de frente. As quatro do lado
+   alcançam-se girando em Y; a de cima, tombando em X — e a dela leva
+   o mesmo Y da face 4, para ir da 4 para a 5 ser só um tombo. */
+/* ONDE PÔR O CUBO PARA CADA FACE CHEGAR DIREITA.
+   As quatro faces do lado ficam quase de frente com um resto de
+   inclinação — os -6° e -9° que dão volume à peça. A de cima NÃO
+   pode levar esse resto: o tombo é em X, mas o giro em Y vem antes
+   dele na conta do navegador, e a normal da face de cima aponta
+   segundo o eixo Y, que é justamente o eixo desse giro. O que aqueles
+   -9° fazem àquela face não é inclinar: é RODÁ-LA no próprio plano —
+   e os -6° do X, somados aos -90 do tombo, punham-na 6° virada para
+   trás. Chegava torcida, e a projeção torcida ainda estragava a conta
+   do dedo em cima dela. Por isso os ângulos aqui são os INTEIROS: a
+   face 5 vai a -90 exatos em X e a -360 em Y, que de pé é zero. */
+const POSE_FACE = {
+  1:{v:-9, t:-6}, 2:{v:-99, t:-6}, 3:{v:-189, t:-6},
+  4:{v:-279, t:-6}, 5:{v:-360, t:-90}, 6:{v:-360, t:90}
+};
+function viraCubo(dir){
+  if (!mundoAberto || !mundoAberto.cubo) return;
+  const cubo = mundoAberto.cubo;
+  if (!cubo.classList.contains('pousado')) return;   /* ainda a chegar */
+  /* Salta as faces ainda vazias. Enquanto só duas tiverem matéria, o
+     clique alterna entre essas duas; à medida que as outras forem
+     ganhando conteúdo, elas entram sozinhas na volta. */
+  const passo = (dir < 0) ? 5 : 1;                  /* -1 é andar ao contrário */
+  let n = mundoAberto.face;
+  for (let i = 0; i < 6; i++){
+    n = ((n - 1 + passo) % 6) + 1;
+    if (FACES_METAIS.some(f => f.n === n)) break;
+  }
+  if (n === mundoAberto.face) return;                /* não há outra face */
+  mundoAberto.face = n;
+  const pose = POSE_FACE[n];
+  cubo.classList.add('virando');
+  cubo.style.setProperty('--volta', pose.v + 'deg');
+  cubo.style.setProperty('--tomba', pose.t + 'deg');
+  acendeFace(cubo, mundoAberto.face);
+  /* a face nova só acorda quando o cubo pára nela */
+  clearTimeout(mundoAberto.tv);
+  dormeMercurio(); dormeCalor(); dormeEletro(); dormeMalha(); dormeFio();
+  /* o número da face vai COPIADO para dentro da espera: fechar o mundo
+     no meio de uma virada apagava o mundoAberto, e o temporizador
+     acordava a ler o que já não existia */
+  const alvo = mundoAberto.face;
+  mundoAberto.tv = setTimeout(() => acordaFace(cubo, alvo), 1000);
+}
+
+
+/* ============================================================
+   A FACE 2 · O CALOR QUE CORRE PELO METAL
+   A barra é o mesmo desenho dos lingotes, esticada. Por cima dela vai
+   uma CÓPIA das mesmas faces, pintada com um degradê horizontal em
+   modo 'screen' — luz somada ao metal, e não tinta por cima dele. Esse
+   degradê tem uma parada por célula da barra, e é ele que mostra o
+   calor: cada parada acende conforme a sua célula.
+
+   Debaixo do desenho corre uma condução de calor em uma dimensão: o
+   dedo injecta calor na célula que toca, cada célula passa parte do
+   que tem às vizinhas, e o conjunto perde um pouco para o ar a cada
+   quadro. É por isso que a incandescência SAI do ponto tocado e
+   caminha para as pontas, em vez de acender a barra toda de uma vez.
+   ============================================================ */
+const CAL_N = 17;                  /* as células da barra */
+const BAR_X1 = 40, BAR_X2 = 326;   /* onde a barra começa e acaba, no viewBox */
+
+function barraSVG(){
+  /* Aço, e escuro: a barra vive numa sala escura, e é a brasa que
+     tem de ser a coisa clara da cena. Com o metal branco, a
+     incandescência não tinha de onde subir. */
+  const m = { spec:'#EFF5FB', claro:'#AEBBC8', medio:'#5F6B78',
+              escuro:'#252C34', noite:'#0B0E12' };
+  let paradas = '';
+  for (let i = 0; i < CAL_N; i++){
+    paradas += '<stop class="cal" offset="' + (i/(CAL_N-1)*100).toFixed(1) + '%"' +
+               ' stop-color="#FF6A00" stop-opacity="0"/>';
+  }
+  const topo   = '40,30 300,18 326,40 66,54';
+  const frente = '66,54 326,40 326,84 66,100';
+  const lado   = '40,30 66,54 66,100 40,74';
+  return '<svg viewBox="0 0 340 120" aria-label="Barra de metal" role="img">' +
+    '<defs>' +
+      '<linearGradient id="ba-t" x1="0" y1="0" x2=".4" y2="1">' +
+        '<stop offset="0" stop-color="' + m.spec + '"/>' +
+        '<stop offset=".3" stop-color="' + m.claro + '"/>' +
+        '<stop offset="1" stop-color="' + m.medio + '"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="ba-f" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="' + m.noite  + '"/>' +
+        '<stop offset=".17" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".33" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".39" stop-color="' + m.spec   + '"/>' +
+        '<stop offset=".47" stop-color="' + m.claro  + '"/>' +
+        '<stop offset=".62" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".82" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".94" stop-color="' + m.noite  + '"/>' +
+        '<stop offset="1"   stop-color="' + m.claro  + '"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="ba-l" x1="0" y1="0" x2=".3" y2="1">' +
+        '<stop offset="0" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".3" stop-color="' + m.medio + '"/>' +
+        '<stop offset="1" stop-color="' + m.noite + '"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="ba-cal" gradientUnits="userSpaceOnUse"' +
+      ' x1="' + BAR_X1 + '" y1="0" x2="' + BAR_X2 + '" y2="0">' + paradas +
+      '</linearGradient>' +
+      '<radialGradient id="ba-s" cx=".5" cy=".5" r=".5">' +
+        '<stop offset="0" stop-color="rgba(0,0,0,.5)"/>' +
+        '<stop offset="1" stop-color="rgba(0,0,0,0)"/>' +
+      '</radialGradient>' +
+    '</defs>' +
+    '<ellipse cx="186" cy="106" rx="140" ry="11" fill="url(#ba-s)"/>' +
+    '<polygon points="' + topo   + '" fill="url(#ba-t)"/>' +
+    '<polygon points="' + frente + '" fill="url(#ba-f)"/>' +
+    '<polygon points="' + lado   + '" fill="url(#ba-l)"/>' +
+    '<path d="M66,54 L326,40" stroke="' + m.spec + '" stroke-width="1.4" opacity=".7" fill="none"/>' +
+    '<g class="brasa" style="mix-blend-mode:screen">' +
+      '<polygon points="' + topo   + '" fill="url(#ba-cal)"/>' +
+      '<polygon points="' + frente + '" fill="url(#ba-cal)"/>' +
+      '<polygon points="' + lado   + '" fill="url(#ba-cal)"/>' +
+    '</g>' +
+  '</svg>';
+}
+
+/* O FOGO é feito de luz, e não de uma forma recortada: quatro línguas
+   borradas, cada uma com o seu tempo e a sua inclinação, mais o halo
+   de brasa no chão e umas fagulhas. O desencontro dos tempos é o que
+   faz o bruxulear. */
+function fogoHTML(){
+  const linguas = [
+    { w:96, h:168, b:13, d:'.9s',  dl:'0s',    r:'3deg',  c1:'#FFD98C', c2:'#FF8E22', c3:'#D63A08' },
+    { w:72, h:138, b:10, d:'.66s', dl:'-.2s',  r:'-5deg', c1:'#FFEFC0', c2:'#FFAE38', c3:'#EF5C0A' },
+    { w:48, h:104, b:7,  d:'.5s',  dl:'-.35s', r:'6deg',  c1:'#FFFDF2', c2:'#FFD469', c3:'#FF8615' },
+    { w:28, h:68,  b:4,  d:'.42s', dl:'-.1s',  r:'-8deg', c1:'#FFFFFF', c2:'#FFF3C6', c3:'#FFB742' }
+  ];
+  let s = '<u></u>';
+  linguas.forEach(l => {
+    s += '<i style="--w:' + l.w + 'px;--h:' + l.h + 'px;--b:' + l.b + 'px' +
+         ';--d:' + l.d + ';--dl:' + l.dl + ';--r:' + l.r +
+         ';--c1:' + l.c1 + ';--c2:' + l.c2 + ';--c3:' + l.c3 + '"></i>';
+  });
+  for (let i = 0; i < 7; i++){
+    s += '<b style="--x:' + (Math.random()*54 - 27).toFixed(0) + 'px' +
+         ';--dx:' + (Math.random()*46 - 23).toFixed(0) + 'px' +
+         ';--fd:' + (1.1 + Math.random()*1.1).toFixed(2) + 's' +
+         ';--dl:' + (-Math.random()*2).toFixed(2) + 's"></b>';
+  }
+  return s;
+}
+
+/* a conta do calor, quadro a quadro */
+let calAnim = null;
+function acordaCalor(face){
+  const cx = face.querySelector('.face2-cx');
+  const svg = face.querySelector('.barra-cx svg');
+  const fogo = face.querySelector('.fogo');
+  if (!cx || !svg || !fogo) return;
+  const paradas = [...svg.querySelectorAll('stop.cal')];
+  const calor = new Array(CAL_N).fill(0);
+  /* a barra em coordenada da FACE: o desenho tem 340 de largura dentro
+     de uma caixa de 340 posta em (50,184) — logo, um para um */
+  const BX1 = 50 + BAR_X1, BX2 = 50 + BAR_X2, BY1 = 184 + 18, BY2 = 184 + 100;
+  let dedo = null;
+  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
+  const pega = (ev) => {
+    dedo = onde(ev);
+    fogo.classList.add('on');
+    mexeuNaFace();
+    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
+    ev.preventDefault(); ev.stopPropagation();
+  };
+  const larga = () => { dedo = null; fogo.classList.remove('on'); };
+  cx.addEventListener('pointerdown', pega);
+  cx.addEventListener('pointermove', (ev) => { if (dedo) dedo = onde(ev); });
+  cx.addEventListener('pointerup', larga);
+  cx.addEventListener('pointercancel', larga);
+  cx.addEventListener('pointerleave', larga);
+  quenta(fogo, paradas, calor, () => dedo, BX1, BX2, BY1, BY2);
+}
+
+/* O laço: a chama anda com o dedo, o calor entra por onde ela lambe o
+   metal, corre para as vizinhas e escapa devagar para o ar. */
+function quenta(fogo, paradas, calor, leDedo, BX1, BX2, BY1, BY2){
+  const CONDUZ = .19, PERDE = .995, ENTRA = .075;
+  (function quadro(){
+    const dedo = leDedo();
+    if (dedo){
+      fogo.style.left = dedo.x + 'px';
+      fogo.style.top  = dedo.y + 'px';
+      /* a chama entra pela barra quando o dedo está nela — ou um pouco
+         abaixo, que é onde a ponta da chama ainda lambe o metal */
+      if (dedo.x > BX1 && dedo.x < BX2 && dedo.y > BY1 - 10 && dedo.y < BY2 + 46){
+        const c = Math.round((dedo.x - BX1) / (BX2 - BX1) * (CAL_N - 1));
+        calor[c] = Math.min(1, calor[c] + ENTRA);
+      }
+    }
+    const novo = calor.slice();
+    for (let i = 0; i < CAL_N; i++){
+      const e = calor[i > 0 ? i - 1 : 0];
+      const d = calor[i < CAL_N - 1 ? i + 1 : CAL_N - 1];
+      novo[i] = (calor[i] + CONDUZ * (e + d - 2 * calor[i])) * PERDE;
+    }
+    for (let i = 0; i < CAL_N; i++){
+      calor[i] = novo[i];
+      const t = calor[i];
+      /* a cor da temperatura: do vermelho escuro ao laranja e daí ao
+         branco — é a mesma escala por que passa um ferro no fogo */
+      const verde = Math.round(40 + 200 * Math.min(1, t * 1.3));
+      const azul  = Math.round(Math.max(0, (t - .55) / .45) * 200);
+      paradas[i].setAttribute('stop-color', 'rgb(255,' + verde + ',' + azul + ')');
+      paradas[i].setAttribute('stop-opacity', (Math.max(0, t - .06) * .95).toFixed(3));
+    }
+    calAnim = requestAnimationFrame(quadro);
+  })();
+}
+function dormeCalor(){
+  cancelAnimationFrame(calAnim);
+  calAnim = null;
+}
+/* o clique dentro do mundo adianta o que há para adiantar */
+
+/* ============================================================
+   A FACE 3 · O CHOQUE
+   Um cabo atravessa a face e tem o meio DESCASCADO: ali o cobre está
+   nu. A barra de metal anda com o dedo; encostada no cobre, ela fecha
+   o circuito — e é a frase da face a acontecer, porque quem fecha o
+   circuito é o metal.
+
+   Enquanto os dois se tocarem: o arco estala entre eles (uma linha
+   quebrada, sorteada de novo a cada poucos quadros — arco parado não
+   é arco), as fagulhas saltam do ponto de contacto e caem, o cubo
+   sacode e um clarão azul lava a face. Separados, tudo pára no mesmo
+   instante.
+   ============================================================ */
+const FIO_Y = 158;                       /* a altura do cabo na face */
+const NU_X1 = 132, NU_X2 = 308;          /* onde a capa foi tirada */
+const BARRA_W = 170, BARRA_H = 56;
+
+function fioSVG(){
+  return '<svg class="eletro" viewBox="0 0 440 440" aria-hidden="true">' +
+    '<defs>' +
+      '<linearGradient id="el-capa" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#4A4F63"/>' +
+        '<stop offset=".38" stop-color="#23283A"/>' +
+        '<stop offset=".62" stop-color="#161A28"/>' +
+        '<stop offset="1" stop-color="#0B0E17"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="el-cobre" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="#7A3A12"/>' +
+        '<stop offset=".26" stop-color="#D98545"/>' +
+        '<stop offset=".42" stop-color="#FFD9AE"/>' +
+        '<stop offset=".58" stop-color="#C9702F"/>' +
+        '<stop offset="1"   stop-color="#5E2A0C"/>' +
+      '</linearGradient>' +
+      /* o brilho do arco e das fagulhas: sem ele a eletricidade fica
+         parecendo um risco branco */
+      '<filter id="el-brilho" x="-60%" y="-60%" width="220%" height="220%">' +
+        '<feGaussianBlur stdDeviation="3.4" result="b"/>' +
+        '<feMerge><feMergeNode in="b"/><feMergeNode in="b"/>' +
+        '<feMergeNode in="SourceGraphic"/></feMerge>' +
+      '</filter>' +
+    '</defs>' +
+    /* o cabo: capa dos dois lados, cobre nu no meio */
+    '<rect x="-4" y="' + (FIO_Y-15) + '" width="' + (NU_X1+8) + '" height="30" rx="12" fill="url(#el-capa)"/>' +
+    '<rect x="' + (NU_X2-4) + '" y="' + (FIO_Y-15) + '" width="' + (448-NU_X2) + '" height="30" rx="12" fill="url(#el-capa)"/>' +
+    /* os fios de cobre trançados, à vista */
+    '<g>' +
+      '<rect x="' + NU_X1 + '" y="' + (FIO_Y-9)  + '" width="' + (NU_X2-NU_X1) + '" height="7" rx="3.5" fill="url(#el-cobre)"/>' +
+      '<rect x="' + NU_X1 + '" y="' + (FIO_Y-1)  + '" width="' + (NU_X2-NU_X1) + '" height="7" rx="3.5" fill="url(#el-cobre)"/>' +
+      '<rect x="' + NU_X1 + '" y="' + (FIO_Y+7)  + '" width="' + (NU_X2-NU_X1) + '" height="7" rx="3.5" fill="url(#el-cobre)"/>' +
+    '</g>' +
+    /* as bocas da capa, onde ela foi cortada */
+    '<ellipse cx="' + NU_X1 + '" cy="' + FIO_Y + '" rx="5" ry="15" fill="#0E1119"/>' +
+    '<ellipse cx="' + NU_X2 + '" cy="' + FIO_Y + '" rx="5" ry="15" fill="#0E1119"/>' +
+    '<g class="arco" filter="url(#el-brilho)"></g>' +
+    '<g class="fagulhas"></g>' +
+  '</svg>';
+}
+
+/* a barra que anda: o mesmo aço da face 2, mais curto */
+function barraMovelSVG(){
+  const m = { spec:'#EFF5FB', claro:'#AEBBC8', medio:'#5F6B78',
+              escuro:'#252C34', noite:'#0B0E12' };
+  return '<svg viewBox="0 0 170 56" aria-label="Barra de metal" role="img">' +
+    '<defs>' +
+      '<linearGradient id="bm-t" x1="0" y1="0" x2=".4" y2="1">' +
+        '<stop offset="0" stop-color="' + m.spec + '"/>' +
+        '<stop offset=".3" stop-color="' + m.claro + '"/>' +
+        '<stop offset="1" stop-color="' + m.medio + '"/></linearGradient>' +
+      '<linearGradient id="bm-f" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="' + m.noite  + '"/>' +
+        '<stop offset=".18" stop-color="' + m.escuro + '"/>' +
+        '<stop offset=".34" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".40" stop-color="' + m.spec   + '"/>' +
+        '<stop offset=".48" stop-color="' + m.claro  + '"/>' +
+        '<stop offset=".64" stop-color="' + m.medio  + '"/>' +
+        '<stop offset=".84" stop-color="' + m.escuro + '"/>' +
+        '<stop offset="1"   stop-color="' + m.claro  + '"/></linearGradient>' +
+    '</defs>' +
+    '<polygon points="16,14 140,6 162,20 40,30" fill="url(#bm-t)"/>' +
+    '<polygon points="40,30 162,20 162,42 40,52" fill="url(#bm-f)"/>' +
+    '<polygon points="16,14 40,30 40,52 16,36" fill="' + m.escuro + '"/>' +
+    '<path d="M40,30 L162,20" stroke="' + m.spec + '" stroke-width="1.3" opacity=".7" fill="none"/>' +
+  '</svg>';
+}
+
+/* o arrasto da barra, o contacto e o estardalhaço */
+let eleAnim = null;
+function acordaEletro(face){
+  const cx = face.querySelector('.face3-cx');
+  const svg = face.querySelector('.eletro');
+  const barra = face.querySelector('.barra-mov');
+  const gArco = svg && svg.querySelector('.arco');
+  const gFag  = svg && svg.querySelector('.fagulhas');
+  if (!cx || !barra || !gArco) return;
+
+  let bx = 220, by = 330;            /* onde a barra está, em coordenada da face */
+  let pega = null;                   /* o desencontro entre o dedo e o centro dela */
+  const poe = () => { barra.style.left = bx + 'px'; barra.style.top = by + 'px'; };
+  poe();
+
+  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
+  cx.addEventListener('pointerdown', (ev) => {
+    const p = onde(ev);
+    /* só se o dedo desceu EM CIMA da barra: o resto da face não a puxa */
+    if (Math.abs(p.x - bx) > BARRA_W/2 || Math.abs(p.y - by) > BARRA_H/2) return;
+    pega = { dx: bx - p.x, dy: by - p.y };
+    cx.classList.add('pegando');
+    mexeuNaFace();
+    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
+    ev.preventDefault(); ev.stopPropagation();
+  });
+  cx.addEventListener('pointermove', (ev) => {
+    if (!pega) return;
+    const p = onde(ev);
+    bx = Math.max(BARRA_W/2 - 30, Math.min(470 - BARRA_W/2, p.x + pega.dx));
+    by = Math.max(BARRA_H/2 + 74, Math.min(408 - BARRA_H/2, p.y + pega.dy));
+    poe();
+  });
+  const solta = () => { pega = null; cx.classList.remove('pegando'); };
+  cx.addEventListener('pointerup', solta);
+  cx.addEventListener('pointercancel', solta);
+
+  /* a barra encosta no cobre nu? A caixa dela contra a faixa descascada */
+  const encosta = () => bx + BARRA_W/2 > NU_X1 && bx - BARRA_W/2 < NU_X2 &&
+                        by - BARRA_H/2 < FIO_Y + 14 && by + BARRA_H/2 > FIO_Y - 14;
+
+  const fagulhas = [];
+  let quadros = 0;
+  (function passo(){
+    quadros++;
+    const toca = encosta();
+    cx.classList.toggle('chocando', toca);
+    barra.classList.toggle('viva', toca);
+    const cubo = cx.closest('.cubo');
+    const caixa = cubo && cubo.parentNode;
+    if (caixa) caixa.classList.toggle('chocando', toca);
+
+    if (toca){
+      /* o ponto de contacto: onde a barra e o cobre se cruzam */
+      const px = Math.max(NU_X1 + 8, Math.min(NU_X2 - 8, bx));
+      const py = FIO_Y;
+      cx.style.setProperty('--lx', (px / 4.4).toFixed(1) + '%');
+      cx.style.setProperty('--ly', (py / 4.4).toFixed(1) + '%');
+      if (quadros % 3 === 0) gArco.innerHTML = arcoHTML(px, py, by - BARRA_H/2 + 12);
+      if (quadros % 2 === 0){
+        for (let i = 0; i < 2; i++){
+          const a = -Math.PI * (.15 + .7 * Math.random());
+          const v = 2.6 + Math.random() * 5.5;
+          fagulhas.push({ x: px + (Math.random()-.5)*22, y: py + (Math.random()-.5)*10,
+                          vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+                          vida: 26 + Math.random()*26, t: 0 });
+        }
+      }
+    } else if (gArco.childNodes.length){
+      gArco.innerHTML = '';
+    }
+    /* as fagulhas vivem por conta própria, e caem */
+    let d = '';
+    for (let i = fagulhas.length - 1; i >= 0; i--){
+      const f = fagulhas[i];
+      f.vy += .36; f.x += f.vx; f.y += f.vy; f.t++;
+      if (f.t > f.vida){ fagulhas.splice(i, 1); continue; }
+      const o = (1 - f.t / f.vida).toFixed(2);
+      d += '<circle cx="' + f.x.toFixed(1) + '" cy="' + f.y.toFixed(1) + '" r="' +
+           (1.2 + 1.6 * (1 - f.t / f.vida)).toFixed(1) + '" fill="#FFF3C8" opacity="' + o + '"/>';
+    }
+    gFag.innerHTML = d;
+    eleAnim = requestAnimationFrame(passo);
+  })();
+}
+/* a linha quebrada do arco, sorteada de novo a cada vez */
+function arcoHTML(x, y, yBarra){
+  let s = '';
+  for (let k = 0; k < 3; k++){
+    let d = 'M' + x.toFixed(0) + ',' + y.toFixed(0);
+    const n = 4, passo = (yBarra - y) / n;
+    for (let i = 1; i <= n; i++){
+      d += ' L' + (x + (Math.random()-.5) * 34).toFixed(0) + ',' + (y + passo*i).toFixed(0);
+    }
+    s += '<path d="' + d + '" fill="none" stroke="' + (k ? '#9FD8FF' : '#FFFFFF') +
+         '" stroke-width="' + (k ? 1.6 : 2.6) + '" opacity="' + (k ? .8 : 1) + '"/>';
+  }
+  return s;
+}
+function dormeEletro(){
+  cancelAnimationFrame(eleAnim);
+  eleAnim = null;
+  document.querySelectorAll('.cubo-cx.chocando, .face3-cx.chocando')
+    .forEach(e => e.classList.remove('chocando'));
+}
+
+/* ============================================================
+   A FACE 4 · A MALEABILIDADE — O MARTELO E A BIGORNA
+   Maleável é o que se deixa bater em FOLHA. Então a face tem a
+   máquina que faz isso: uma bigorna, um pedaço de ouro em cima dela e
+   um martelo. Cada toque é uma martelada — o martelo cai, o metal
+   perde metade da espessura e ganha em largura o que perdeu em
+   altura, porque a matéria não desaparece, muda de forma.
+
+   O que faz a demonstração valer é o NÚMERO ao lado: a espessura
+   começa em 20 mm e cada pancada corta-a quase ao meio. Em dez
+   marteladas está abaixo de um décimo de milímetro, e aí o metal já
+   deixa passar a luz — que é o que é uma folha de ouro. Nenhuma
+   deformação desenhada diz isso; o número diz.
+
+   Nada aqui pede requestAnimationFrame: a martelada é uma animação de
+   CSS e o achatamento é uma transição. O relógio do navegador faz o
+   trabalho todo.
+   ============================================================ */
+const MAR_X = 220, MAR_Y = 322;      /* onde o metal assenta na bigorna */
+const MAR_W = 92, MAR_H = 52;        /* o tarugo por bater */
+const MAR_ESP0 = 20;                 /* milímetros, antes da primeira pancada */
+
+function martelaSVG(){
+  const o = { spec:'#FFFBEA', claro:'#FFD75E', medio:'#C98F12', escuro:'#6B4104', noite:'#2A1900' };
+  return '<svg class="oficina" viewBox="0 0 440 440" aria-hidden="true">' +
+    '<defs>' +
+      '<linearGradient id="mt-ouro" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0"   stop-color="' + o.noite  + '"/>' +
+        '<stop offset=".16" stop-color="' + o.escuro + '"/>' +
+        '<stop offset=".33" stop-color="' + o.medio  + '"/>' +
+        '<stop offset=".41" stop-color="' + o.spec   + '"/>' +
+        '<stop offset=".52" stop-color="' + o.claro  + '"/>' +
+        '<stop offset=".70" stop-color="' + o.medio  + '"/>' +
+        '<stop offset=".88" stop-color="' + o.escuro + '"/>' +
+        '<stop offset="1"   stop-color="' + o.claro  + '"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="mt-aco" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#8A96A3"/><stop offset=".4" stop-color="#4A545F"/>' +
+        '<stop offset=".55" stop-color="#68737F"/><stop offset="1" stop-color="#191E25"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="mt-cabo" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#5A3C1E"/><stop offset=".4" stop-color="#A87438"/>' +
+        '<stop offset="1" stop-color="#3E2810"/>' +
+      '</linearGradient>' +
+      '<radialGradient id="mt-flash" cx=".5" cy=".5" r=".5">' +
+        '<stop offset="0" stop-color="rgba(255,246,214,.95)"/>' +
+        '<stop offset=".5" stop-color="rgba(255,190,90,.45)"/>' +
+        '<stop offset="1" stop-color="rgba(255,150,40,0)"/>' +
+      '</radialGradient>' +
+    '</defs>' +
+    /* a bigorna */
+    '<path d="M120,330 L320,330 L306,352 L296,392 L144,392 L134,352 Z" fill="url(#mt-aco)"/>' +
+    '<rect x="112" y="322" width="216" height="12" rx="4" fill="#7C8794"/>' +
+    '<rect x="112" y="322" width="216" height="3" fill="#AAB5C1"/>' +
+    /* o metal: um grupo que só muda de escala, e a escala transita */
+    '<g class="lamina">' +
+      '<rect x="' + (MAR_X - MAR_W/2) + '" y="' + (MAR_Y - MAR_H) + '"' +
+        ' width="' + MAR_W + '" height="' + MAR_H + '" rx="7"' +
+        ' fill="url(#mt-ouro)" stroke="rgba(255,255,255,.35)" stroke-width="1.1"/>' +
+    '</g>' +
+    '<circle class="flash" cx="' + MAR_X + '" cy="' + (MAR_Y - 14) + '" r="70"' +
+      ' fill="url(#mt-flash)" opacity="0"/>' +
+    '<g class="fagulhas-m"></g>' +
+    /* o martelo, que pendura de um pino lá em cima */
+    /* O MARTELO é desenhado NA POSIÇÃO DE BATER: pendurado a direito
+       do pino, com a cara mesmo em cima do metal. A posição de
+       descanso é uma rotação a partir daqui, e não o contrário — foi
+       assim que a cara passou a cair onde o metal está. */
+    '<g class="martelo">' +
+      '<rect x="' + (MAR_X-8) + '" y="92" width="16" height="146" rx="7" fill="url(#mt-cabo)"/>' +
+      '<rect x="' + (MAR_X-52) + '" y="224" width="104" height="46" rx="7" fill="url(#mt-aco)"/>' +
+      '<rect x="' + (MAR_X-52) + '" y="224" width="104" height="7" rx="3" fill="#9AA5B2"/>' +
+      '<rect x="' + (MAR_X-60) + '" y="232" width="12" height="30" rx="4" fill="#39424C"/>' +
+    '</g>' +
+  '</svg>';
+}
+
+function acordaMalha(face){
+  const cx = face.querySelector('.face4-cx');
+  const svg = face.querySelector('.oficina');
+  const dica = face.querySelector('.face4-dica');
+  const conta = face.querySelector('.face4-conta');
+  if (!cx || !svg) return;
+  const lamina = svg.querySelector('.lamina');
+  const martelo = svg.querySelector('.martelo');
+  const flash = svg.querySelector('.flash');
+  const gFag = svg.querySelector('.fagulhas-m');
+
+  /* o estado, refeito a cada acordar: virar o cubo e voltar traz o
+     tarugo por bater */
+  let pancadas = 0, sx = 1, sy = 1, batendo = false;
+  lamina.style.transform = 'scale(1,1)';
+  lamina.style.opacity = '1';
+  gFag.innerHTML = '';
+  const escreve = () => {
+    const esp = MAR_ESP0 * sy;
+    const txt = esp >= 1 ? esp.toFixed(1).replace('.', ',') + ' mm'
+                         : (esp * 1000).toFixed(0) + ' µm';
+    if (conta) conta.innerHTML = '<b>' + txt + '</b><i>de espessura</i>';
+    if (dica) dica.textContent = esp < .1 ? 'Isto é uma folha de ouro'
+                               : (pancadas ? 'Bata outra vez' : 'Toque para martelar');
+  };
+  escreve();
+
+  function bate(){
+    if (batendo) return;
+    batendo = true;
+    martelo.classList.remove('bate');
+    void martelo.getBBox();                  /* recomeça a animação */
+    martelo.classList.add('bate');
+    /* o impacto acontece a meio da animação do martelo, e é aí que o
+       metal cede — não no princípio nem no fim */
+    setTimeout(() => {
+      pancadas++;
+      /* metade da espessura, e a largura leva o que a altura perdeu */
+      sy *= .58;
+      sx = Math.min(4.2, sx * 1.30);
+      /* Quem conta a espessura de verdade é o NÚMERO. O desenho guarda
+         um mínimo visível — a folha de ouro de verdade não se veria de
+         lado nenhum, e uma face vazia não demonstra coisa alguma. */
+      lamina.style.transform = 'scale(' + sx.toFixed(3) + ',' +
+                               Math.max(.075, sy).toFixed(4) + ')';
+      /* muito fina, a folha começa a deixar passar a luz */
+      lamina.style.opacity = (sy < .02 ? .55 : sy < .06 ? .78 : 1).toFixed(2);
+      escreve();
+      cx.classList.remove('bateu'); void cx.offsetWidth; cx.classList.add('bateu');
+      flash.style.opacity = '1';
+      setTimeout(() => { flash.style.opacity = '0'; }, 130);
+      /* as lascas que saltam da pancada */
+      let d = '';
+      for (let i = 0; i < 9; i++){
+        const a = -Math.PI * (.1 + .8 * Math.random());
+        const v = 26 + Math.random() * 44;
+        d += '<circle cx="' + (MAR_X + Math.cos(a) * v).toFixed(0) + '" cy="' +
+             (MAR_Y - 8 + Math.sin(a) * v * .6).toFixed(0) + '" r="' +
+             (1 + Math.random() * 2).toFixed(1) + '" fill="#FFE9A8" opacity="' +
+             (.5 + Math.random() * .5).toFixed(2) + '"/>';
+      }
+      gFag.innerHTML = d;
+      setTimeout(() => { gFag.innerHTML = ''; }, 320);
+    }, 190);
+    setTimeout(() => { batendo = false; }, 560);
+  }
+
+  cx.addEventListener('pointerdown', (ev) => {
+    bate();
+    ev.preventDefault(); ev.stopPropagation();
+  });
+}
+function dormeMalha(){}
+
+/* ============================================================
+   A FACE 5 · A DUCTILIDADE — A FIEIRA
+   Dúctil é o que se deixa estirar em FIO. A face tem a máquina que
+   faz isso: um tarugo grosso à esquerda, uma fieira ao meio — a placa
+   de aço com um furo — e, do outro lado do furo, o fio fino que sai.
+   Entra grosso, sai fino: a imagem inteira da propriedade está nessa
+   travessia, e é por isso que a fieira vale mais aqui do que um fio
+   solto no ar.
+
+   Puxar é passar o dedo para a direita. O fio SERPENTEIA — chega à
+   beirada, dobra, volta na linha de baixo — porque um fio a direito
+   pararia na parede da face ao fim de meio metro, e o que espanta na
+   ductilidade é justamente o comprimento: o número ao lado conta os
+   metros enquanto o tarugo à esquerda encolhe. De um grama de ouro
+   tiram-se três quilómetros de fio, e é essa a conta que a face
+   quer que a turma sinta.
+   ============================================================ */
+const FI_X = 176, FI_Y = 250;        /* a fieira: onde o furo está */
+const FI_LX = 372, FI_LY = 384;      /* até onde o fio pode serpentear */
+const FI_DY = 34;                    /* a distância entre voltas */
+
+function fieiraSVG(){
+  const m = { spec:'#F2F7FC', claro:'#B9C5D1', medio:'#6E7B88', escuro:'#2C343C', noite:'#0E1216' };
+  const c = { spec:'#FFE2CE', claro:'#F09A63', medio:'#B4602A', escuro:'#5E2C0E', noite:'#200D03' };
+  const barra = (id, p) =>
+    '<linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0"   stop-color="' + p.noite  + '"/>' +
+      '<stop offset=".18" stop-color="' + p.escuro + '"/>' +
+      '<stop offset=".35" stop-color="' + p.medio  + '"/>' +
+      '<stop offset=".42" stop-color="' + p.spec   + '"/>' +
+      '<stop offset=".52" stop-color="' + p.claro  + '"/>' +
+      '<stop offset=".70" stop-color="' + p.medio  + '"/>' +
+      '<stop offset=".88" stop-color="' + p.escuro + '"/>' +
+      '<stop offset="1"   stop-color="' + p.claro  + '"/>' +
+    '</linearGradient>';
+  return '<svg class="bancada" viewBox="0 0 440 440" aria-hidden="true">' +
+    '<defs>' + barra('fi-aco', m) + barra('fi-cobre', c) + '</defs>' +
+    /* o tarugo, que vem de fora da face e entra no furo */
+    '<rect class="tarugo" x="-10" y="' + (FI_Y - 21) + '" width="' + (FI_X + 4) + '"' +
+      ' height="42" rx="6" fill="url(#fi-cobre)"/>' +
+    /* o fio que já saiu */
+    /* O FIO VAI EM COR CHAPADA, e em três traços sobrepostos: o escuro
+       da beirada, o corpo de cobre e um fio de luz por cima. Pintado
+       com o degradê do tarugo, ele saía preto na volta de cima e claro
+       na de baixo — porque um degradê de caixa segue a caixa do
+       caminho, e o caminho serpenteia por meia face. */
+    '<path class="fio" d="" fill="none" stroke="#3A1A06" stroke-width="7.5"' +
+      ' stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path class="fio-luz" d="" fill="none" stroke="#C87838" stroke-width="5"' +
+      ' stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path class="fio-alto" d="" fill="none" stroke="#FFD1A6" stroke-width="1.6"' +
+      ' stroke-linecap="round" stroke-linejoin="round" opacity=".75"' +
+      ' transform="translate(0,-1.4)"/>' +
+    /* A FIEIRA por cima de tudo: o fio nasce por trás dela, e é isso\n' +
+    '   que faz o furo parecer um furo */
+    '<g class="fieira-placa">' +
+      '<rect x="' + (FI_X - 16) + '" y="' + (FI_Y - 82) + '" width="32" height="164" rx="6"' +
+        ' fill="url(#fi-aco)" stroke="rgba(255,255,255,.3)" stroke-width="1.2"/>' +
+      '<ellipse cx="' + (FI_X + 16) + '" cy="' + FI_Y + '" rx="5" ry="9" fill="#0A0D12"/>' +
+      '<ellipse cx="' + (FI_X + 16) + '" cy="' + FI_Y + '" rx="3" ry="5.5" fill="#1B2129"/>' +
+    '</g>' +
+    '<g class="brilho-furo"></g>' +
+  '</svg>';
+}
+
+/* o caminho do fio, dado o comprimento já puxado: para a direita,
+   dobra, para a esquerda, dobra — e assim por diante */
+function fioSerpente(L){
+  let x = FI_X + 16, y = FI_Y, dir = 1, resta = L;
+  let d = 'M' + x + ',' + y;
+  let guarda = 0;
+  while (resta > 0 && guarda++ < 40){
+    const parede = dir > 0 ? FI_LX : 40;
+    const trecho = Math.abs(parede - x);
+    if (resta <= trecho){
+      x += dir * resta; resta = 0;
+      d += ' L' + x.toFixed(0) + ',' + y.toFixed(0);
+      break;
+    }
+    x = parede; resta -= trecho;
+    d += ' L' + x.toFixed(0) + ',' + y.toFixed(0);
+    if (y + FI_DY > FI_LY) break;                 /* a face acabou */
+    const volta = Math.min(resta, FI_DY * 1.6);
+    resta -= volta;
+    d += ' Q' + (x + dir * 26).toFixed(0) + ',' + (y + FI_DY / 2).toFixed(0) +
+         ' '  + x.toFixed(0) + ',' + (y + FI_DY).toFixed(0);
+    y += FI_DY; dir = -dir;
+  }
+  return d;
+}
+
+function acordaFio(face){
+  const cx = face.querySelector('.face5-cx');
+  const svg = face.querySelector('.bancada');
+  const dica = face.querySelector('.face5-dica');
+  const conta = face.querySelector('.face5-conta');
+  if (!cx || !svg) return;
+  const fio = svg.querySelector('.fio');
+  const luz = svg.querySelector('.fio-luz');
+  const alto = svg.querySelector('.fio-alto');
+  const tarugo = svg.querySelector('.tarugo');
+
+  /* refeito a cada acordar: virar o cubo e voltar recolhe o fio */
+  let puxado = 0, dedo = null;
+  const escreve = () => {
+    const d = fioSerpente(puxado);
+    fio.setAttribute('d', d);
+    luz.setAttribute('d', d);
+    alto.setAttribute('d', d);
+    /* o tarugo míngua à medida que vira fio, e afina também: é dele
+       que o fio sai */
+    const gasto = Math.min(.72, puxado / 2600);
+    const alt = 21 * (1 - gasto);
+    tarugo.setAttribute('y', (FI_Y - alt).toFixed(1));
+    tarugo.setAttribute('height', (alt * 2).toFixed(1));
+    /* 26 px de fio por centímetro — o número é o que espanta */
+    const cm = puxado / 26;
+    if (conta){
+      const txt = cm < 100 ? cm.toFixed(0) + ' cm'
+                           : (cm / 100).toFixed(2).replace('.', ',') + ' m';
+      conta.innerHTML = '<b>' + txt + '</b><i>de fio</i>';
+    }
+    if (dica) dica.textContent = puxado > 1400 ? 'De 1 g de ouro tiram-se 3 km de fio'
+                               : puxado > 0 ? 'Continue a puxar' : 'Passe o dedo para puxar o fio';
+  };
+  escreve();
+
+  const onde = (ev) => ({ x: ev.offsetX, y: ev.offsetY });
+  cx.addEventListener('pointerdown', (ev) => {
+    dedo = onde(ev);
+    mexeuNaFace();
+    try { cx.setPointerCapture(ev.pointerId); } catch(_){}
+    ev.preventDefault(); ev.stopPropagation();
+  });
+  cx.addEventListener('pointermove', (ev) => {
+    if (!dedo) return;
+    const t = onde(ev);
+    /* QUALQUER caminho do dedo puxa fio, e não só o que vai para a
+       direita: quem está a mostrar isto à turma arrasta como lhe sai,
+       e um gesto na diagonal não podia ficar sem resposta. A fieira
+       também nunca devolve o que já estirou — por isso conta-se a
+       distância andada, que é sempre positiva. */
+    puxado += Math.hypot(t.x - dedo.x, t.y - dedo.y) * 2;
+    escreve();
+    dedo = t;
+  });
+  const larga = () => { dedo = null; };
+  cx.addEventListener('pointerup', larga);
+  cx.addEventListener('pointercancel', larga);
+}
+function dormeFio(){}
+/* A hora do último gesto dentro de uma face. Um arrasto que começa
+   na face acaba muitas vezes FORA do cubo — puxar fio ou levar a
+   barra leva o dedo para longe —, e nesse caso o clique que se segue
+   não nasce na face: nasce no antepassado comum dos dois pontos, que
+   é a folha do mundo. Sem esta marca, esse clique virava o cubo, a
+   face acordava de novo e apagava o que se tinha acabado de fazer. */
+function mexeuNaFace(){
+  if (mundoAberto) mundoAberto.mexeu = Date.now();
+}
+
+/* o clique adiante, dentro do mundo: por enquanto quem tem o que
+   mostrar é o cubo dos metais, e adiantar é virá-lo de face */
+function passoDoMundo(){
+  viraCubo(1);
+}
+function abreMundo(mesa, tipo){
+  if (mundoAberto || !mesa) return;
+  const sl = mesa.closest('.slide');
+  if (!sl) return;
+  /* O mergulho nasce no meio do bloco. A conta vai pela caixa na tela,
+     e não pelo left/top das cartas: a mesa pode estar pinçada, e aí as
+     duas contas dariam pontos diferentes. */
+  const pecas = [...mesa.querySelectorAll('.pc')].filter(c => tipoDe(+c.dataset.z) === tipo);
+  if (!pecas.length) return;
+  const rs = sl.getBoundingClientRect();
+  let x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+  pecas.forEach(c => {
+    const r = c.getBoundingClientRect();
+    if (r.left   < x1) x1 = r.left;    if (r.right  > x2) x2 = r.right;
+    if (r.top    < y1) y1 = r.top;     if (r.bottom > y2) y2 = r.bottom;
+  });
+  const ox = ((x1 + x2)/2 - rs.left)/fitScale;
+  const oy = ((y1 + y2)/2 - rs.top )/fitScale;
+
+  const w = document.createElement('div');
+  w.className = 'mundo';
+  w.style.setProperty('--cor', 'var(--cat-' + CORES_TIPO[tipo] + ')');
+  w.style.setProperty('--ox', (ox/12.8).toFixed(2) + '%');
+  w.style.setProperty('--oy', (oy/7.2).toFixed(2) + '%');
+  w.innerHTML =
+    '<span class="mundo-breu"></span>' +
+    '<span class="mundo-aurora"></span>' +
+    '<div class="mundo-po">' + poDoMundo() + '</div>' +
+    /* a câmera, por enquanto vazia: é aqui que entra o que cada tipo
+       tem para mostrar, um tipo de cada vez */
+    '<div class="mundo-zoom"></div>' +
+    '<div class="mundo-tit">' + NOMES_TIPO[tipo] + '</div>' +
+    '<button class="mundo-voltar" type="button">&#8592; Voltar</button>';
+  sl.appendChild(w);
+  stage.classList.add('no-mundo');
+  revela(w, 'on');
+  mundoAberto = { el:w, tipo, face:1, cubo:null };
+  /* nos metais o cubo É o mundo: entra com ele, e não depois de um
+     clique. Os outros tipos abrem com o nome e mais nada, à espera. */
+  if (tipo === 'metais') mundoAberto.cubo = cuboDosMetais(w);
+  w.querySelector('.mundo-voltar').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    fechaMundo();
+  });
+  /* Lá dentro o clique é do mundo: não adianta a aula nem cai na mesa,
+     e é ele que conduz os passos. O que já é interativo — a poça de
+     mercúrio — fica de fora: mexer no mercúrio não é pedir o passo
+     seguinte. */
+  /* A FOLHA ENGOLE O GESTO INTEIRO.
+     Não basta parar o clique: quem levava a aula adiante era o toque —
+     o pointerdown/pointerup chegava à mesa por baixo, ela dava o toque
+     por bom e adiantava o passo do slide. O mundo é paralelo, e por
+     isso nada do que aqui se faz atravessa para lá. O que é de dentro
+     (a poça, o fogo, o Voltar) já tratou do seu antes de chegar aqui. */
+  ['pointerdown','pointerup','pointermove','pointercancel','wheel','dblclick']
+    .forEach(t => w.addEventListener(t, (ev) => ev.stopPropagation()));
+  /* QUEM VIRA O CUBO É O CLIQUE FORA DELE.
+     Duas guardas, e são precisas as duas. A primeira: um toque em cima
+     do cubo é para mexer na matéria da face, e nunca para virar a
+     peça. A segunda apanha o gesto que começou na face e acabou fora
+     dela — ver mexeuNaFace(). */
+  w.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (ev.target.closest('.face, .mundo-voltar')) return;
+    if (mundoAberto && Date.now() - (mundoAberto.mexeu || 0) < 700) return;
+    passoDoMundo();
+  });
+}
+
+function fechaMundo(){
+  if (!mundoAberto) return;
+  const el = mundoAberto.el;
+  clearTimeout(mundoAberto.tv);   /* uma virada a meio não acorda ninguém */
+  mundoAberto = null;
+  /* o mergulho ao contrário: a cena encolhe de volta para o bloco de
+     onde veio, e só então a folha sai do DOM */
+  dormeMercurio();
+  dormeCalor();
+  dormeEletro();
+  dormeMalha();
+  dormeFio();
+  el.classList.remove('on');
+  stage.classList.remove('no-mundo');
+  setTimeout(() => el.remove(), 900);
+}
 function refazBlocos(mesa){
   mesa.querySelectorAll('.rot-tipo').forEach(r => r.classList.remove('on'));
   descolados.clear();          /* voltam para a estrutura: e preciso arranca-los de novo */
@@ -5364,8 +7922,20 @@ function brilhoVerde(mesa){
     .forEach(c => c.classList.remove('verde')), 2400);
 }
 
-/* os confetes: papel picado com gravidade, na paleta das famílias */
-function confetes(){
+/* os confetes: papel picado com gravidade, na paleta das famílias.
+   Sem ponto de partida eles chovem do alto do palco inteiro — é a
+   festa do fim da montagem. Com um ponto, saem DALI num leque para
+   cima, e é o acerto do quiz: nasce na carta tocada. O leque precisa
+   de uma gravidade bem maior que a da chuva, senão a peça subiria por
+   segundos antes de virar.
+
+   Uma folha só, e um voo só: as peças de uma rajada nova entram no
+   mesmo bando das que ainda estão no ar. Duas voltas de desenho na
+   mesma folha se apagariam uma à outra — e no quiz as rajadas se
+   encavalam, porque a pergunta seguinte chega antes de a anterior
+   pousar. */
+let festaPs = [], festaVoando = false;
+function confetes(origem){
   const cv = document.getElementById('festa');
   const s = Math.min(3, (window.devicePixelRatio || 1) * (fitScale || 1));
   cv.width  = Math.round(1280*s);
@@ -5374,20 +7944,30 @@ function confetes(){
   cx.setTransform(s, 0, 0, s, 0, 0);
   const cores = ['#D2591F','#C58A0E','#2E7BAE','#1E8F7D','#6F8C1E',
                  '#2E9450','#C13757','#5B4BD6','#8B3FBE','#B1408C'];
-  const ps = Array.from({length:150}, () => ({
-    x: 180 + Math.random()*920, y: -20 - Math.random()*300,
-    vx: (Math.random()-.5)*2.6, vy: 1.6 + Math.random()*3,
-    g: .05 + Math.random()*.03,
-    w: 5 + Math.random()*7, h: 8 + Math.random()*9,
-    a: Math.random()*6.28, va: (Math.random()-.5)*.26,
-    c: cores[(Math.random()*cores.length)|0]
-  }));
+  for (let i = 0; i < (origem ? 96 : 150); i++){
+    const p = { w: 5 + Math.random()*7, h: 8 + Math.random()*9,
+                a: Math.random()*6.28, va: (Math.random()-.5)*.26,
+                c: cores[(Math.random()*cores.length)|0] };
+    if (origem){
+      const ang = -Math.PI * (.1 + .8*Math.random());   /* o leque, sempre para cima */
+      const v = 6 + Math.random()*8;
+      p.x = origem.x + (Math.random()-.5)*30;
+      p.y = origem.y + (Math.random()-.5)*20;
+      p.vx = Math.cos(ang)*v; p.vy = Math.sin(ang)*v;
+      p.g = .26 + Math.random()*.1;
+    } else {
+      p.x = 180 + Math.random()*920; p.y = -20 - Math.random()*300;
+      p.vx = (Math.random()-.5)*2.6; p.vy = 1.6 + Math.random()*3;
+      p.g = .05 + Math.random()*.03;
+    }
+    festaPs.push(p);
+  }
+  if (festaVoando) return;
+  festaVoando = true;
   (function quadro(){
     cx.clearRect(0, 0, 1280, 720);
-    let vivos = 0;
-    ps.forEach(p => {
+    festaPs = festaPs.filter(p => {
       p.vy += p.g; p.x += p.vx; p.y += p.vy; p.a += p.va;
-      if (p.y < 780) vivos++;
       cx.save();
       cx.translate(p.x, p.y);
       cx.rotate(p.a);
@@ -5395,9 +7975,10 @@ function confetes(){
       cx.fillStyle = p.c;
       cx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
       cx.restore();
+      return p.y < 780;
     });
-    if (vivos) requestAnimationFrame(quadro);
-    else cx.clearRect(0, 0, 1280, 720);
+    if (festaPs.length) requestAnimationFrame(quadro);
+    else { festaVoando = false; cx.clearRect(0, 0, 1280, 720); }
   })();
 }
 
@@ -5723,14 +8304,22 @@ const ENCOLHE = '.title, .subtitle, .regua, .regra, .ficha-sel, .rotulos,' +
                 ' .capa .marca, .capa .autor, .capa h1';
 /* quem tem letra que interessa medir */
 const COM_LETRA = '.title, .subtitle, .regra, .capa .marca, .capa .autor, .capa h1,' +
-                  ' .dist-val';
+                  ' .dist-val, .rot-val, .rot-sub';
 
 const MEDIDAS = new WeakMap();          /* elemento -> {cx, cy, w, h, esc} */
 const coord = document.getElementById('coord');
 let moveu = false;                      /* houve arrasto desde o último toque? */
 
 function soltaSlide(sl){
-  const alvos = [...sl.querySelectorAll(MOVEIS)].filter(el => !el.classList.contains('solto'));
+  /* A conta dos elétrons anda pela própria mão, por left e top que ela
+     mesma escreve. Se a montagem a soltasse, passaria a ter dois donos
+     — e a largura congelada cortaria o texto quando ele mudasse de
+     "1 elétron" para "8 elétrons". Ela só é medida, nunca solta. */
+  const alvos = [...sl.querySelectorAll(MOVEIS)]
+    .filter(el => !el.classList.contains('solto') &&
+                  !el.classList.contains('rot-val') &&
+                  !el.classList.contains('rot-sub') &&
+                  !el.classList.contains('chip-mini'));
   if (!alvos.length || andando) return;
   const rs = sl.getBoundingClientRect();
   /* mede todas primeiro; só depois solta */
@@ -5859,6 +8448,27 @@ const LAYOUTS = {
     regua:  {x:120,  y: 32, esc:1.00},
     titulo: {esq:281, y: 30, esc:0.76},
     regra9: {esq:104, y: 82, esc:1.00}
+  },
+  /* slide 10 · A Tabela e o Subnível mais Energético — a tira do
+     slide anterior, com a frase no mesmo lugar */
+  9: {
+    numero:  {x:259,  y: 34, esc:1.00},
+    regua:   {x:120,  y: 32, esc:1.00},
+    titulo:  {esq:281, y: 30, esc:0.76},
+    regra10: {esq:104, y: 82, esc:1.00}
+  },
+  /* slide 11 · A Tabela e a Distribuição Eletrônica — a mesma tira.
+     O título é preso pela ESQUERDA, e não pelo centro: assim ele
+     começa no mesmo lugar dos outros por mais comprido que seja o
+     nome, que é o que faz a fila de cabeçalhos parecer uma fila. */
+  10: {
+    /* Dois algarismos: centrado em 259 como os de um algarismo, o '10'
+       crescia para os dois lados e encostava no título. Recuado, ele
+       acaba onde os outros acabam — é a borda DIREITA dele que faz a
+       fila com o título, e não o meio. */
+    numero: {x:248,  y: 34, esc:1.00},
+    regua:  {x:120,  y: 32, esc:1.00},
+    titulo: {esq:281, y: 30, esc:0.76}
   }
 };
 
@@ -6024,18 +8634,16 @@ function poeModo(mesa, modo){
 const CICLO = ['linhas', 'junta', 'colunas', 'junta'];
 let cicloMesa = 0;
 
-const ICONES = {
-  linhas:  '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
-             '<rect x="3" y="3" width="18" height="4" rx="1.2"/>' +
-             '<rect x="3" y="10" width="18" height="4" rx="1.2"/>' +
-             '<rect x="3" y="17" width="18" height="4" rx="1.2"/></svg>',
-  colunas: '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
-             '<rect x="3" y="3" width="4" height="18" rx="1.2"/>' +
-             '<rect x="10" y="3" width="4" height="18" rx="1.2"/>' +
-             '<rect x="17" y="3" width="4" height="18" rx="1.2"/></svg>',
-  junta:   '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">' +
-             '<rect x="4" y="7" width="16" height="10" rx="1.5"/></svg>'
-};
+/* a cruz: a seta dupla deitada e a seta dupla em pé, cada uma num
+   grupo, para o CSS poder acender uma sem tocar na outra */
+const CRUZ_SETAS =
+  '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+       'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+    '<g class="hz"><path d="M3.2 12h17.6"/><path d="M6.3 8.9 3.2 12l3.1 3.1"/>' +
+      '<path d="M17.7 8.9 20.8 12l-3.1 3.1"/></g>' +
+    '<g class="vt"><path d="M12 3.2v17.6"/><path d="M8.9 6.3 12 3.2l3.1 3.1"/>' +
+      '<path d="M8.9 17.7 12 20.8l3.1-3.1"/></g>' +
+  '</svg>';
 const ROTULOS = {
   linhas:  'Separar as linhas',
   colunas: 'Separar as colunas',
@@ -6045,7 +8653,14 @@ function atualizaBotao(mesa){
   const b = mesa.parentNode && mesa.parentNode.querySelector('#botao-mesa');
   if (!b) return;
   const proximo = CICLO[cicloMesa];
-  b.innerHTML = ICONES[proximo] + '<span>' + ROTULOS[proximo] + '</span>';
+  /* o desenho é sempre o mesmo; o que muda é qual braço acende */
+  if (!b.querySelector('svg')) b.innerHTML = CRUZ_SETAS;
+  b.classList.remove('eixo-linhas', 'eixo-colunas', 'eixo-junta');
+  b.classList.add('eixo-' + proximo);
+  /* a frase que ele dizia continua dita, agora só a quem parar o
+     ponteiro em cima */
+  b.title = ROTULOS[proximo];
+  b.setAttribute('aria-label', ROTULOS[proximo]);
 }
 
 /* ---- o elemento tocado cresce ----
@@ -6075,8 +8690,12 @@ function realceFaixa(mesa, c){
   /* Numerada nos dois eixos — que é como a tabela chega ao slide das
      coordenadas —, o elemento acende a linha E a coluna: é o encontro
      das duas que dá o lugar dele. Fora daí, acende só o eixo aberto. */
+  /* No slide do subnível não há números em eixo nenhum, e mesmo assim
+     é a cruz que se acende: o que se está a mostrar ali é o LUGAR do
+     elemento, que é o cruzamento da linha com a coluna. */
   const cruz = mesa.classList.contains('numerada') ||
-               mesa.classList.contains('cruzada');
+               mesa.classList.contains('cruzada') ||
+               mesa.classList.contains('subnivel');
   const porLinha  = cruz || modoMesa !== 'colunas';
   const porColuna = cruz || modoMesa === 'colunas';
 
@@ -6133,6 +8752,13 @@ function rotulaCoordenada(mesa, n){
   alvo.classList.add('on');
   poeRotulos(mesa);
 }
+/* A altura em que a ficha do elemento e os nomes das coordenadas
+   moram. No slide do subnível eles sobem uma linha inteira: ali a
+   tabela subiu, e a faixa que sobrava em cima deles agora tem os
+   tijolos dos subníveis. */
+const yDaFicha = mesa => yDaLinha(4, modoMesa) -
+  (mesa.classList.contains('subnivel') ? 2.5 : 1.5) * PASSO_Y;
+
 function poeRotulos(mesa){
   const r = mesa.querySelector('.rotulos');
   /* solto na montagem, o lugar dele é o que o professor escolheu: a
@@ -6140,7 +8766,7 @@ function poeRotulos(mesa){
   if (!r || r.classList.contains('solto')) return;
   if (LAYOUTS[atual] && LAYOUTS[atual].coordenadas){ aplicaLayout(atual); return; }
   r.style.left = (xDaColuna(6, modoMesa) + 62).toFixed(0) + 'px';
-  r.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+  r.style.top  = yDaFicha(mesa).toFixed(0) + 'px';
 }
 function limpaRotulos(mesa){
   mesa.querySelectorAll('.rotulos span').forEach(s => s.classList.remove('on'));
@@ -6152,7 +8778,8 @@ function mostraFicha(mesa, z){
   const f = mesa.querySelector('.ficha-sel');
   if (!f) return;
   if (!mesa.classList.contains('numerada') &&
-      !mesa.classList.contains('cruzada')) return;
+      !mesa.classList.contains('cruzada') &&
+      !mesa.classList.contains('subnivel')) return;
   /* outro elemento, outras coordenadas: os nomes antigos saem */
   limpaRotulos(mesa);
   const troca = () => {
@@ -6165,7 +8792,7 @@ function mostraFicha(mesa, z){
       if (LAYOUTS[atual] && LAYOUTS[atual].simbolo) aplicaLayout(atual);
       else {
         f.style.left = xDaColuna(6, modoMesa).toFixed(0) + 'px';
-        f.style.top  = (yDaLinha(4, modoMesa) - 1.5*PASSO_Y).toFixed(0) + 'px';
+        f.style.top  = yDaFicha(mesa).toFixed(0) + 'px';
       }
     }
     f.classList.add('on');
@@ -6176,6 +8803,7 @@ function mostraFicha(mesa, z){
 
 function limpaRealce(mesa){
   mesa.classList.remove('tem-realce');
+  desmarcaNobre(mesa);
   mesa.querySelectorAll('.realce').forEach(e => e.classList.remove('realce'));
   escolheCarta(mesa, null);
   mesa.querySelectorAll('.banda, .banda2').forEach(b => b.classList.remove('on'));
@@ -6208,6 +8836,20 @@ function ancoraMesa(m){
 stage.addEventListener('pointerdown', (ev) => {
   const m = mesaPronta();
   if (!m || ev.target.closest('button, a, input')) return;
+  /* NO QUIZ O DEDO É SÓ DO QUIZ
+     Nada de arrastar bloco, abrir a tabela, pegar rótulo ou dar zoom:
+     o toque é registado — porque é ele que responde à pergunta — e o
+     resto do que a mesa sabe fazer fica de fora. */
+  if (quizAtivo){
+    dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+    if (dedosMesa.size > 1) houvePinca = true;
+    else {
+      houvePinca = false;
+      toqueMesa = {id:ev.pointerId, x:ev.clientX, y:ev.clientY,
+                   t:Date.now(), alvo:ev.target};
+    }
+    return;
+  }
   /* a caixa do slide das famílias é solta: o dedo que desce nela é
      dela, e não da mesa — senão arrastar o texto arrastaria a tabela */
   const cxAlvo = ev.target.closest && ev.target.closest('.cx-fam');
@@ -6215,18 +8857,17 @@ stage.addEventListener('pointerdown', (ev) => {
     if (!caixaNaMao) comecaCaixa(m, cxAlvo, ev);
     return;
   }
-  /* a frase do slide da valência, enquanto ele a arruma */
-  const frAlvo = ev.target.closest && ev.target.closest('[data-mont="regra9"]');
-  if (frAlvo){
-    if (!fraseNaMao) comecaFrase(m, frAlvo, ev);
-    else if (fraseNaMao.ptr.size < 2){
-      fraseNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
-      ancoraFrase();
+
+  /* as letras dos subníveis, enquanto ele as arruma */
+  const sbAlvo = ev.target.closest && ev.target.closest('.rot-sub');
+  if (sbAlvo){
+    if (!subNaMao) comecaSub(m, sbAlvo, ev);
+    else if (subNaMao.ptr.size < 2){
+      subNaMao.ptr.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+      ancoraSub();
     }
     return;
   }
-
-
 
   /* no slide dos grupos, o dedo na tabela é dela: parado, abre a
      tabela; aberta ela, arrasta o bloco. Em nenhum dos casos é gesto
@@ -6256,6 +8897,19 @@ stage.addEventListener('pointerdown', (ev) => {
     if (c){
       if (!blocoAtivo){
         const tipo = tipoDe(+c.dataset.z);
+        /* DOIS TOQUES num bloco que já saiu da estrutura: é a porta do
+           mundo quântico dele. Só nos que já saíram — nos que ainda
+           estão encaixados o gesto é outro, o de segurar para arrancar,
+           e as duas coisas não podem morar no mesmo toque. */
+        if (descolados.has(tipo)){
+          const agora = Date.now();
+          if (toqueBloco && toqueBloco.tipo === tipo && agora - toqueBloco.t < 420){
+            toqueBloco = null;
+            abreMundo(m, tipo);
+            return;                     /* e o bloco não sai do lugar */
+          }
+          toqueBloco = { tipo, t: agora };
+        }
         /* Já arrancado antes, ou sozinho na estrutura porque levaram os
            vizinhos dele, o bloco anda no primeiro toque. Ainda encaixado
            entre outros, primeiro é preciso soltá-lo. */
@@ -6277,7 +8931,7 @@ stage.addEventListener('pointerdown', (ev) => {
   try { stage.setPointerCapture(ev.pointerId); } catch(_){}
 });
 document.addEventListener('pointermove', (ev) => {
-  if (!dedosMesa.has(ev.pointerId)) return;
+  if (!dedosMesa.has(ev.pointerId) || quizAtivo) return;
   const m = mesaPronta();
   if (!m) return;
   dedosMesa.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
@@ -6304,6 +8958,14 @@ function largaMesa(ev){
   if (dedosMesa.size){ ancoraMesa(m); return; }   /* sobrou dedo: recomeça dali */
 
   if (foiToque){
+    /* No quiz a tabela só responde ao quiz: o que a aula fazia com o
+       dedo fica de fora enquanto ele durar. */
+    if (quizAtivo){
+      const c = toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc');
+      if (c) respondeQuiz(m, c);
+      toqueMesa = null;
+      return;
+    }
     /* Quem abre e fecha a tabela agora é o botão do canto. Aqui sobra
        o que sempre foi do dedo: o elemento que se acende, e o vazio,
        que adianta a aula. */
@@ -6325,10 +8987,36 @@ function largaMesa(ev){
 
     /* No slide da valência, o que o dedo pega depende da leitura: na
        primeira é a família inteira, na de Pauling é o elemento. */
-    if (atual === 8){
+    /* No slide do subnível é sempre o elemento, e é a tabela toda: o
+       subnível de maior energia é o que dá nome ao bloco, e a pergunta
+       vale tanto para o d quanto para o f. */
+    if (atual === 8 || atual === 9 || atual === 10){
       const c = m.classList.contains('viva') && toqueMesa.alvo.closest
-              ? toqueMesa.alvo.closest('.pc.repr') : null;
+              ? toqueMesa.alvo.closest(atual === 8 ? '.pc.repr' : '.pc') : null;
+      /* Fora do modo Pauling o slide do subnível não escreve
+         distribuição nenhuma: ele faz o que o slide das coordenadas
+         faz — o elemento cresce e a linha e a coluna dele acendem. A
+         distribuição é do modo Pauling, e só dele. */
+      /* o buraco chama a série de volta, e a carta de pilha manda-a
+         sair — as duas coisas do slide das séries, aqui outra vez */
+      const bur = atual >= 9 && !modoPauling && toqueMesa.alvo.closest
+                ? toqueMesa.alvo.closest('.buraco') : null;
+      if (bur){ fechaSerie(m, bur.dataset.serie, true); toqueMesa = null; return; }
       if (c && modoPauling)   acendeElemento(m, c);
+      else if (c && atual >= 9){
+        const z = +c.dataset.z, chave = serieDe(z);
+        if (chave && !seriesAbertas.has(chave) && PILHAS[z]) abreSerie(m, chave);
+        /* o mesmo elemento de novo solta a seleção inteira: a carta
+           volta ao tamanho, a cruz apaga e a ficha sai */
+        else if (c.classList.contains('escolhida')) limpaRealce(m);
+        else {
+          escolheCarta(m, c);
+          realceFaixa(m, c);
+          /* e na cena da distribuição acende também o gás nobre de
+             onde a conta dele parte */
+          if (atual === 10) marcaNobre(m, z);
+        }
+      }
       else if (c)             sobeColuna(m, +c.dataset.col);
       else if (!toqueMesa.alvo.closest || !toqueMesa.alvo.closest('.pc')) passoAdiante();
       toqueMesa = null;
@@ -6413,15 +9101,14 @@ document.addEventListener('pointercancel', largaMesa);
 /* a roda do mouse amplia a mesa como a pinça */
 stage.addEventListener('wheel', (ev) => {
   const m = mesaPronta();
-  if (!m) return;
-  /* a roda sobre a frase muda o tamanho dela */
-  const frRoda = ev.target.closest && ev.target.closest('[data-mont="regra9"]');
-  if (frRoda){
-    const m = MEDIDAS.get(frRoda);
-    if (m){
-      m.esc = Math.max(.4, Math.min(2.5, m.esc * (1 - ev.deltaY * 0.0015)));
-      aplicaEl(frRoda);
-    }
+  if (!m || quizAtivo) return;
+  /* a roda sobre uma letra de subnível muda o tamanho dela */
+  const sbRoda = ev.target.closest && ev.target.closest('.rot-sub');
+  if (sbRoda){
+    const k0 = parseFloat(sbRoda.style.getPropertyValue('--kb')) || 1;
+    sbRoda.style.setProperty('--kb',
+      Math.max(.3, Math.min(4, k0 * (1 - ev.deltaY * 0.0015))).toFixed(3));
+    guardaSub(sbRoda);
     ev.preventDefault();
     return;
   }
@@ -6564,6 +9251,22 @@ function textoDoSlide(i){
            (o.fonte === null ? ' '.repeat(13) : ', fonte:' + pad(o.fonte,5)) +
            ', esc:' + o.esc.toFixed(2) + ' },\n';
   });
+  /* A caixa da pergunta não é peça da montagem: a letra dela muda a
+     cada pergunta, e uma largura congelada cortaria o texto — é o
+     mesmo motivo da conta dos elétrons. Mas o lugar dela interessa, e
+     por isso ela entra aqui medida, como a mesa. Vai por offsetLeft, e
+     não pela caixa na tela: assim o número não sai torto se o Ctrl+C
+     apanhar a caixa no meio da viagem de entrada — e o offsetLeft dela
+     já É o centro, que é onde ela está presa. */
+  const perg = slides[i].querySelector('.quiz-pergunta:not(.sai)');
+  if (perg){
+    out += '  { ' + "el:'pergunta',".padEnd(16, ' ') +
+           ' x:' + pad(perg.offsetLeft, 4) +
+           ', y:' + pad(Math.round(perg.offsetTop  + perg.offsetHeight/2), 3) +
+           ', larg:' + pad(perg.offsetWidth,  4) +
+           ', alt:'  + pad(perg.offsetHeight, 3) +
+           ' '.repeat(13) + ', esc:1.00 },\n';
+  }
   /* a mesa entra com o tamanho a que ela foi pinçada, e já com a conta
      feita: é a carta desse tamanho que eu fixo no arquivo */
   const mesa = slides[i].querySelector('.mesa');
@@ -6639,6 +9342,11 @@ stage.addEventListener('click', (ev) => {
    TECLADO
    ------------------------------------------------------------ */
 document.addEventListener('keydown', (e) => {
+  /* dentro do mundo quântico, o Escape é a mesma porta que o Voltar */
+  if (typeof mundoAberto !== 'undefined' && mundoAberto && e.key === 'Escape'){
+    fechaMundo();
+    return;
+  }
   /* com a caixa de anotações aberta, o teclado é dela */
   if (!notes.hidden){ if (e.key === 'Escape') hideNotes(); return; }
 
@@ -6680,7 +9388,13 @@ document.addEventListener('keydown', (e) => {
     case 'l': case 'L': modoLaser(); break;
     case 'q': case 'Q': modoQuadro(); break;
     case 'g': case 'G': modoMontagem(); break;
-    case 'r': case 'R': if (naMontagem()) refazLayout(); break;
+    /* na montagem a tecla refaz o layout; fora dela, restaura o slide.
+       No quiz não faz nem uma coisa nem outra: o slide de baixo fica
+       como está até o quiz sair. */
+    case 'r': case 'R':
+      if (quizAtivo) break;
+      if (naMontagem()) refazLayout(); else restauraSlide();
+      break;
     case 'h': case 'H': mostraAjuda(true); break;
   }
 });
@@ -6713,6 +9427,7 @@ document.getElementById('over').addEventListener('click', () => mostraOverview()
 quadroBtn.addEventListener('click', modoQuadro);
 montBtn.addEventListener('click', () => modoMontagem());
 document.getElementById('copia-btn').addEventListener('click', () => copiaPosicoes(false));
+document.getElementById('restaura-btn').addEventListener('click', restauraSlide);
 document.getElementById('coords-close').addEventListener('click', fechaCoords);
 overview.addEventListener('click', (e) => { if (e.target === overview) mostraOverview(false); });
 ajuda.addEventListener('click', (e) => { if (e.target === ajuda) mostraAjuda(false); });
@@ -6738,6 +9453,648 @@ document.addEventListener('pointerdown', seguraTela, { once:true });
 document.getElementById('ver').textContent = VERSAO;
 ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
+/* ============================================================
+   O QUIZ
+   As perguntas são as do app de tabela anterior, trazidas uma a uma —
+   as mesmas, na mesma ordem, com as mesmas dicas. O que mudou foi a
+   roupa: lá elas eram ditas em áudio sobre um tabuleiro de outra
+   paleta; aqui elas se escrevem no lugar em que as frases da aula
+   moram, na letra desta apresentação.
+
+   O tópico de lá vira o SLIDE daqui: cada quiz mora no slide que fala
+   do assunto dele, e é por isso que o botão do painel abre sempre o
+   quiz do slide em que a aula está — e fica apagado nos três slides
+   que não têm um.
+   ============================================================ */
+const QUIZ = {
+  /* slide 2 · Os critérios de Organização */
+  1: {eixos:true, perguntas:[
+    {q:'Toque no elemento cujo número atômico é 17', ok:z => z === 17,
+     dica:'O número atômico é o número que fica em cima do símbolo. Os elementos estão em ordem crescente, da esquerda para a direita.',
+     pista:{linha:3}},
+    {q:'Toque no elemento imediatamente posterior ao número atômico 10', ok:z => z === 11,
+     dica:'O elemento posterior ao 10 é o 11. É o primeiro elemento da terceira linha.',
+     pista:{linha:3}},
+    {q:'Toque no primeiro elemento da segunda linha', ok:z => z === 3,
+     dica:'As linhas são horizontais, da esquerda para a direita. Ache a linha 2 e toque no primeiro elemento dela.',
+     pista:{linha:2}},
+    {q:'Toque no último elemento da quinta linha', ok:z => z === 54,
+     dica:'As linhas são horizontais, da esquerda para a direita. Ache a quinta linha e toque no último elemento dela.',
+     pista:{linha:5}},
+    {q:'Qual elemento é semelhante ao chumbo, 82?', ok:z => [6,14,32,50,114].indexOf(z) >= 0,
+     dica:'Numa mesma coluna todos são quimicamente semelhantes. Toque em qualquer elemento da coluna do chumbo, menos ele.',
+     pista:{coluna:14}}
+  ]},
+
+  /* slide 3 · As Coordenadas Periódicas */
+  2: {eixos:true, perguntas:[
+    {q:'Toque no elemento do 4º período, grupo 8.', ok:z => z === 26,
+     dica:'O período é a linha e o grupo é a coluna. Ache o cruzamento da linha 4 com a coluna 8.',
+     pista:{linha:4}},
+    {q:'Toque no elemento do 3º período, grupo 17.', ok:z => z === 17,
+     dica:'Desça até a terceira linha e ande até a penúltima coluna.',
+     pista:{coluna:17}},
+    {q:'Toque no elemento do 7º período, grupo 2.', ok:z => z === 88,
+     dica:'A última linha da tabela, na segunda coluna.',
+     pista:{linha:7}}
+  ]},
+
+  /* slide 5 · As principais famílias */
+  4: {perguntas:[
+    {q:'Qual o último elemento alcalino?', ok:z => z === 87,
+     dica:'Os alcalinos são a família 1 da tabela. O último deles fica no período 7.',
+     pista:{coluna:1}},
+    {q:'Toque no 3º elemento dos gases nobres.', ok:z => z === 18,
+     dica:'Os gases nobres são a família 18. Conte de cima para baixo na coluna.',
+     pista:{coluna:18}},
+    {q:'Toque na família dos alcalinos-terrosos.', tipo:'familia', ok:(z,col) => col === 2,
+     dica:'Os alcalinos-terrosos ocupam a família 2, ao lado dos alcalinos.',
+     pista:{coluna:2}},
+    {q:'Toque na família dos halogênios.', tipo:'familia', ok:(z,col) => col === 17,
+     dica:'Os halogênios são a família 17, logo ao lado dos gases nobres.',
+     pista:{coluna:17}},
+    {q:'Toque em qualquer elemento que antecede um calcogênio.', ok:(z,col) => col === 15,
+     dica:'Os calcogênios são a família 16. Os que os antecedem ficam na família 15.',
+     pista:{coluna:15}},
+    {q:'Toque em qualquer elemento posterior aos halogênios.', ok:(z,col) => col === 18,
+     dica:'Os halogênios são a família 17. Os elementos depois deles ficam na família 18.',
+     pista:{coluna:18}}
+  ]},
+
+  /* slide 6 · Os Grupos A e B */
+  5: {eixos:true, perguntas:[
+    {q:'Qual elemento está no 3º período, família 2A?', ok:z => z === 12,
+     dica:'A família 2A é a segunda coluna. Desça até a terceira linha.',
+     pista:{linha:3}},
+    {q:'Qual elemento está no 5º período, família 1B?', ok:z => z === 47,
+     dica:'A família 1B é o grupo 11, no meio dos elementos de transição.',
+     pista:{linha:5}},
+    {q:'Qual elemento está no 3º período, família 7A?', ok:z => z === 17,
+     dica:'A família 7A é a coluna 17, a penúltima da tabela.',
+     pista:{coluna:17}}
+  ]},
+
+  /* slide 7 · Os Lantanídeos e os Actinídeos — com as duas séries
+     abertas, que é onde estão as respostas */
+  6: {prepara:(mesa) => { abreSerie(mesa, 'la'); abreSerie(mesa, 'ac'); },
+      perguntas:[
+    {q:'Toque em um elemento de transição interna.', ok:z => blocoSPDF(z) === 'f',
+     dica:'Os elementos de transição interna são os lantanídeos e os actinídeos, nas duas linhas abaixo da tabela.'},
+    {q:'Toque no primeiro elemento da série dos lantanídeos.', ok:z => z === 57,
+     dica:'É o lantânio (La), número atômico 57 — o que dá nome à série.'},
+    {q:'Toque no último elemento da série dos actinídeos.', ok:z => z === 103,
+     dica:'É o laurêncio (Lr), número atômico 103 — o último da segunda fila.'},
+    {q:'Toque no último elemento da série dos lantanídeos.', ok:z => z === 71,
+     dica:'É o lutécio (Lu), número atômico 71 — o último da primeira fila.'},
+    {q:'Toque em qualquer elemento representativo na tabela.',
+     ok:z => blocoSPDF(z) === 's' || blocoSPDF(z) === 'p',
+     dica:'Os elementos representativos formam os blocos s e p, nas duas pontas da tabela.'}
+  ]},
+
+  /* slide 8 · A Natureza dos Elementos */
+  7: {perguntas:[
+    {q:'Toque em qualquer elemento natural da tabela periódica',
+     ok:z => z >= 1 && z <= 92 && z !== 43 && z !== 61,
+     dica:'Os elementos naturais vão do 1 ao 92, menos o tecnécio (43) e o promécio (61).'},
+    {q:'Toque num elemento cujo isótopo mais comum é radioativo',
+     ok:z => z >= 83 || z === 43 || z === 61,
+     dica:'São os do 83 em diante, mais o tecnécio (43) e o promécio (61).'},
+    {q:'Toque num elemento transurânico', ok:z => z > 92,
+     dica:'Transurânicos são os que vêm depois do urânio — número atômico maior que 92.'},
+    {q:'Toque num elemento cisurânico', ok:z => z <= 92 && z !== 43 && z !== 61,
+     dica:'Cisurânicos são os do 1 ao 92, menos o 43 e o 61.'},
+    {q:'Toque no último elemento natural da tabela', ok:z => z === 92,
+     dica:'É o urânio (U), de número atômico 92.'},
+    {q:'Toque no último elemento com isótopo mais comum estável', ok:z => z === 82,
+     dica:'É o chumbo (Pb), de número atômico 82.'}
+  ]},
+
+  /* slide 9 · A Tabela e os Elétrons de Valência */
+  8: {perguntas:[
+    {q:'Toque na família cujos elementos têm 6 elétrons na camada de valência',
+     tipo:'familia', ok:(z,col) => col === 16,
+     dica:'A família com 6 elétrons de valência é a 6A, a dos calcogênios.',
+     pista:{coluna:16}},
+    {q:'Toque em qualquer elemento que tem 2 elétrons na última camada',
+     ok:(z,col) => col === 2,
+     dica:'Os elementos com 2 elétrons na última camada estão na família 2A.',
+     pista:{coluna:2}},
+    {q:'Toque em qualquer elemento que tenha 8 elétrons de valência',
+     ok:(z,col) => col === 18 && z !== 2,
+     dica:'Os gases nobres (família 8A) têm 8 elétrons de valência — todos menos o hélio.',
+     pista:{coluna:18}},
+    {q:'Qual o total de elétrons de valência destes três átomos, somados?',
+     tipo:'escrita', atomos:[12, 6, 17], resposta:13,
+     dica:'Nos grupos A, os elétrons de valência coincidem com o número da família: 2A, 4A e 7A.'}
+  ]},
+
+  /* slide 10 · A Tabela e o Subnível mais Energético */
+  9: {perguntas:[
+    {q:'Toque no elemento que tem o subnível mais energético 3s<sup>2</sup>', ok:z => z === 12,
+     dica:'Acaba em 3s²: terceira camada, subnível s cheio — o segundo elemento do 3º período.',
+     pista:{linha:3}},
+    {q:'Toque no elemento com subnível mais energético 4p<sup>6</sup>', ok:z => z === 36,
+     dica:'O p cheio fecha o período: procure o último elemento da quarta linha.',
+     pista:{linha:4}},
+    {q:'Toque no elemento cujo subnível de maior energia é o 3p<sup>1</sup>', ok:z => z === 13,
+     dica:'Um só elétron no 3p: é o primeiro elemento do bloco p, no 3º período.',
+     pista:{linha:3}},
+    {q:'Toque no elemento que tem o subnível mais energético 3d<sup>5</sup>', ok:z => z === 25,
+     dica:'Cinco elétrons no 3d: conte cinco casas no bloco d do 4º período.',
+     pista:{linha:4}},
+    {q:'Toque no elemento com subnível mais energético 5d<sup>2</sup>', ok:z => z === 72,
+     dica:'Dois elétrons no 5d: o bloco d do 6º período, logo depois dos lantanídeos.',
+     pista:{linha:6}}
+  ]}
+};
+const temQuiz = i => !!QUIZ[i];
+
+/* ---- os sons ----
+   Um Audio novo a cada toque, e não um objeto guardado: reaproveitado,
+   ele cortaria o som anterior — e no tropeço os dois tocam JUNTOS, de
+   propósito. O navegador só deixa tocar depois do primeiro toque na
+   página, e a essa altura a aula já começou. */
+const SONS = {
+  acerto: 'Audios/funfare.mp3',
+  erro:   'Audios/error.mp3',
+  fraco:  'Audios/lowscore.mp3',
+  placar: 'Audios/statistics.mp3'
+};
+function tocaSom(nome){
+  const src = SONS[nome];
+  if (!src) return;
+  try {
+    const a = new Audio(src);
+    a.volume = .85;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch(_){}
+}
+/* e o tremor vermelho, que acompanha o som do erro */
+function sacodeTela(){
+  let veu = document.getElementById('veu-erro');
+  if (!veu){
+    veu = document.createElement('div');
+    veu.id = 'veu-erro';
+    document.body.appendChild(veu);
+  }
+  stage.classList.remove('erro-treme');
+  void stage.offsetWidth;                /* recomeça se já estava a tremer */
+  stage.classList.add('erro-treme');
+  revela(veu, 'on');
+  setTimeout(() => veu.classList.remove('on'), 300);
+  setTimeout(() => stage.classList.remove('erro-treme'), 560);
+}
+
+/* e o verde do acerto, que é o contrário do tremor: a tabela inteira
+   se acende por um instante e os confetes da festa da montagem saem
+   da carta certa — do meio da mesa, quando a resposta foi escrita.
+   O ponto vai em coordenada de palco, que é onde a folha dos confetes
+   desenha: da tela para o palco é a divisão pelo fitScale. */
+function acendeVerde(mesa){
+  if (mesa) mesa.classList.add('brilha-acerto');
+}
+/* e o giro da troca: a volta que a tabela dá quando a pergunta muda.
+   A onda é a mesma da onda verde — a diagonal, uma carta pouco depois
+   da vizinha. Se um giro ainda estiver a acontecer, este recomeça: sem
+   tirar a classe e obrigar o assentamento, a animação não reinicia. */
+let giraTimer = null;
+function giraTabela(mesa){
+  if (!mesa) return;
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const p = posDe(+c.dataset.z);
+    c.style.setProperty('--onda', ((p.col + p.row)*22) + 'ms');
+  });
+  mesa.classList.remove('girando');
+  void mesa.offsetWidth;
+  mesa.classList.add('girando');
+  clearTimeout(giraTimer);
+  giraTimer = setTimeout(() => mesa.classList.remove('girando'), 1500);
+}
+function confeteDaqui(alvo){
+  if (!alvo || !alvo.getBoundingClientRect) return;
+  const r = alvo.getBoundingClientRect(), p = stage.getBoundingClientRect();
+  if (!r.width && !r.height) return;
+  confetes({ x: (r.left + r.width/2  - p.left)/fitScale,
+             y: (r.top  + r.height/2 - p.top )/fitScale });
+}
+
+let quizAtivo = false, quizSlide = -1, quizPasso = 0;
+let quizAcertos = 0, quizTropecos = 0, quizTravado = false;
+let quizTimers = [];
+const quizEspera = (ms, faz) => quizTimers.push(setTimeout(faz, ms));
+function quizLimpaTimers(){ quizTimers.forEach(clearTimeout); quizTimers = []; }
+
+function quizCena(){ return cenaDe(slides[quizSlide]); }
+function quizMesa(){ return slides[quizSlide] && slides[quizSlide].querySelector('.mesa'); }
+function quizPerguntas(){ return QUIZ[quizSlide] ? QUIZ[quizSlide].perguntas : []; }
+
+/* ---- abrir e fechar ---- */
+function abreQuiz(){
+  if (quizAtivo || !temQuiz(atual)) return;
+  /* a tabela esquece a aula: o quiz começa com o slide como ele nasce */
+  restauraSlide();
+  quizAtivo = true; quizSlide = atual;
+  const cena = quizCena(), mesa = quizMesa();
+  cena.classList.add('em-quiz');
+  acendeBreuDoQuiz(slides[quizSlide], true);
+  if (mesa){
+    mesa.classList.add('quiz');
+    /* No slide dos critérios a aula COMEÇA com a tabela desmontada, e
+       o quiz dele pergunta pela tabela: ela chega montada, como chega
+       aos outros slides. */
+    /* No slide dos critérios a aula COMEÇA com a tabela desmontada, e
+       o quiz dele pergunta pela tabela: ela chega montada, como chega
+       aos outros slides. */
+    const r2 = ROTEIROS[1];
+    if (r2 && r2.garanteMontada) r2.garanteMontada();
+    /* e onde a pergunta fala de linha e de coluna, os dois eixos
+       aparecem — é assim que o app anterior fazia */
+    if (QUIZ[quizSlide].eixos) mesa.classList.add('numerada');
+    const prep = QUIZ[quizSlide].prepara;
+    if (prep) prep(mesa);
+  }
+  /* o painel sai de cena: ele mora em cima da última fila da tabela,
+     e no quiz aquela fila é resposta — e o quiz tem o botão de sair
+     dele, que é o único que faz falta aqui */
+  mostraBarra(false);
+  const sair = document.createElement('button');
+  sair.className = 'quiz-sair';
+  sair.type = 'button';
+  sair.textContent = 'Sair do quiz';
+  sair.addEventListener('click', fechaQuiz);
+  cena.appendChild(sair);
+  const placar = document.createElement('div');
+  placar.className = 'quiz-placar';
+  cena.appendChild(placar);
+  revela(placar, 'on');
+  recomecaQuiz();
+  atualizaBotaoQuiz();
+}
+/* o véu que apaga a sala, e a letra do cabeçalho que clareia com ele */
+function acendeBreuDoQuiz(sl, entra){
+  if (!sl) return;
+  let veu = sl.querySelector(':scope > .breu-quiz');
+  if (entra){
+    if (!veu){
+      veu = document.createElement('div');
+      veu.className = 'breu-quiz';
+      sl.insertBefore(veu, sl.firstChild);
+    }
+    sl.classList.add('quiz-escuro');
+    revela(veu, 'on');
+  } else if (veu){
+    sl.classList.remove('quiz-escuro');
+    veu.classList.remove('on');
+    setTimeout(() => veu.remove(), 620);
+  } else sl.classList.remove('quiz-escuro');
+}
+
+function recomecaQuiz(){
+  quizPasso = 0; quizAcertos = 0; quizTropecos = 0; quizTravado = false;
+  quizTiraCartao();
+  poePergunta();
+}
+function fechaQuiz(){
+  if (!quizAtivo) return;
+  quizLimpaTimers();
+  acendeBreuDoQuiz(slides[quizSlide], false);
+  const cena = quizCena(), mesa = quizMesa();
+  if (cena){
+    cena.classList.remove('em-quiz');
+    cena.querySelectorAll('.quiz-pergunta, .quiz-dica, .quiz-placar,' +
+      ' .quiz-sair, .quiz-cartao, .quiz-escrita').forEach(e => e.remove());
+  }
+  if (mesa){
+    clearTimeout(giraTimer);
+    mesa.classList.remove('quiz', 'brilha-acerto', 'girando');
+    mesa.querySelectorAll('.pc.certa, .pc.errada').forEach(c => {
+      c.classList.remove('certa', 'errada');
+      c.firstElementChild.style.removeProperty('--sc');
+    });
+    mesa.querySelectorAll('.quiz-faixa').forEach(e => e.remove());
+  }
+  quizAtivo = false; quizSlide = -1;
+  restauraSlide();
+  atualizaBotaoQuiz();
+}
+
+/* ---- a pergunta em cena ---- */
+function quizTiraDica(){
+  const cena = quizCena();
+  if (cena) cena.querySelectorAll('.quiz-dica').forEach(d => {
+    d.classList.remove('on');
+    setTimeout(() => d.remove(), 400);
+  });
+}
+
+/* ---- a caixa anda pelo palco ----
+   A pergunta é arrastável como o quadro branco: pega-se nela em
+   qualquer ponto e leva-se para onde a tabela deixar. O lugar fica
+   guardado na sessão e as perguntas seguintes já nascem ali — senão
+   cada nova caixa voltaria ao canto e não haveria como escolher.
+   Anda por left/top, e não por translate: o translate é a esteira da
+   entrada e da saída, e um cancelaria o outro. */
+let pergPos = null;
+function arrastaPergunta(t){
+  const eti = document.createElement('span');
+  eti.className = 'quiz-medida';
+  t.appendChild(eti);
+  let leva = null, some = null;
+  /* o app inteiro fala em CENTRO de peça — o Ctrl+C, a montagem, as
+     posições fixadas no arquivo. A etiqueta fala a mesma língua: o que
+     ela mostra é o que o Ctrl+C mostraria, e não o canto de cima. */
+  const centro = (x, y) => [Math.round(x), Math.round(y + t.offsetHeight/2)];
+  const marca = (x, y) => {
+    const [cx, cy] = centro(x, y);
+    eti.textContent = 'x: ' + cx + '   y: ' + cy;
+    eti.classList.toggle('acima', y > 600);
+    if (!eti.classList.contains('on')) revela(eti, 'on');
+  };
+  t.addEventListener('pointerdown', (e) => {
+    /* na montagem o gesto é do montador, como no quadro branco: dois
+       arrastos no mesmo objeto se atrapalhariam */
+    if (naMontagem()) return;
+    const cs = getComputedStyle(t);
+    leva = { id:e.pointerId, px:e.clientX, py:e.clientY,
+             x:parseFloat(cs.left), y:parseFloat(cs.top) };
+    try { t.setPointerCapture(e.pointerId); } catch(_){}
+    t.classList.add('levando');
+    clearTimeout(some);
+    marca(leva.x, leva.y);          /* um toque só já mostra onde ela está */
+    e.preventDefault();
+  });
+  t.addEventListener('pointermove', (e) => {
+    if (!leva || e.pointerId !== leva.id) return;
+    /* a caixa não sai do palco: o que ficasse de fora estaria cortado
+       na aula, e não é lugar que se possa escolher. Em x a conta é a do
+       centro, que é o que o 'left' vale nesta caixa. */
+    const meia = t.offsetWidth/2;
+    const x = Math.round(Math.max(meia, Math.min(1280 - meia, leva.x + (e.clientX - leva.px)/fitScale)));
+    const y = Math.round(Math.max(0, Math.min(720 - t.offsetHeight, leva.y + (e.clientY - leva.py)/fitScale)));
+    t.style.left = x + 'px';
+    t.style.top  = y + 'px';
+    pergPos = { x, y };
+    marca(x, y);
+  });
+  const solta = () => {
+    if (!leva) return;
+    leva = null;
+    t.classList.remove('levando');
+    /* e o ponto vai para a área de transferência, como o clique no papel
+       durante a montagem: dali ele se cola onde for preciso */
+    if (pergPos){
+      const [cx, cy] = centro(pergPos.x, pergPos.y);
+      navigator.clipboard?.writeText('x: '+cx+', y: '+cy).catch(()=>{});
+    }
+    /* a etiqueta fica mais um instante, para dar tempo de anotar */
+    some = setTimeout(() => eti.classList.remove('on'), 5000);
+  };
+  t.addEventListener('pointerup', solta);
+  t.addEventListener('pointercancel', solta);
+}
+function poePergunta(){
+  const cena = quizCena(), perg = quizPerguntas()[quizPasso];
+  if (!cena || !perg) return;
+  /* a caixa que estava em cena não some: ela sai pela direita enquanto
+     a nova entra pela esquerda. Só se apaga do DOM depois da viagem —
+     e uma que já esteja a sair segue o próprio caminho, para uma
+     resposta rápida não deixar caixa pendurada. */
+  let trocou = false;
+  cena.querySelectorAll('.quiz-pergunta:not(.sai)').forEach(e => {
+    e.classList.add('sai');
+    setTimeout(() => e.remove(), 700);
+    trocou = true;
+  });
+  /* a tabela gira junto com a troca — mas só na TROCA: a primeira
+     pergunta do quiz não substitui ninguém, e não há o que festejar */
+  if (trocou) giraTabela(quizMesa());
+  cena.querySelectorAll('.quiz-escrita').forEach(e => e.remove());
+  quizTiraDica();
+  quizTropecos = 0;
+  const t = document.createElement('div');
+  t.className = 'quiz-pergunta';
+  t.innerHTML = '<b>' + (quizPasso + 1) + '.</b>' + perg.q;
+  if (pergPos){ t.style.left = pergPos.x + 'px'; t.style.top = pergPos.y + 'px'; }
+  arrastaPergunta(t);
+  cena.appendChild(t);
+  revela(t, 'on');
+  atualizaPlacar();
+  if (perg.tipo === 'escrita') poeEscrita(perg);
+}
+function atualizaPlacar(){
+  const cena = quizCena(), p = cena && cena.querySelector('.quiz-placar');
+  if (!p) return;
+  p.innerHTML = '<b>' + quizAcertos + '</b><i>de ' + quizPerguntas().length + '</i>';
+}
+
+/* ---- a resposta escrita ---- */
+function poeEscrita(perg){
+  const cena = quizCena();
+  const cx = document.createElement('div');
+  cx.className = 'quiz-escrita';
+  const atomos = perg.atomos.map(z =>
+    '<div class="atomo"><i>' + z + '</i><b>' + SIMBOLOS[z-1] + '</b></div>').join('');
+  cx.innerHTML = '<div class="atomos">' + atomos + '</div>' +
+                 '<input type="number" inputmode="numeric" aria-label="Total de elétrons de valência">' +
+                 '<button type="button">Responder</button>';
+  cena.appendChild(cx);
+  revela(cx, 'on');
+  const campo = cx.querySelector('input'), bt = cx.querySelector('button');
+  const confere = () => {
+    if (quizTravado) return;
+    if (+campo.value === perg.resposta){
+      cx.classList.remove('on');
+      setTimeout(() => cx.remove(), 350);
+      acertaQuiz(null, perg);
+    } else erraQuiz(null, perg);
+  };
+  bt.addEventListener('click', confere);
+  campo.addEventListener('keydown', ev => { if (ev.key === 'Enter') confere(); });
+}
+
+/* ---- o dedo na tabela ---- */
+function respondeQuiz(mesa, carta){
+  if (!quizAtivo || quizTravado) return;
+  const perg = quizPerguntas()[quizPasso];
+  if (!perg || perg.tipo === 'escrita') return;
+  const z = +carta.dataset.z, col = +carta.dataset.col, linha = +carta.dataset.linha;
+  if (perg.ok(z, col, linha)) acertaQuiz(carta, perg);
+  else erraQuiz(carta, perg);
+}
+function acertaQuiz(carta, perg){
+  quizTravado = true;
+  tocaSom('acerto');
+  const mesa = quizMesa();
+  acendeVerde(mesa);
+  confeteDaqui(carta || mesa);
+  /* de primeira é que vale ponto: quem tropeçou já viu a resposta */
+  if (!quizTropecos) quizAcertos++;
+  if (carta && mesa){
+    if (perg.tipo === 'familia'){
+      /* a família inteira acende, mas quem cresce é a carta tocada:
+         uma coluna inteira crescida taparia as vizinhas todas */
+      const col = +carta.dataset.col;
+      mesa.querySelectorAll('.pc[data-col="'+col+'"]').forEach(c => c.classList.add('certa'));
+    } else carta.classList.add('certa');
+    carta.firstElementChild.style.setProperty('--sc', '1.5');
+  }
+  atualizaPlacar();
+  quizTiraDica();
+  /* a festa pede tempo: a pergunta seguinte espera os confetes */
+  quizEspera(1250, () => {
+    if (mesa) mesa.classList.remove('brilha-acerto');
+    if (mesa) mesa.querySelectorAll('.pc.certa').forEach(c => {
+      c.classList.remove('certa');
+      c.firstElementChild.style.removeProperty('--sc');
+    });
+    quizTravado = false;
+    quizPasso++;
+    if (quizPasso >= quizPerguntas().length) fimDoQuiz();
+    else poePergunta();
+  });
+}
+function erraQuiz(carta, perg){
+  const mesa = quizMesa();
+  quizTropecos++;
+  /* os dois ao mesmo tempo, com a tela sacudindo em vermelho */
+  tocaSom('fraco');
+  tocaSom('erro');
+  sacodeTela();
+  if (carta){
+    carta.classList.add('errada');
+    carta.firstElementChild.style.setProperty('--sc', '1.34');
+    setTimeout(() => {
+      carta.classList.remove('errada');
+      carta.firstElementChild.style.removeProperty('--sc');
+    }, 620);
+  }
+  if (quizTropecos === 1) poeDica(perg.dica);
+  else if (quizTropecos >= 2 && perg.pista && mesa) piscaFaixa(mesa, perg.pista);
+}
+function poeDica(texto){
+  const cena = quizCena();
+  if (!cena || !texto) return;
+  quizTiraDica();
+  const d = document.createElement('div');
+  d.className = 'quiz-dica';
+  d.innerHTML = '<b>Dica:</b> ' + texto;
+  cena.appendChild(d);
+  revela(d, 'on');
+}
+/* a faixa que pisca três vezes por cima da linha ou da coluna certa */
+function piscaFaixa(mesa, pista){
+  mesa.querySelectorAll('.quiz-faixa').forEach(e => e.remove());
+  const f = document.createElement('div');
+  f.className = 'quiz-faixa';
+  if (pista.linha){
+    f.style.left   = (xDaColuna(1, 'junta') - CARTA_W/2 - 10) + 'px';
+    f.style.top    = (yDaLinha(pista.linha, 'junta') - CARTA_H/2 - 6) + 'px';
+    f.style.width  = (17*PASSO_X + CARTA_W + 20) + 'px';
+    f.style.height = (CARTA_H + 12) + 'px';
+  } else {
+    f.style.left   = (xDaColuna(pista.coluna, 'junta') - CARTA_W/2 - 6) + 'px';
+    f.style.top    = (yDaLinha(1, 'junta') - CARTA_H/2 - 6) + 'px';
+    f.style.width  = (CARTA_W + 12) + 'px';
+    f.style.height = (6*PASSO_Y + CARTA_H + 12) + 'px';
+  }
+  mesa.appendChild(f);
+  let n = 0;
+  const acende = () => {
+    f.classList.add('on');
+    quizEspera(520, () => {
+      f.classList.remove('on');
+      if (++n < 3) quizEspera(360, acende);
+      else quizEspera(400, () => f.remove());
+    });
+  };
+  quizEspera(60, acende);
+}
+
+/* ---- o fim, e o cartão ---- */
+const QUIZ_RECADOS_BONS = ['Você está aprendendo bem!', 'Ótimo resultado!',
+                           'Muito bem! Continue assim!'];
+const QUIZ_RECADOS_FRACOS = ['Continue praticando!', 'Quase lá, não desista!',
+                             'Pratique mais um pouco!'];
+function quizTiraCartao(){
+  const cena = quizCena();
+  if (cena) cena.querySelectorAll('.quiz-cartao').forEach(c => c.remove());
+}
+function fimDoQuiz(){
+  const cena = quizCena();
+  if (!cena) return;
+  /* a última caixa também sai pela direita: nenhuma pergunta desta aula
+     desaparece no lugar, e é o cartão do resultado que toma a cena */
+  cena.querySelectorAll('.quiz-pergunta').forEach(e => {
+    e.classList.add('sai');
+    setTimeout(() => e.remove(), 700);
+  });
+  cena.querySelectorAll('.quiz-escrita').forEach(e => e.remove());
+  quizTiraDica();
+  const total = quizPerguntas().length;
+  const nota = Math.round(quizAcertos / total * 100) / 10;
+  const bom = nota >= 5;
+  const recado = (bom ? QUIZ_RECADOS_BONS : QUIZ_RECADOS_FRACOS)[
+                   Math.floor(Math.random() * 3)];
+  const volta = 2 * Math.PI * 38;
+  const c = document.createElement('div');
+  c.className = 'quiz-cartao';
+  c.innerHTML =
+    '<div class="trofeu">🏆</div>' +
+    '<div class="chapeu">Seu resultado</div>' +
+    '<div class="anel">' +
+      '<svg viewBox="0 0 100 100">' +
+        '<circle cx="50" cy="50" r="38" fill="none" stroke="rgba(76,63,191,.16)" stroke-width="9"/>' +
+        '<circle cx="50" cy="50" r="38" fill="none" stroke-width="9" stroke-linecap="round" ' +
+          'stroke="' + (bom ? 'var(--natural)' : 'var(--ouro-luz)') + '" ' +
+          'stroke-dasharray="' + volta.toFixed(1) + '" ' +
+          'stroke-dashoffset="' + volta.toFixed(1) + '" ' +
+          'style="transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1) .35s"/>' +
+      '</svg>' +
+      '<div class="miolo"><span>Pontuação</span><b>' + nota.toFixed(1).replace('.', ',') + '</b></div>' +
+    '</div>' +
+    '<div class="conta"><em class="acerto">' + quizAcertos + '</em> de ' + total +
+      ' de primeira · <em class="erro">' + (total - quizAcertos) + '</em> com tropeço</div>' +
+    '<div class="recado">' + recado + '</div>' +
+    '<div class="botoes"><button type="button" class="refaz">Refazer</button>' +
+      '<button type="button" class="forte sai">Sair do quiz</button></div>';
+  cena.appendChild(c);
+  revela(c, 'on');
+  tocaSom('placar');
+  /* o anel só se enche depois de o cartão entrar */
+  quizEspera(120, () => {
+    const arco = c.querySelectorAll('circle')[1];
+    if (arco) arco.setAttribute('stroke-dashoffset', (volta * (1 - nota/10)).toFixed(1));
+  });
+  c.querySelector('.refaz').addEventListener('click', () => {
+    c.classList.remove('on');
+    setTimeout(() => c.remove(), 400);
+    const m = quizMesa();
+    if (m){
+      m.querySelectorAll('.pc.certa, .pc.errada').forEach(e => {
+        e.classList.remove('certa','errada');
+        e.firstElementChild.style.removeProperty('--sc');
+      });
+      m.querySelectorAll('.quiz-faixa').forEach(e => e.remove());
+    }
+    quizLimpaTimers();
+    recomecaQuiz();
+  });
+  c.querySelector('.sai').addEventListener('click', fechaQuiz);
+}
+
+/* ---- o botão do painel ---- */
+const quizBtn = document.getElementById('quiz-btn');
+function atualizaBotaoQuiz(){
+  if (!quizBtn) return;
+  quizBtn.disabled = !quizAtivo && !temQuiz(atual);
+  quizBtn.classList.toggle('on', quizAtivo);
+  quizBtn.title = quizAtivo ? 'Sair do quiz'
+                : (temQuiz(atual) ? 'Quiz deste slide' : 'Este slide não tem quiz');
+}
+quizBtn.addEventListener('click', () => { if (quizAtivo) fechaQuiz(); else abreQuiz(); });
+atualizaBotaoQuiz();      /* a capa não tem quiz: ele já nasce apagado */
+
 montaRoteiro3();
 montaRoteiro4();
 montaRoteiro5();
@@ -6745,6 +10102,7 @@ montaRoteiro6();
 montaRoteiro7();
 montaRoteiro8();
 montaRoteiro9();
+montaRoteiro10();
 animaCapa();
 pinta();
 seguraTela();
