@@ -9992,7 +9992,6 @@ function largaMesa(ev){
     /* no slide dos grupos o toque na carta já foi tratado lá em cima:
        aqui sobra o vazio, que adianta a aula */
     if (atual === 5){
-      if (!(toqueMesa.alvo.closest && toqueMesa.alvo.closest('.pc'))) passoAdiante();
       toqueMesa = null;
       return;
     }
@@ -10030,7 +10029,6 @@ function largaMesa(ev){
         }
       }
       else if (c)             sobeColuna(m, +c.dataset.col);
-      else if (!toqueMesa.alvo.closest || !toqueMesa.alvo.closest('.pc')) passoAdiante();
       toqueMesa = null;
       return;
     }
@@ -10045,12 +10043,10 @@ function largaMesa(ev){
       if (estaveisDitos){
         if (z === Z_ESTAVEL)      varreEstaveis(m);
         else if (z > Z_ESTAVEL)   varreRadioativos(m);
-        else if (!c)              passoAdiante();
       } else if (naturaisDitos){
         if (z === Z_NATURAL)      varreNaturais(m);
         else if (z > Z_NATURAL)   varreArtificiais(m);
-        else if (!c)              passoAdiante();
-      } else if (!c) passoAdiante();
+      }
       toqueMesa = null;
       return;
     }
@@ -10069,7 +10065,6 @@ function largaMesa(ev){
         if (chave && !seriesAbertas.has(chave) && PILHAS[z]) abreSerie(m, chave);
         else mostraBloco7(m, blocoDaCarta7(c));
       }
-      else if (!c) passoAdiante();
       toqueMesa = null;
       return;
     }
@@ -10083,7 +10078,6 @@ function largaMesa(ev){
       else if (!perto('.cx-fam')){
         const fam = perto('.pc');
         if (fam && m.classList.contains('familias')) alternaFamilia(m, fam);
-        else passoAdiante();
       }
       toqueMesa = null;
       return;
@@ -10102,7 +10096,6 @@ function largaMesa(ev){
       if (modoMesa !== 'junta' || m.classList.contains('numerada'))
         realceFaixa(m, carta);
     }
-    else passoAdiante();
     toqueMesa = null;
     return;
   }
@@ -10366,18 +10359,14 @@ const ajuda = document.getElementById('ajuda');
 function mostraAjuda(v){
   ajuda.hidden = !(v === undefined ? ajuda.hidden : !!v);
 }
-/* O clique no palco adianta a CENA do slide — nunca o slide. Trocar
-   de assunto é só pelas setas: um toque perdido na tela não pode
-   virar a página no meio da explicação. */
-stage.addEventListener('click', (ev) => {
-  if (naMontagem() || stage.classList.contains('escrevendo')) return;
-  if (ev.target.closest('button, a, input, .q-board, .pc')) return;
-  /* com a tabela aberta, os toques pertencem a ela: é ela que decide
-     se aquele toque acende um elemento, troca a leitura ou adianta a
-     aula — e a conta do toque duplo mora lá */
-  if (slides[atual].querySelector('.mesa.pronta')) return;
-  passoAdiante();
-});
+/* O TOQUE NA TELA VAZIA NÃO ADIANTA NADA.
+   Quem conduz a aula é a seta — a do teclado, a do controle remoto e a
+   da barra. O palco tinha um ouvinte de clique que adiantava a cena, e
+   a mesa fazia o mesmo com o dedo caído fora de qualquer peça: em aula
+   isso vira texto aparecendo por engano, com a mão apoiada na tela ou
+   um toque perdido enquanto se aponta alguma coisa. Tocar numa PEÇA
+   continua a valer — o elemento, o rótulo, o bloco, a caixa —, que
+   esse toque é a interação da cena, e não a passagem dela. */
 
 /* na montagem, o clique em cima do papel diz a coordenada dali —
    mas só se foi um clique mesmo, e não o fim de um arrasto */
