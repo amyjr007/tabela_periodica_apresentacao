@@ -4034,6 +4034,22 @@ function poeGuiaNaCarta(mesa, chave, z){
   return poeGuia(mesa, chave, parseFloat(c.style.left),
                  parseFloat(c.style.top) - CARTA_H/2 - 13);
 }
+/* em cima de um bloco de tipo: no meio dele, acima da carta mais alta */
+function poeGuiaNoBloco(mesa, chave, tipo){
+  const cs = [...mesa.querySelectorAll('.pc')].filter(c => tipoDe(+c.dataset.z) === tipo);
+  if (!cs.length) return null;
+  let x1 = 1e9, x2 = -1e9, y1 = 1e9;
+  cs.forEach(c => {
+    const x = parseFloat(c.style.left), y = parseFloat(c.style.top);
+    if (x < x1) x1 = x;  if (x > x2) x2 = x;  if (y < y1) y1 = y;
+  });
+  return poeGuia(mesa, chave, (x1 + x2)/2, y1 - CARTA_H/2 - 15);
+}
+/* as três de uma vez, no slide dos tipos */
+function poeGuiasDosTipos(mesa){
+  if (!mesa) return;
+  ['metais', 'ametais', 'nobres'].forEach(tp => poeGuiaNoBloco(mesa, 'tipo-' + tp, tp));
+}
 function tiraGuia(mesa, chave){
   guiasDitas.add(chave);
   if (!mesa) return;
@@ -4922,9 +4938,10 @@ function montaRoteiro4(){
     aplicaLayout(3);
     revela(t, 'posta');
 
-    /* dita a frase, os blocos se soltam do tabuleiro */
+    /* dita a frase, os blocos se soltam do tabuleiro — e cada um ganha
+       a sua bolinha, que sai quando aquele bloco for mexido */
     const mesa = sl.querySelector('.mesa');
-    if (mesa) mesa.classList.add('blocos', 'tipos');
+    if (mesa){ mesa.classList.add('blocos', 'tipos'); poeGuiasDosTipos(mesa); }
 
     /* o botão de refazer nasce com a cena e só aparece quando algum
        bloco tiver saído do lugar */
@@ -5929,6 +5946,7 @@ const blocosVistos7 = new Set();
 function reponhaGuias(mesa, i){
   if (!mesa) return;
   if (i === 2 && slides[2].querySelector('[data-mont="regra3"]')) poeGuiaNaCarta(mesa, 'coord-toque', 5);
+  else if (i === 3 && mesa.classList.contains('blocos')) poeGuiasDosTipos(mesa);
   else if (i === 4) poeGuiasDasFamilias(mesa);
   else if (i === 5 && mesa.classList.contains('grupos')) poeGuiaNaColuna(mesa, 'grp-1a', 1);
   else if (i === 6) poeGuiasDosBlocos(mesa, 6);
@@ -7334,6 +7352,7 @@ function blocoIsolado(tipo){
 
 function agendaDescolar(mesa, carta, ev){
   const tipo = tipoDe(+carta.dataset.z);
+  tiraGuia(mesa, 'tipo-' + tipo);        /* a mão já foi a este bloco */
   const pecas = [...mesa.querySelectorAll('.pc')].filter(p => tipoDe(+p.dataset.z) === tipo);
   pecas.forEach(p => p.classList.add('segurando'));
   esperaBloco = {
@@ -7364,6 +7383,7 @@ document.addEventListener('pointercancel', cancelaEspera);
 
 function comecaBloco(mesa, carta, ev){
   const tipo = tipoDe(+carta.dataset.z);
+  tiraGuia(mesa, 'tipo-' + tipo);
   descolados.add(tipo);            /* na mão, ele já saiu da estrutura */
   const pecas = [...mesa.querySelectorAll('.pc')]
     .filter(c => tipoDe(+c.dataset.z) === tipo)
