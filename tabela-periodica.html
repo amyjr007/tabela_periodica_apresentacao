@@ -1584,20 +1584,6 @@ body{
 .quiz-escrita button:hover{background:var(--tinta)}
 .quiz-escrita button:active{transform:scale(.95)}
 
-/* o botão de sair, no canto de baixo */
-.quiz-sair{
-  position:absolute;right:26px;bottom:18px;z-index:40;pointer-events:auto;
-  font-family:var(--display);font-weight:700;font-size:13px;
-  padding:10px 18px;border-radius:12px;cursor:pointer;
-  border:1.5px solid var(--indigo-dim);background:rgba(255,255,255,.92);
-  color:var(--tinta-dim);
-  transition:background .2s,color .2s,border-color .2s;
-}
-.quiz-sair:hover{border-color:var(--indigo);color:var(--indigo)}
-.cena.em-quiz .quiz-sair{
-  background:rgba(255,255,255,.09);border-color:rgba(207,198,245,.34);color:#DDD6F5;
-}
-.cena.em-quiz .quiz-sair:hover{background:rgba(255,255,255,.18);border-color:#CFC6F5;color:#fff}
 
 /* ---------- a natureza dos elementos, no slide 8 ----------
    A carta acende ao ser alcançada pela varredura: um salto curto, o
@@ -4511,13 +4497,24 @@ function marcaPrincipais(mesa, on){
     else    c.style.removeProperty('--fase');
   });
 }
-/* a cor que esta carta já ganhou no slide das famílias — nada, se a
-   coluna dela ainda não foi levantada */
+/* A cor que esta carta já ganhou no slide das famílias — nada, se a
+   coluna dela ainda não foi levantada, e nada TAMBÉM se a coluna não
+   for uma das famílias com nome próprio.
+
+   O slide é o das principais: alcalinos, alcalinos-terrosos,
+   calcogênios, halogênios e gases nobres, mais o hidrogênio, que
+   responde sozinho. As colunas do meio levantam-se e dizem como se
+   chamam — é para isso que se lhes toca —, mas não mudam de cor:
+   pintá-las era prometer à turma uma família que aquele slide não
+   está a ensinar, e ao fim da aula a tabela ficava colorida por
+   inteiro, sem distinguir as cinco que interessam. */
 function corPintadaDe(c){
   const z = +c.dataset.z;
   const chave = z === 1 ? 'h' : c.dataset.col;
   if (!familiasPintadas.has(chave)) return null;
-  return z === 1 ? 'var(--cat-ametais)' : corDaColuna(+c.dataset.col);
+  if (z === 1) return 'var(--cat-ametais)';
+  const col = +c.dataset.col;
+  return FAMILIAS[col] ? corDaColuna(col) : null;
 }
 /* Pintar uma coluna é tirar dela a face lisa e vestir a cor da
    família — a mesma coisa que a carta faz no slide 2 quando acha o
@@ -4611,7 +4608,10 @@ function alternaFamilia(mesa, carta){
     if (hidro) hidro.classList.add('de-fora');
   }
 
-  const cor  = z === 1 ? 'var(--cat-ametais)' : corDaColuna(col);
+  /* o nome de uma coluna sem família própria vem na cor da estrutura:
+     ele não pode anunciar uma cor que a coluna não vai vestir */
+  const cor  = z === 1 ? 'var(--cat-ametais)'
+             : (FAMILIAS[col] ? corDaColuna(col) : 'var(--indigo)');
   const nome = z === 1 ? 'Hidrogênio' : nomeDaFamilia(col);
   const rot = document.createElement('div');
   /* da metade da tabela para a esquerda o nome vem da direita; da
@@ -10371,17 +10371,10 @@ function abreQuiz(){
      e no quiz aquela fila é resposta — e o quiz tem o botão de sair
      dele, que é o único que faz falta aqui */
   mostraBarra(false);
-  /* O botão de sair mora na quina de baixo à direita — e no slide do
-     jogo aquela quina é do "Começar", que lhe ficava por cima. Ali
-     sai-se pelo Escape, ou pelo botão do quiz na barra. */
-  if (!QUIZ[quizSlide].jogo){
-    const sair = document.createElement('button');
-    sair.className = 'quiz-sair';
-    sair.type = 'button';
-    sair.textContent = 'Sair do quiz';
-    sair.addEventListener('click', fechaQuiz);
-    cena.appendChild(sair);
-  }
+  /* NÃO HÁ BOTÃO DE SAIR DENTRO DO QUIZ. A saída é pelo menu dos
+     controles — o mesmo botão que o abriu fecha-o —, ou pelo Escape.
+     Um botão de sair na quina roubava lugar ao que a cena tem para
+     mostrar, e no slide do jogo ficava mesmo por baixo do "Começar". */
   const placar = document.createElement('div');
   placar.className = 'quiz-placar';
   cena.appendChild(placar);
@@ -11017,8 +11010,7 @@ function poeCartaoDoQuiz(nota, contaHTML){
     '</div>' +
     '<div class="conta">' + contaHTML + '</div>' +
     '<div class="recado">' + recado + '</div>' +
-    '<div class="botoes"><button type="button" class="refaz">Refazer</button>' +
-      '<button type="button" class="forte sai">Sair do quiz</button></div>';
+    '<div class="botoes"><button type="button" class="forte refaz">Refazer</button></div>';
   cena.appendChild(c);
   revela(c, 'on');
   tocaSom('placar');
@@ -11042,7 +11034,6 @@ function poeCartaoDoQuiz(nota, contaHTML){
     if (QUIZ[quizSlide] && QUIZ[quizSlide].jogo) comecaJogo();
     else recomecaQuiz();
   });
-  c.querySelector('.sai').addEventListener('click', fechaQuiz);
 }
 
 /* ---- o botão do painel ---- */
