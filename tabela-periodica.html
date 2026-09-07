@@ -3833,6 +3833,7 @@ function reiniciaCena2(){
   if (typeof montaRoteiro9 === 'function') montaRoteiro9();
   if (typeof montaRoteiro10 === 'function') montaRoteiro10();
   familiasPintadas.clear();          /* a tabela recomeça sem cor nenhuma */
+  festejouFamilias = false;
   gruposDitos.clear();               /* e sem nome de grupo dito */
   blocosNomeados = false;
   festejouGrupos = false;
@@ -4478,6 +4479,22 @@ function textoDaFamilia(col, z){
    e não no DOM, porque virar a face apaga a tinta das cartas: quem
    volta ao slide 5 repinta o que a aula já levantou. */
 const familiasPintadas = new Set();
+/* DITA A ÚLTIMA DAS PRINCIPAIS, A TABELA COMEMORA.
+   É a mesma festa da montagem do slide 2 e do fim dos grupos do slide
+   6 — a onda verde a atravessar a tabela na diagonal e os confetes.
+   As principais são as cinco com nome próprio; o hidrogênio responde
+   sozinho e não entra na conta, senão a festa dependia de um toque
+   que o professor pode nunca dar. Uma vez só: quem volta ao slide
+   encontra a tabela pintada, e não a festa de novo. */
+let festejouFamilias = false;
+function conferFamilias(mesa){
+  if (festejouFamilias) return;
+  const faltam = Object.keys(FAMILIAS).some(col => !familiasPintadas.has(String(col)));
+  if (faltam) return;
+  festejouFamilias = true;
+  brilhoVerde(mesa);
+  confetes();
+}
 let familiaNoAlto = null;
 
 function nomeDaFamilia(col){
@@ -4601,6 +4618,7 @@ function alternaFamilia(mesa, carta){
   cartas.forEach(c => c.classList.add('no-alto'));
   familiasPintadas.add(chave);
   pintaFamilias(mesa);
+  conferFamilias(mesa);
   /* o hidrogênio dá um passo para o lado quando os alcalinos sobem:
      ele está na coluna 1 sem ser um deles */
   if (col === 1 && z !== 1){
@@ -6593,6 +6611,7 @@ function montaRoteiro5(){
         /* voltar apaga também a tinta: o slide recomeça no tabuleiro
            liso, como chegou */
         familiasPintadas.clear();
+        festejouFamilias = false;
         aplicaFace(m, 'face2');
       }
     });
