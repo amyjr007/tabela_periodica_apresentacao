@@ -2466,6 +2466,87 @@ body.montagem .slide.is-active .solto.pego{
 #bar .btn-quiz:hover{background:rgba(226,162,43,.16);color:var(--ouro)}
 #bar .btn-quiz.on{background:var(--ouro-luz);color:#fff}
 #bar .btn-quiz[disabled]{opacity:.3;cursor:default;background:transparent;color:var(--ouro)}
+
+/* ============================================================
+   O JOGO DA MEMÓRIA · o quiz 2 do slide 2
+   Vinte cartas viradas para baixo, dez pares: de um lado o símbolo,
+   do outro o nome do elemento. Achar o par é reconhecer que "Fe" e
+   "Ferro" são a mesma casa da tabela — que é o que o slide dos
+   critérios está a ensinar.
+   ============================================================ */
+.memoria{
+  position:absolute;inset:0;z-index:52;pointer-events:auto;
+  display:flex;flex-direction:column;align-items:center;
+  opacity:0;transition:opacity .4s ease;
+  background:radial-gradient(ellipse 92% 82% at 50% 46%,
+             rgba(20,17,46,.95) 0%, rgba(11,9,30,.985) 62%, rgba(7,6,22,.995) 100%);
+}
+.memoria.on{opacity:1}
+.mem-topo{
+  /* abaixo do cabeçalho do slide: o placar não pode sentar-se em cima
+     do título */
+  display:flex;align-items:baseline;gap:26px;margin:72px 0 10px;
+  font-family:var(--display);color:#EDE8FA;
+}
+.mem-topo b{font-size:30px;font-weight:800;color:var(--ouro-luz);line-height:1}
+.mem-topo i{font-style:normal;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.5);margin-left:7px}
+/* a grelha: cinco por quatro, medida para caber no palco */
+.mem-grade{
+  display:grid;grid-template-columns:repeat(5, 168px);
+  grid-auto-rows:126px;gap:10px;
+}
+.mem-carta{perspective:900px;cursor:pointer}
+.mem-carta .giro{
+  position:relative;width:100%;height:100%;transform-style:preserve-3d;
+  transition:transform .45s cubic-bezier(.3,.9,.3,1);
+}
+.mem-carta.virada .giro, .mem-carta.casada .giro{transform:rotateY(180deg)}
+.mem-carta .face{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:11px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 8px 22px rgba(6,5,26,.5), inset 0 1px 0 rgba(255,255,255,.18);
+}
+/* o verso: o átomo, na cor da estrutura */
+.mem-carta .costas{
+  background:linear-gradient(150deg,#3A3270,#221D4C 60%,#171338);
+  border:1px solid rgba(207,198,245,.26);
+  font-size:44px;color:rgba(207,198,245,.5);
+}
+.mem-carta .frente{
+  transform:rotateY(180deg);gap:3px;padding:8px;
+  background:linear-gradient(160deg,#FBFAFE,#E9E5F4);
+  border:1px solid rgba(255,255,255,.5);
+}
+.mem-carta .chapeu{
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tinta-faint);
+}
+.mem-carta .simbolo{font-family:var(--display);font-size:44px;font-weight:700;
+  color:var(--indigo);line-height:1}
+.mem-carta .nome{font-family:var(--display);font-size:19px;font-weight:700;
+  color:var(--tinta);line-height:1.1;text-align:center}
+.mem-carta .miudo{font-family:var(--mono);font-size:10px;color:var(--tinta-dim)}
+.mem-carta .emoji{font-size:26px;line-height:1}
+/* o par certo assenta e apaga-se; o errado treme em vermelho */
+.mem-carta.casada{pointer-events:none}
+.mem-carta.casada .frente{
+  background:linear-gradient(160deg,#DFF5E8,#BFE9D2);
+  border-color:rgba(31,157,85,.5);
+  box-shadow:0 0 0 2.5px var(--natural), 0 0 20px 5px rgba(31,157,85,.4);
+}
+.mem-carta.casada{opacity:.62;transition:opacity .5s ease .3s}
+.mem-carta.errada .frente{
+  box-shadow:0 0 0 2.5px var(--neon), 0 0 20px 6px rgba(255,46,76,.5);
+  animation:memTreme .4s ease;
+}
+@keyframes memTreme{
+  0%,100%{translate:0 0} 25%{translate:-7px 0} 60%{translate:6px 0} 85%{translate:-3px 0}
+}
+.mem-dica{
+  margin-top:14px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(226,222,240,.42);
+}
 #bar .sep{width:1px;height:22px;background:var(--indigo-dim);margin:0 3px}
 #counter{font-family:var(--mono);font-size:13px;color:var(--tinta-dim);
   min-width:58px;text-align:center;user-select:none}
@@ -2636,6 +2717,9 @@ body.montagem .slide.is-active .solto.pego{
   <!-- o quiz do slide: de outra cor, porque é outro modo, e não mais
        uma ferramenta da aula. Apagado nos slides que não têm quiz. -->
   <button class="btn btn-quiz" id="quiz-btn" title="Quiz deste slide" aria-label="Quiz deste slide">quiz</button>
+  <!-- o segundo quiz do slide 2: o jogo da memória. Só existe ali, e
+       por isso nasce escondido e aparece quando o slide chega. -->
+  <button class="btn btn-quiz" id="quiz2-btn" title="Jogo da memória" aria-label="Jogo da memória" hidden>quiz 2</button>
   <div class="sep"></div>
   <!-- a montagem: fora da aula, é aqui que a cena se arruma -->
   <button class="btn" id="mont-btn" title="Modo montagem: arrastar e redimensionar (G)" aria-label="Modo montagem" hidden>
@@ -3032,7 +3116,9 @@ function go(i, dir){
   if (typeof devolveSalto === 'function') devolveSalto(false);
   /* o quiz é de um slide só: mudou o slide, ele sai de cena */
   if (typeof quizAtivo !== 'undefined' && quizAtivo) fechaQuiz();
+  if (typeof fechaMemoria === 'function') fechaMemoria();
   if (typeof atualizaBotaoQuiz === 'function') atualizaBotaoQuiz();
+  if (typeof atualizaBotaoMemoria === 'function') atualizaBotaoMemoria();
   pinta();
 }
 function limpaFx(el){
@@ -11058,6 +11144,163 @@ function limpaJogo(){
   const cena = quizCena();
   if (cena) cena.querySelectorAll('.carta-jogo, .jogo-btn, .jogo-refaz').forEach(e => e.remove());
 }
+
+/* ============================================================
+   O JOGO DA MEMÓRIA · o quiz 2 do slide 2
+   Vinte cartas viradas para baixo, dez pares: de um lado o SÍMBOLO
+   com o número atômico e a massa, do outro o NOME com o grupo e o
+   período. Achar o par é reconhecer que "Fe" e "Ferro" são a mesma
+   casa da tabela — que é o que o slide dos critérios ensina.
+
+   O jogo é o do app de tabela anterior, com as regras de lá: dez
+   pontos por par, vinte se for prata ou ouro, mais cinco se o par
+   seguinte for do mesmo grupo do anterior, e menos dois por engano.
+   ============================================================ */
+const MEM_PARES = [
+  { z:1,  sym:'H',  nome:'Hidrogênio', g:1,  p:1, massa:'1,008',  cat:'Ametal',              emoji:'💧' },
+  { z:8,  sym:'O',  nome:'Oxigênio',   g:16, p:2, massa:'15,999', cat:'Ametal',              emoji:'🔥' },
+  { z:6,  sym:'C',  nome:'Carbono',    g:14, p:2, massa:'12,011', cat:'Ametal',              emoji:'💎' },
+  { z:7,  sym:'N',  nome:'Nitrogênio', g:15, p:2, massa:'14,007', cat:'Ametal',              emoji:'🌿' },
+  { z:11, sym:'Na', nome:'Sódio',      g:1,  p:3, massa:'22,990', cat:'Metal alcalino',      emoji:'🧂' },
+  { z:26, sym:'Fe', nome:'Ferro',      g:8,  p:4, massa:'55,845', cat:'Metal de transição',  emoji:'⚙️' },
+  { z:29, sym:'Cu', nome:'Cobre',      g:11, p:4, massa:'63,546', cat:'Metal de transição',  emoji:'⚡' },
+  { z:47, sym:'Ag', nome:'Prata',      g:11, p:5, massa:'107,87', cat:'Metal de transição',  emoji:'🌟' },
+  { z:79, sym:'Au', nome:'Ouro',       g:11, p:6, massa:'196,97', cat:'Metal de transição',  emoji:'👑' },
+  { z:30, sym:'Zn', nome:'Zinco',      g:12, p:4, massa:'65,38',  cat:'Metal de transição',  emoji:'🛡️' }
+];
+let memAberto = null, memCartas = [], memViradas = [];
+let memPontos = 0, memPares = 0, memErros = 0, memUltimoG = null, memConferindo = false;
+
+function cartaDaMemoria(d, tipo){
+  const corpo = tipo === 'sym'
+    ? '<div class="chapeu">Símbolo</div>' +
+      '<div class="simbolo">' + d.sym + '</div>' +
+      '<div class="miudo">Z = ' + d.z + '</div>' +
+      '<div class="miudo">' + d.massa + ' g/mol</div>'
+    : '<div class="chapeu">Nome do elemento</div>' +
+      '<div class="emoji">' + d.emoji + '</div>' +
+      '<div class="nome">' + d.nome + '</div>' +
+      '<div class="miudo">' + d.cat + '</div>' +
+      '<div class="miudo">Grupo ' + d.g + ' · ' + d.p + 'º período</div>';
+  return '<div class="mem-carta" data-z="' + d.z + '" data-tipo="' + tipo + '" data-g="' + d.g + '">' +
+           '<div class="giro">' +
+             '<div class="face costas">⚛</div>' +
+             '<div class="face frente">' + corpo + '</div>' +
+           '</div>' +
+         '</div>';
+}
+function baralhaMemoria(){
+  const baralho = [];
+  MEM_PARES.forEach(d => { baralho.push({d, tipo:'sym'}); baralho.push({d, tipo:'nome'}); });
+  for (let i = baralho.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = baralho[i]; baralho[i] = baralho[j]; baralho[j] = t;
+  }
+  return baralho;
+}
+
+function abreMemoria(){
+  if (memAberto || atual !== 1) return;
+  const sl = slides[1];
+  if (!sl) return;
+  if (quizAtivo) fechaQuiz();
+  mostraBarra(false);
+  memPontos = 0; memPares = 0; memErros = 0; memUltimoG = null; memConferindo = false;
+  memViradas = [];
+  const ov = document.createElement('div');
+  ov.className = 'memoria';
+  ov.innerHTML =
+    '<div class="mem-topo"><span><b class="pt">0</b><i>pontos</i></span>' +
+    '<span><b class="pr">0</b><i>de 10 pares</i></span></div>' +
+    '<div class="mem-grade">' + baralhaMemoria().map(c => cartaDaMemoria(c.d, c.tipo)).join('') + '</div>' +
+    '<div class="mem-dica">Ache o símbolo e o nome do mesmo elemento</div>';
+  sl.appendChild(ov);
+  memAberto = ov;
+  memCartas = [...ov.querySelectorAll('.mem-carta')];
+  memCartas.forEach((el, i) => el.addEventListener('click', () => viraMemoria(i)));
+  revela(ov, 'on');
+  atualizaBotaoMemoria();
+}
+function fechaMemoria(){
+  if (!memAberto) return;
+  const ov = memAberto;
+  memAberto = null; memCartas = []; memViradas = [];
+  ov.classList.remove('on');
+  setTimeout(() => ov.remove(), 450);
+  atualizaBotaoMemoria();
+}
+function placarMemoria(){
+  if (!memAberto) return;
+  memAberto.querySelector('.pt').textContent = memPontos;
+  memAberto.querySelector('.pr').textContent = memPares;
+}
+function viraMemoria(i){
+  if (memConferindo || !memAberto) return;
+  const el = memCartas[i];
+  if (!el || el.classList.contains('casada') || el.classList.contains('virada')) return;
+  if (memViradas.length >= 2) return;
+  el.classList.add('virada');
+  memViradas.push(i);
+  if (memViradas.length === 2) conferePar();
+}
+function conferePar(){
+  memConferindo = true;
+  const [ia, ib] = memViradas;
+  const a = memCartas[ia], b = memCartas[ib];
+  const igual = a.dataset.z === b.dataset.z && a.dataset.tipo !== b.dataset.tipo;
+  if (igual){
+    /* prata e ouro valem o dobro, e dois pares seguidos do mesmo grupo
+       dão um bónus: são as regras do jogo de onde ele veio */
+    const z = +a.dataset.z, g = a.dataset.g;
+    let pts = (z === 47 || z === 79) ? 20 : 10;
+    if (memUltimoG !== null && memUltimoG === g) pts += 5;
+    memUltimoG = g;
+    memPontos += pts; memPares++;
+    placarMemoria();
+    tocaSom('certo');
+    setTimeout(() => {
+      a.classList.remove('virada'); a.classList.add('casada');
+      b.classList.remove('virada'); b.classList.add('casada');
+      memViradas = []; memConferindo = false;
+      if (memPares === MEM_PARES.length) setTimeout(fimDaMemoria, 700);
+    }, 420);
+  } else {
+    memErros++; memPontos = Math.max(0, memPontos - 2); memUltimoG = null;
+    placarMemoria();
+    tocaSom('erro');
+    sacodeTela();
+    a.classList.add('errada'); b.classList.add('errada');
+    setTimeout(() => {
+      a.classList.remove('virada', 'errada');
+      b.classList.remove('virada', 'errada');
+      memViradas = []; memConferindo = false;
+    }, 1200);
+  }
+}
+/* o fim: a nota é a dos pontos sobre o melhor possível — dez pares,
+   com os dois de vinte e os bónus de grupo que o baralho permitir */
+function fimDaMemoria(){
+  const teto = 10 * 10 + 20;                 /* os dez pares, com prata e ouro a dobrar */
+  const nota = Math.max(0, Math.round(memPontos / teto * 100) / 10);
+  confetes();
+  const ov = memAberto;
+  if (ov) ov.querySelector('.mem-dica').textContent = 'Todos os pares encontrados';
+  poeCartaoDaMemoria(nota);
+}
+function poeCartaoDaMemoria(nota){
+  poeCartaoDoQuiz(nota,
+    '<em class="acerto">' + memPares + '</em> pares · ' +
+    '<em class="erro">' + memErros + '</em> enganos · ' + memPontos + ' pontos',
+    memAberto,
+    () => { fechaMemoria(); setTimeout(abreMemoria, 520); });
+}
+function atualizaBotaoMemoria(){
+  const b = document.getElementById('quiz2-btn');
+  if (!b) return;
+  b.hidden = atual !== 1;
+  b.classList.toggle('on', !!memAberto);
+  b.title = memAberto ? 'Sair do jogo da memória' : 'Jogo da memória';
+}
 /* ---- o fim, e o cartão ---- */
 const QUIZ_RECADOS_BONS = ['Você está aprendendo bem!', 'Ótimo resultado!',
                            'Muito bem! Continue assim!'];
@@ -11087,8 +11330,10 @@ function fimDoQuiz(){
 /* O CARTÃO DO RESULTADO, e é o mesmo para os dois: o quiz de
    perguntas conta acertos de primeira, o jogo dos blocos conta erros
    e tempo — muda a linha do meio, e mais nada. */
-function poeCartaoDoQuiz(nota, contaHTML){
-  const cena = quizCena();
+/* onde: a cena do quiz, ou a folha de outro jogo que queira o mesmo
+   cartão. refazer: o que o botão Refazer faz, quando não for o quiz. */
+function poeCartaoDoQuiz(nota, contaHTML, onde, refazer){
+  const cena = onde || quizCena();
   if (!cena) return;
   const bom = nota >= 5;
   const recado = (bom ? QUIZ_RECADOS_BONS : QUIZ_RECADOS_FRACOS)[
@@ -11124,6 +11369,7 @@ function poeCartaoDoQuiz(nota, contaHTML){
   c.querySelector('.refaz').addEventListener('click', () => {
     c.classList.remove('on');
     setTimeout(() => c.remove(), 400);
+    if (refazer){ refazer(); return; }
     const m = quizMesa();
     if (m){
       m.querySelectorAll('.pc.certa, .pc.errada').forEach(e => {
@@ -11148,6 +11394,11 @@ function atualizaBotaoQuiz(){
                 : (temQuiz(atual) ? 'Quiz deste slide' : 'Este slide não tem quiz');
 }
 quizBtn.addEventListener('click', () => { if (quizAtivo) fechaQuiz(); else abreQuiz(); });
+const quiz2Btn = document.getElementById('quiz2-btn');
+if (quiz2Btn) quiz2Btn.addEventListener('click', () => {
+  if (memAberto) fechaMemoria(); else abreMemoria();
+});
+atualizaBotaoMemoria();
 atualizaBotaoQuiz();      /* a capa não tem quiz: ele já nasce apagado */
 
 montaRoteiro3();
