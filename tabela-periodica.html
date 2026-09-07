@@ -479,6 +479,82 @@ body{
    ele ganha altura e sombra, para se ver que saiu do tabuleiro. */
 .mesa.blocos .pc{cursor:grab}
 
+
+/* ============================================================
+   O JOGO DOS BLOCOS — o quiz do slide 4
+   A tabela abre-se em três blocos encolhidos, e do alto desce uma
+   carta de cada vez: o aluno arrasta-a para o bloco a que ela
+   pertence. As cinco primeiras vêm com a resposta escrita e pintada
+   — são para ensinar o gesto e não contam ponto; daí em diante vêm
+   em branco. Dez acertos fecham o jogo.
+   ============================================================ */
+.carta-jogo{
+  position:absolute;z-index:70;transform:translate(-50%,-50%);
+  width:96px;height:112px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:linear-gradient(150deg,#FBFAFE,#E7E3F2);
+  box-shadow:0 10px 30px rgba(6,5,26,.5), 0 2px 8px rgba(6,5,26,.3),
+             inset 0 1px 0 rgba(255,255,255,.7);
+  cursor:grab;touch-action:none;user-select:none;
+  transition:top .7s cubic-bezier(.15,1.12,.35,1), opacity .3s ease;
+}
+.carta-jogo.pegada{cursor:grabbing;transition:none;z-index:80}
+.carta-jogo i{
+  font-style:normal;font-family:var(--mono);font-size:12px;
+  color:var(--tinta-dim);line-height:1;
+}
+.carta-jogo b{
+  font-family:var(--display);font-weight:700;font-size:38px;line-height:1;
+  color:var(--tinta);
+}
+.carta-jogo u{
+  text-decoration:none;font-family:var(--body);font-size:11px;
+  color:var(--tinta-dim);line-height:1;text-align:center;
+}
+/* a carta de ensino vem pintada da cor do tipo, e com o nome dele */
+.carta-jogo.ensina{background:var(--fundo-tipo)}
+.carta-jogo.ensina i, .carta-jogo.ensina u{color:rgba(255,255,255,.9)}
+.carta-jogo.ensina b{color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.4)}
+.carta-jogo em{
+  font-style:normal;font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:#fff;line-height:1;
+  text-shadow:0 1px 4px rgba(0,0,0,.45);
+}
+.carta-jogo.errou{animation:cartaErrou .42s ease}
+@keyframes cartaErrou{
+  0%,100%{translate:0 0} 22%{translate:-9px 0} 55%{translate:8px 0} 80%{translate:-4px 0}
+}
+/* o bloco por baixo do dedo acende: é o que diz "solta aqui" */
+.mesa .pc.alvo-jogo .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),
+             0 0 0 2.5px rgba(255,255,255,.75), 0 0 18px 4px rgba(255,255,255,.4);
+}
+.mesa .pc.certo-jogo .pc-in{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),
+             0 0 0 3px var(--natural), 0 0 22px 6px rgba(31,157,85,.6);
+}
+/* os dois botões redondos do canto: começar embaixo, refazer em cima */
+.jogo-btn, .jogo-refaz{
+  position:absolute;right:30px;z-index:60;pointer-events:auto;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;
+  transition:transform .16s, background .2s, color .2s, box-shadow .2s, opacity .3s;
+}
+.jogo-btn{
+  bottom:24px;width:96px;height:96px;
+  font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.02em;
+  border:2px solid var(--ouro-luz);color:#2B1B02;
+  background:radial-gradient(circle at 38% 30%, #FFD98A, var(--ouro-luz) 62%, #C07C10);
+  box-shadow:0 10px 28px rgba(226,162,43,.4), 0 0 0 8px rgba(226,162,43,.12);
+}
+.jogo-btn:hover{transform:scale(1.06)}
+.jogo-btn:active{transform:scale(.95)}
+.jogo-refaz{
+  bottom:136px;width:60px;height:60px;
+  border:1.5px solid rgba(226,162,43,.5);color:var(--ouro-luz);
+  background:rgba(20,17,46,.7);
+}
+.jogo-refaz:hover{border-color:var(--ouro-luz);background:rgba(40,32,70,.85);transform:scale(1.06)}
+.jogo-refaz:active{transform:scale(.94)}
 /* ---------- O SLIDE DOS TIPOS PINTA POR TIPO ----------
    Nos outros slides a carta veste a cor da FAMÍLIA dela, e são dez.
    Aqui a leitura é outra: há metais, ametais e gases nobres, e mais
@@ -491,6 +567,13 @@ body{
    Vai com !important porque a cor da família é posta na carta como
    estilo inline, ao nascer — e estilo inline ganha a uma regra
    normal. Aqui a folha é que tem de mandar. */
+/* e o fundo é forçado a nascer do --cor: a carta da frente de uma
+   pilha — os 57–71 e os 89–103 — leva um fundo escrito à mão pelo
+   slide dos grupos, e sem isto ficava vermelha no meio dos metais */
+.mesa.tipos .pc .pc-in{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--cor) 84%,#fff),
+                                   color-mix(in srgb,var(--cor) 86%,#000))!important;
+}
 .mesa.tipos .pc[data-tipo="metais"]     {--cor:var(--cat-transicao)!important}
 .mesa.tipos .pc[data-tipo="ametais"]    {--cor:var(--cat-ametais)!important}
 .mesa.tipos .pc[data-tipo="nobres"]     {--cor:var(--cat-nobres)!important}
@@ -9995,6 +10078,10 @@ reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zer
    que não têm um.
    ============================================================ */
 const QUIZ = {
+  /* slide 4 · Os Tipos de Elementos — aqui o quiz não pergunta: joga-se.
+     A tabela abre-se em blocos e as cartas caem de cima. */
+  3: { jogo:true, perguntas:[] },
+
   /* slide 2 · Os critérios de Organização */
   1: {eixos:true, perguntas:[
     {q:'Toque no elemento cujo número atômico é 17', ok:z => z === 17,
@@ -10144,6 +10231,7 @@ const temQuiz = i => !!QUIZ[i];
    página, e a essa altura a aula já começou. */
 const SONS = {
   acerto: 'Audios/funfare.mp3',
+  certo:  'Audios/right.mp3',      /* o do jogo dos blocos */
   erro:   'Audios/error.mp3',
   fraco:  'Audios/lowscore.mp3',
   placar: 'Audios/statistics.mp3'
@@ -10256,7 +10344,14 @@ function abreQuiz(){
   placar.className = 'quiz-placar';
   cena.appendChild(placar);
   revela(placar, 'on');
-  recomecaQuiz();
+  if (QUIZ[quizSlide].jogo){
+    /* a tabela abre-se em três blocos encolhidos e fica à espera do
+       botão: quem manda começar é o professor, não a entrada no quiz */
+    jogoAtivo = false; jogoAcertos = 0; jogoErros = 0;
+    if (mesa) separaBlocos(mesa);
+    atualizaPlacarDoJogo();
+    poeBotoesDoJogo(cena);
+  } else recomecaQuiz();
   atualizaBotaoQuiz();
 }
 /* o véu que apaga a sala, e a letra do cabeçalho que clareia com ele */
@@ -10293,9 +10388,14 @@ function fechaQuiz(){
     cena.querySelectorAll('.quiz-pergunta, .quiz-dica, .quiz-placar,' +
       ' .quiz-sair, .quiz-cartao, .quiz-escrita').forEach(e => e.remove());
   }
+  limpaJogo();
   if (mesa){
     clearTimeout(giraTimer);
     mesa.classList.remove('quiz', 'brilha-acerto', 'girando');
+    mesa.querySelectorAll('.pc.alvo-jogo, .pc.certo-jogo')
+        .forEach(c => c.classList.remove('alvo-jogo', 'certo-jogo'));
+    /* os blocos que o jogo separou voltam ao lugar */
+    if (QUIZ[quizSlide] && QUIZ[quizSlide].jogo) refazBlocos(mesa);
     mesa.querySelectorAll('.pc.certa, .pc.errada').forEach(c => {
       c.classList.remove('certa', 'errada');
       c.firstElementChild.style.removeProperty('--sc');
@@ -10539,6 +10639,274 @@ function piscaFaixa(mesa, pista){
   quizEspera(60, acende);
 }
 
+
+/* ============================================================
+   O JOGO DOS BLOCOS · o quiz do slide 4
+   A tabela abre-se em três blocos encolhidos — metais, ametais e
+   gases nobres, cada um com o seu nome por cima — e do alto desce
+   uma carta de cada vez, para o aluno arrastar até ao bloco a que
+   ela pertence.
+
+   As cinco primeiras vêm com a resposta escrita e pintada: são para
+   ensinar o gesto, e não contam ponto. Daí em diante vêm em branco.
+   Dez acertos fecham o jogo, e a nota desconta os erros e o tempo,
+   como no app anterior — o jogo é o de lá, trazido para esta casa.
+   ============================================================ */
+const JOGO_K = .5;                    /* a que tamanho os blocos encolhem */
+const JOGO_ALVO = 10;                 /* acertos para terminar */
+const JOGO_ENSINO = ['metais','metais','metais','ametais','nobres'];
+const JOGO_CENTROS = {
+  metais:  { x:330, y:534 },
+  ametais: { x:742, y:498 },
+  nobres:  { x:906, y:534 }
+};
+let jogoAtivo = false, jogoAcertos = 0, jogoErros = 0, jogoT0 = 0;
+let jogoUsados = [], jogoCarta = null, jogoAlvoAceso = null;
+
+/* ---- a tabela abre-se em três blocos ---- */
+function separaBlocos(mesa){
+  const grupos = { metais:[], ametais:[], nobres:[], hidrogenio:[] };
+  mesa.querySelectorAll('.pc').forEach(c => {
+    const t = tipoDe(+c.dataset.z);
+    (grupos[t] || grupos.metais).push(c);
+  });
+  const poe = (c, x, y) => {
+    c.style.transition = 'left .7s cubic-bezier(.3,.85,.3,1), top .7s cubic-bezier(.3,.85,.3,1)';
+    c.style.left = x.toFixed(1) + 'px';
+    c.style.top  = y.toFixed(1) + 'px';
+    c.firstElementChild.style.setProperty('--sc', JOGO_K);
+    setTimeout(() => c.style.removeProperty('transition'), 760);
+  };
+  const cantos = {};
+  Object.keys(JOGO_CENTROS).forEach(t => {
+    const cs = grupos[t];
+    if (!cs.length) return;
+    let x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+    cs.forEach(c => {
+      const a = alvoDe(+c.dataset.z, 'junta');
+      if (a.x < x1) x1 = a.x;  if (a.x > x2) x2 = a.x;
+      if (a.y < y1) y1 = a.y;  if (a.y > y2) y2 = a.y;
+    });
+    const cx = (x1+x2)/2, cy = (y1+y2)/2, alvo = JOGO_CENTROS[t];
+    cs.forEach(c => {
+      const a = alvoDe(+c.dataset.z, 'junta');
+      poe(c, alvo.x + (a.x - cx) * JOGO_K, alvo.y + (a.y - cy) * JOGO_K);
+    });
+    cantos[t] = { x: alvo.x - (cx - x1) * JOGO_K, y: alvo.y - (cy - y1) * JOGO_K };
+    descolados.add(t);
+    escalaBloco[t] = JOGO_K;
+  });
+  /* o hidrogénio é um ametal e joga com eles, mas na tabela mora
+     sozinho — aqui encosta ao canto do bloco deles, como quem espera */
+  if (cantos.ametais) grupos.hidrogenio.forEach(c =>
+    poe(c, cantos.ametais.x - 42, cantos.ametais.y));
+  /* e cada bloco diz o seu nome */
+  setTimeout(() => {
+    Object.keys(JOGO_CENTROS).forEach(t => {
+      if (grupos[t].length) nomeiaBloco(mesa, t, grupos[t]);
+    });
+  }, 720);
+}
+
+/* ---- os dois botões do canto ---- */
+function poeBotoesDoJogo(cena){
+  cena.querySelectorAll('.jogo-btn, .jogo-refaz').forEach(b => b.remove());
+  const b = document.createElement('button');
+  b.className = 'jogo-btn';
+  b.type = 'button';
+  b.textContent = 'Começar';
+  b.addEventListener('click', (ev) => { ev.stopPropagation(); comecaJogo(); });
+  cena.appendChild(b);
+  const r = document.createElement('button');
+  r.className = 'jogo-refaz';
+  r.type = 'button';
+  r.title = 'Recomeçar o jogo';
+  r.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none"' +
+    ' stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4.5V11h-6.4"/></svg>';
+  r.addEventListener('click', (ev) => { ev.stopPropagation(); comecaJogo(); });
+  cena.appendChild(r);
+}
+
+/* ---- o jogo ---- */
+function comecaJogo(){
+  const cena = quizCena();
+  if (!cena) return;
+  cena.querySelectorAll('.carta-jogo, .quiz-cartao').forEach(e => e.remove());
+  const b = cena.querySelector('.jogo-btn');
+  if (b) b.remove();
+  jogoAtivo = true;
+  jogoAcertos = 0; jogoErros = 0; jogoUsados = []; jogoT0 = Date.now();
+  atualizaPlacarDoJogo();
+  proximaCarta();
+}
+function atualizaPlacarDoJogo(){
+  const cena = quizCena(), p = cena && cena.querySelector('.quiz-placar');
+  if (p) p.innerHTML = '<b>' + jogoAcertos + '</b><i>de ' + JOGO_ALVO + '</i>';
+}
+/* quem desce a seguir: nas cinco primeiras a vez é de um tipo dito,
+   para o aluno ver os três blocos serem usados antes de decidir sozinho */
+function sorteiaElemento(){
+  const querido = JOGO_ENSINO[jogoUsados.length];
+  const tipoDoJogo = z => { const t = tipoDe(z); return t === 'hidrogenio' ? 'ametais' : t; };
+  let pool = [];
+  for (let z = 1; z <= 118; z++){
+    if (jogoUsados.indexOf(z) >= 0) continue;
+    if (z >= 57 && z <= 71) continue;        /* as séries moram na pilha */
+    if (z >= 89 && z <= 103) continue;
+    if (querido && tipoDoJogo(z) !== querido) continue;
+    pool.push(z);
+  }
+  if (!pool.length){
+    for (let z = 1; z <= 118; z++)
+      if (jogoUsados.indexOf(z) < 0 && !(z >= 57 && z <= 71) && !(z >= 89 && z <= 103)) pool.push(z);
+  }
+  const z = pool[Math.floor(Math.random() * pool.length)];
+  jogoUsados.push(z);
+  return { z, ensina: jogoUsados.length <= JOGO_ENSINO.length ? tipoDoJogo(z) : null };
+}
+function proximaCarta(){
+  if (!jogoAtivo) return;
+  const cena = quizCena();
+  if (!cena) return;
+  const { z, ensina } = sorteiaElemento();
+  const c = document.createElement('div');
+  c.className = 'carta-jogo' + (ensina ? ' ensina' : '');
+  c.dataset.z = z;
+  if (ensina){
+    c.style.setProperty('--fundo-tipo', fundoDe('var(--cat-' + CORES_TIPO[ensina] + ')'));
+    c.innerHTML = '<em>' + NOMES_TIPO[ensina] + '</em>';
+  } else c.innerHTML = '';
+  /* Z e símbolo, que é o que está escrito nas cartas da tabela: o
+     aluno procura o mesmo par ali em baixo */
+  c.innerHTML += '<i>' + z + '</i><b>' + SIMBOLOS[z-1] + '</b>';
+  c.style.left = '640px';
+  c.style.top  = '-120px';
+  cena.appendChild(c);
+  jogoCarta = c;
+  arrastaCartaDoJogo(c, z);
+  requestAnimationFrame(() => { c.style.top = '236px'; });
+}
+/* que bloco está debaixo deste ponto */
+function blocoSob(cx, cy){
+  const antes = jogoCarta ? jogoCarta.style.pointerEvents : null;
+  if (jogoCarta) jogoCarta.style.pointerEvents = 'none';
+  const el = document.elementFromPoint(cx, cy);
+  if (jogoCarta) jogoCarta.style.pointerEvents = antes || '';
+  const pc = el && el.closest && el.closest('.pc');
+  if (!pc) return null;
+  const t = tipoDe(+pc.dataset.z);
+  return t === 'hidrogenio' ? 'ametais' : t;
+}
+function acendeAlvo(tipo){
+  if (jogoAlvoAceso === tipo) return;
+  const mesa = quizMesa();
+  if (mesa) mesa.querySelectorAll('.pc.alvo-jogo').forEach(c => c.classList.remove('alvo-jogo'));
+  jogoAlvoAceso = tipo;
+  if (tipo && mesa) mesa.querySelectorAll('.pc').forEach(c => {
+    const t = tipoDe(+c.dataset.z);
+    if (t === tipo || (tipo === 'ametais' && t === 'hidrogenio')) c.classList.add('alvo-jogo');
+  });
+}
+
+function arrastaCartaDoJogo(c, z){
+  let pego = null, casa = null;
+  c.addEventListener('pointerdown', (ev) => {
+    if (!jogoAtivo) return;
+    const [px, py] = noPalco(ev);
+    casa = casa || { x: parseFloat(c.style.left), y: parseFloat(c.style.top) };
+    pego = { id: ev.pointerId, dx: casa.x - px, dy: casa.y - py };
+    c.classList.add('pegada');
+    try { c.setPointerCapture(ev.pointerId); } catch(_){}
+    ev.preventDefault(); ev.stopPropagation();
+  });
+  c.addEventListener('pointermove', (ev) => {
+    if (!pego || ev.pointerId !== pego.id) return;
+    const [px, py] = noPalco(ev);
+    c.style.left = (px + pego.dx).toFixed(1) + 'px';
+    c.style.top  = (py + pego.dy).toFixed(1) + 'px';
+    acendeAlvo(blocoSob(ev.clientX, ev.clientY));
+  });
+  const larga = (ev) => {
+    if (!pego || ev.pointerId !== pego.id) return;
+    pego = null;
+    c.classList.remove('pegada');
+    const tipo = blocoSob(ev.clientX, ev.clientY);
+    acendeAlvo(null);
+    if (!jogoAtivo) return;
+    if (tipo) responde(c, z, tipo);
+    else {
+      /* soltou no vazio: a carta volta para onde estava */
+      c.style.transition = 'left .4s cubic-bezier(.3,1.4,.5,1), top .4s cubic-bezier(.3,1.4,.5,1)';
+      c.style.left = casa.x + 'px';
+      c.style.top  = casa.y + 'px';
+    }
+  };
+  c.addEventListener('pointerup', larga);
+  c.addEventListener('pointercancel', larga);
+}
+
+function responde(c, z, tipo){
+  const bruto = tipoDe(z);
+  const certo = (bruto === 'hidrogenio' ? 'ametais' : bruto) === tipo;
+  const ensinando = c.classList.contains('ensina');
+  jogoCarta = null;
+  if (certo){
+    tocaSom('certo');
+    if (!ensinando) jogoAcertos++;
+    atualizaPlacarDoJogo();
+    piscaBlocoCerto(tipo);
+    c.style.transition = 'transform .3s cubic-bezier(.3,1.5,.5,1), opacity .3s';
+    c.style.transform = 'translate(-50%,-50%) scale(1.3)';
+    c.style.opacity = '0';
+    setTimeout(() => {
+      c.remove();
+      if (!ensinando && jogoAcertos >= JOGO_ALVO){ jogoAtivo = false; fimDoJogo(); }
+      else proximaCarta();
+    }, 340);
+  } else {
+    if (!ensinando) jogoErros++;
+    tocaSom('fraco'); tocaSom('erro');
+    sacodeTela();
+    c.classList.add('errou');
+    setTimeout(() => {
+      c.style.transition = 'opacity .3s, transform .3s';
+      c.style.opacity = '0';
+      c.style.transform = 'translate(-50%,-50%) scale(.7)';
+      setTimeout(() => { c.remove(); if (jogoAtivo) proximaCarta(); }, 320);
+    }, 260);
+  }
+}
+function piscaBlocoCerto(tipo){
+  const mesa = quizMesa();
+  if (!mesa) return;
+  const cs = [...mesa.querySelectorAll('.pc')].filter(c => {
+    const t = tipoDe(+c.dataset.z);
+    return t === tipo || (tipo === 'ametais' && t === 'hidrogenio');
+  });
+  cs.forEach(c => c.classList.add('certo-jogo'));
+  setTimeout(() => cs.forEach(c => c.classList.remove('certo-jogo')), 700);
+}
+/* a nota é a do app anterior: dez pontos, menos os erros e menos o
+   tempo que passou dos vinte segundos */
+function fimDoJogo(){
+  const cena = quizCena();
+  if (!cena) return;
+  cena.querySelectorAll('.carta-jogo').forEach(e => e.remove());
+  const segs = Math.round((Date.now() - jogoT0) / 1000);
+  const castigo = Math.max(0, (segs - 20) * .2);
+  quizAcertos = Math.max(0, Math.round((10 - castigo - jogoErros) * 10) / 10);
+  poeCartaoDoQuiz(quizAcertos,
+    '<em class="acerto">' + jogoAcertos + '</em> acertos · ' +
+    '<em class="erro">' + jogoErros + '</em> erros · ' + segs + 's');
+}
+function limpaJogo(){
+  jogoAtivo = false;
+  jogoCarta = null;
+  acendeAlvo(null);
+  const cena = quizCena();
+  if (cena) cena.querySelectorAll('.carta-jogo, .jogo-btn, .jogo-refaz').forEach(e => e.remove());
+}
 /* ---- o fim, e o cartão ---- */
 const QUIZ_RECADOS_BONS = ['Você está aprendendo bem!', 'Ótimo resultado!',
                            'Muito bem! Continue assim!'];
@@ -10561,6 +10929,16 @@ function fimDoQuiz(){
   quizTiraDica();
   const total = quizPerguntas().length;
   const nota = Math.round(quizAcertos / total * 100) / 10;
+  poeCartaoDoQuiz(nota,
+    '<em class="acerto">' + quizAcertos + '</em> de ' + total +
+    ' de primeira · <em class="erro">' + (total - quizAcertos) + '</em> com tropeço');
+}
+/* O CARTÃO DO RESULTADO, e é o mesmo para os dois: o quiz de
+   perguntas conta acertos de primeira, o jogo dos blocos conta erros
+   e tempo — muda a linha do meio, e mais nada. */
+function poeCartaoDoQuiz(nota, contaHTML){
+  const cena = quizCena();
+  if (!cena) return;
   const bom = nota >= 5;
   const recado = (bom ? QUIZ_RECADOS_BONS : QUIZ_RECADOS_FRACOS)[
                    Math.floor(Math.random() * 3)];
@@ -10581,8 +10959,7 @@ function fimDoQuiz(){
       '</svg>' +
       '<div class="miolo"><span>Pontuação</span><b>' + nota.toFixed(1).replace('.', ',') + '</b></div>' +
     '</div>' +
-    '<div class="conta"><em class="acerto">' + quizAcertos + '</em> de ' + total +
-      ' de primeira · <em class="erro">' + (total - quizAcertos) + '</em> com tropeço</div>' +
+    '<div class="conta">' + contaHTML + '</div>' +
     '<div class="recado">' + recado + '</div>' +
     '<div class="botoes"><button type="button" class="refaz">Refazer</button>' +
       '<button type="button" class="forte sai">Sair do quiz</button></div>';
@@ -10606,7 +10983,8 @@ function fimDoQuiz(){
       m.querySelectorAll('.quiz-faixa').forEach(e => e.remove());
     }
     quizLimpaTimers();
-    recomecaQuiz();
+    if (QUIZ[quizSlide] && QUIZ[quizSlide].jogo) comecaJogo();
+    else recomecaQuiz();
   });
   c.querySelector('.sai').addEventListener('click', fechaQuiz);
 }
