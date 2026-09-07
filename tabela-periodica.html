@@ -3764,10 +3764,10 @@ function lugarDaPista(){
   if (!mapa || !sl) return null;
   const cena = sl.querySelector('.cena');
   if (!cena) return null;
-  /* Slide 2 abre com o monte de cartas: o primeiro clique derrama as
-     118, e não traz frase nenhuma. Sem carta na mesa, o ponto não tem
+  /* O primeiro clique do slide 2 desmancha a tabela, e desmanchar não
+     traz frase nenhuma: enquanto ele não acontecer, o ponto não tem
      texto para anunciar e fica no canto. */
-  if (atual === 1 && !cena.querySelector('.pc')) return null;
+  if (atual === 1 && ROTEIROS[1] && ROTEIROS[1].i === 0) return null;
 
   const chaves = Object.keys(mapa)
     .filter(k => /^regra/.test(k))
@@ -9525,6 +9525,13 @@ function poeModo(mesa, modo){
     }, 380);
   }
   atualizaBotao(mesa);
+  /* E O PONTO SE ACENDE AQUI TAMBÉM.
+     Abrir a tabela em colunas é o que libera a segunda frase do slide 2
+     — ela espera por isso, e por mais nada. Sem este aviso, a frase
+     ficava pronta e o ponto apagado: o professor não tinha como saber
+     que a seta já tinha o que soltar. Trocar a leitura da tabela pode
+     mudar o que o clique solta, e quem muda a leitura é esta função. */
+  atualizaPista();
 }
 
 /* ---- o botão do canto ----
