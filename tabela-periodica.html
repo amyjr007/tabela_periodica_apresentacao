@@ -1982,7 +1982,14 @@ body{
   transition:opacity .45s ease, background .2s, color .2s, transform .16s;
 }
 .cena.valencia-viva .botao-subnivel{opacity:1;pointer-events:auto}
-.botao-subnivel:hover{background:var(--indigo);color:#fff}
+/* O AZUL DESTE BOTÃO É O DO ESTADO, E NÃO O DO DEDO.
+   Numa tela sensível o :hover fica grudado no último elemento tocado:
+   escondidos os subníveis, o botão continuava azul como se eles ainda
+   estivessem lá. O realce do ponteiro passa a existir só onde há
+   ponteiro de verdade. */
+@media (hover:hover){
+  .botao-subnivel:hover{background:var(--indigo);color:#fff}
+}
 .botao-subnivel:active{transform:scale(.94)}
 .botao-subnivel.aceso{background:var(--indigo);color:#fff}
 
@@ -1998,7 +2005,9 @@ body{
   content:'';position:absolute;inset:-3px;border-radius:50%;pointer-events:none;
   animation:botaoPulsa 2.2s ease-out .4s infinite;
 }
-.botao-pauling:hover{background:var(--indigo);color:#fff}
+@media (hover:hover){
+  .botao-pauling:hover{background:var(--indigo);color:#fff}
+}
 .botao-pauling:active{transform:scale(.94)}
 .botao-pauling.aceso{background:var(--indigo);color:#fff}
 
@@ -5089,6 +5098,7 @@ function conferFamilias(mesa){
   festejouFamilias = true;
   brilhoVerde(mesa);
   confetes();
+  tocaSom('acerto');          /* a fanfarra vai com os confetes */
 }
 let familiaNoAlto = null;
 
@@ -5377,6 +5387,7 @@ function conferGrupos(mesa){
   festejouGrupos = true;
   brilhoVerde(mesa);
   confetes();
+  tocaSom('acerto');          /* a mesma fanfarra do slide das famílias */
 }
 function diGrupo(mesa, col){
   gruposDitos.add(col);
@@ -6254,10 +6265,25 @@ function sobeColuna(mesa, col){
   r.className = 'rot-val ' + (col <= 9 ? 'de-dir' : 'de-esq');
   r.dataset.mont = 'conta';
   r.innerHTML = '<b>' + n + '</b> ' + (n === 1 ? 'elétron' : 'elétrons');
-  /* O lugar é da conta, e não de cada coluna: ele a arrumou uma vez,
-     no alto e à direita, e é dali que todas as famílias falam. O
-     sentido da entrada é que continua sendo de cada uma. */
   mesa.appendChild(r);
+  /* O LUGAR É DE CADA FAMÍLIA: no alto dela, e do lado.
+     A conta fica à altura do primeiro elemento da coluna já levantado
+     — os 54 px que a subida lhe deu — e encostada nele, do lado que
+     tem tela: à direita para as colunas da esquerda, à esquerda para
+     as da direita. Assim ela fala da coluna que está no alto, e não de
+     um canto qualquer da tabela.
+     A largura só se sabe com o texto posto, e por isso a conta do
+     lugar vem depois do appendChild. */
+  const cs = [...mesa.querySelectorAll('.pc')].filter(c => +c.dataset.col === col);
+  if (cs.length){
+    const topo = cs.reduce((a, c) =>
+      parseFloat(c.style.top) < parseFloat(a.style.top) ? c : a);
+    const paraADireita = col <= 9;
+    const meia = r.offsetWidth / 2;
+    r.style.left = (xDaColuna(col, 'junta') +
+                    (paraADireita ? 1 : -1) * (CARTA_W/2 + 18 + meia)).toFixed(0) + 'px';
+    r.style.top  = (parseFloat(topo.style.top) - 54).toFixed(0) + 'px';
+  }
   revela(r, 'on');
 }
 
@@ -6532,11 +6558,13 @@ function montaRoteiro9(){
    PALCO, e a mesa deste slide está subida 81 px — por isso o y de cá é
    o de lá mais 81. E o corpo é a fonte dele dividida pelos 38 de
    origem. Nada disto tranca nada: eles continuam de pegar. */
+/* Os quatro desceram três quartos de linha (40 px, que PASSO_Y é 54):
+   o professor os quis mais perto da tabela de que falam. */
 const BLOCOS_SUB = [
-  {q:'s', max: 2, x:323, y:196, k:1.453},
-  {q:'p', max: 6, x:461, y:199, k:1.418},
-  {q:'d', max:10, x:604, y:200, k:1.418},
-  {q:'f', max:14, x:729, y:202, k:1.495}
+  {q:'s', max: 2, x:323, y:236, k:1.453},
+  {q:'p', max: 6, x:461, y:239, k:1.418},
+  {q:'d', max:10, x:604, y:240, k:1.418},
+  {q:'f', max:14, x:729, y:242, k:1.495}
 ];
 /* As famílias de cada bloco, pela coluna em que estão. O f são catorze
    — uma por par lantanídeo/actinídeo —, e as colunas dele só existem
