@@ -7,6 +7,16 @@
 <meta name="theme-color" content="#EDEAF2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tabela Periódica">
+<meta name="description" content="A aula de Tabela Periódica do Prof. Amauri Junior: onze slides interativos, com quizzes, jogos e os mundos quânticos dos elementos.">
+<!-- A AULA SE INSTALA. O manifesto e o serviço abaixo fazem dela um app:
+     instalada, abre em tela cheia, com ícone próprio, e — guardada a
+     casca no aparelho — sem depender da internet da escola. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icones/icone.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/icone-192.png">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -267,6 +277,13 @@ body{
 }
 .capa .autor{font-size:23px;font-weight:300;color:var(--tinta-dim);letter-spacing:.01em}
 .capa .autor b{font-weight:500;color:var(--tinta)}
+/* o endereço, logo abaixo do nome e mais discreto do que ele: quem lê
+   isto de longe está lendo o título, e quem quer o contato está perto */
+.capa .email{
+  margin-top:9px;
+  font-family:var(--mono);font-size:14px;letter-spacing:.02em;
+  color:var(--tinta-faint);
+}
 
 /* o retrato do autor: enquadrado como uma célula da tabela — fundo
    branco, borda fina da cor da estrutura, canto levemente arredondado.
@@ -3036,7 +3053,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.1 · aula completa';
+const VERSAO    = 'v1.2 · app instalável';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
@@ -3205,6 +3222,7 @@ SLIDES.forEach((sl,i) => {
       '<h1>Tabela Periódica<br><em>Interativa e Moderna</em></h1>' +
       '<div class="risco"></div>' +
       '<div class="autor">Designed by Prof. <b>Amauri Junior</b></div>' +
+      '<div class="email">amauri.junior@escola.seduc.pa.gov.br</div>' +
       '<figure class="foto"><img src="Imagens/amauri_jr.jpg" alt="Professor Amauri Junior" draggable="false"></figure>';
   } else {
     el.innerHTML =
@@ -11055,6 +11073,18 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) segu
 document.addEventListener('pointerdown', seguraTela, { once:true });
 
 document.getElementById('ver').textContent = VERSAO;
+
+/* ---- o serviço que guarda a aula ----
+   Registrado depois de a página estar de pé, para não disputar a rede
+   com o que a cena precisa agora. Falhando — arquivo aberto direto do
+   disco, navegador antigo, permissão negada —, a aula corre na mesma:
+   isto acrescenta o poder de instalar e o de abrir sem internet, e não
+   é condição para nada. */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 ajustaPalco();
 reiniciaCena2();          /* o slide 2 já nasce com a cena armada, no passo zero */
 /* ============================================================

@@ -1,0 +1,23 @@
+{
+  "name": "Tabela Periódica Interativa e Moderna",
+  "short_name": "Tabela Periódica",
+  "description": "A aula de Tabela Periódica do Prof. Amauri Junior: onze slides interativos, com quizzes, jogos e os mundos quânticos dos elementos.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "id": "/tabela_periodica_apresentacao/",
+  "start_url": "./tabela-periodica.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#EDEAF2",
+  "theme_color": "#EDEAF2",
+  "categories": ["education", "science"],
+  "icons": [
+    { "src": "icones/icone-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/icone-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/icone-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icones/icone.svg",              "sizes": "any",     "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
