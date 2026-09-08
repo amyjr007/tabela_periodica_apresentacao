@@ -280,9 +280,14 @@ body{
 /* o endereço, logo abaixo do nome e mais discreto do que ele: quem lê
    isto de longe está lendo o título, e quem quer o contato está perto */
 .capa .email{
-  margin-top:9px;
-  font-family:var(--mono);font-size:14px;letter-spacing:.02em;
-  color:var(--tinta-faint);
+  /* Nasceu em 14px e no tom mais apagado da casa (28% de tinta), e
+     sumia: um endereço serve para ser lido e copiado, e a esta altura
+     da capa ninguém está a três metros da tela. Cresce para 19 e toma
+     o índigo da estrutura — visível como um contato, sem disputar com
+     o nome, que é maior e mais escuro. */
+  margin-top:10px;
+  font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.01em;
+  color:var(--indigo);
 }
 
 /* o retrato do autor: enquadrado como uma célula da tabela — fundo
@@ -3053,7 +3058,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.2 · app instalável';
+const VERSAO    = 'v1.3 · app instalável';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
