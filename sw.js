@@ -9,7 +9,7 @@
    zero: é assim que uma aula atualizada chega ao aparelho já
    instalado, sem ninguém ter de limpar nada à mão.
    ============================================================ */
-const VERSAO = 'v1.3';
+const VERSAO = 'v1.4';
 const CACHE  = 'tabela-periodica-' + VERSAO;
 
 /* o essencial, guardado na instalação */
@@ -31,7 +31,18 @@ const CASCA = [
   './Audios/lowscore.mp3',
   './Audios/statistics.mp3',
   './Audios/flipcard.mp3',
-  './Audios/exato!.mp3'
+  './Audios/exato!.mp3',
+  './fontes/fontes.css',
+  './fontes/space-grotesk-normal-latin.woff2',
+  './fontes/space-grotesk-normal-latin-ext.woff2',
+  './fontes/ibm-plex-sans-normal-latin.woff2',
+  './fontes/ibm-plex-sans-normal-latin-ext.woff2',
+  './fontes/ibm-plex-sans-400-italic-latin.woff2',
+  './fontes/ibm-plex-sans-400-italic-latin-ext.woff2',
+  './fontes/ibm-plex-mono-400-normal-latin.woff2',
+  './fontes/ibm-plex-mono-400-normal-latin-ext.woff2',
+  './fontes/ibm-plex-mono-500-normal-latin.woff2',
+  './fontes/ibm-plex-mono-500-normal-latin-ext.woff2'
 ];
 
 self.addEventListener('install', (ev) => {
@@ -75,13 +86,8 @@ self.addEventListener('fetch', (ev) => {
     return;
   }
 
-  /* as fontes do Google: rede primeiro, e o que já veio serve de
-     reserva quando ela falta */
-  ev.respondWith(
-    fetch(req).then(resp => {
-      if (resp && (resp.ok || resp.type === 'opaque'))
-        caches.open(CACHE).then(c => c.put(req, resp.clone()));
-      return resp;
-    }).catch(() => caches.match(req))
-  );
+  /* De fora não vem mais nada: desde a v1.4 as fontes moram no
+     repositório e a aula inteira é da casa. Se algum dia voltar a
+     haver um pedido externo, ele segue para a rede como sempre —
+     este serviço não se mete. */
 });

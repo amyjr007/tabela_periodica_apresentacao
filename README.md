@@ -6,6 +6,20 @@ Um arquivo só, sem instalação: abra `tabela-periodica.html` no navegador
 (Chromebook, PC ou projetor). O palco é fixo em 1280×720 e a tela apenas dá
 zoom nele, então a aula fica idêntica em qualquer lugar.
 
+## Sem internet
+
+A aula também se instala. Aberta pelo endereço publicado, o navegador oferece
+instalá-la; a partir daí abre em tela cheia, com ícone próprio, e **sem
+depender da rede da escola** — os slides, os sons, as imagens e as fontes ficam
+guardados no aparelho.
+
+Nada é pedido para fora: desde a v1.4 as fontes moram em `fontes/`, servidas
+do próprio repositório. Antes vinham do Google Fonts, e numa primeira abertura
+sem rede a aula recuava para as fontes do sistema.
+
+Para atualizar a aula num aparelho já instalado, basta subir a versão em
+`sw.js`: o cache velho é apagado sozinho.
+
 ## As 3 cores do tema
 
 papel-lavanda (fundo) · índigo (estrutura) · âmbar (destaque). As famílias da
