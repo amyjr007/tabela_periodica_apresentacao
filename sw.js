@@ -9,7 +9,7 @@
    zero: é assim que uma aula atualizada chega ao aparelho já
    instalado, sem ninguém ter de limpar nada à mão.
    ============================================================ */
-const VERSAO = 'v1.4';
+const VERSAO = 'v1.5';
 const CACHE  = 'tabela-periodica-' + VERSAO;
 
 /* o essencial, guardado na instalação */

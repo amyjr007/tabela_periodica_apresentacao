@@ -288,6 +288,11 @@ body{
      o índigo da estrutura — visível como um contato, sem disputar com
      o nome, que é maior e mais escuro. */
   margin-top:10px;
+  /* E DESCE UMA LINHA. Não por margem: a capa é centrada, e uma margem
+     maior aqui reparte o vão entre os dois — empurrava o nome para cima
+     metade do que descia o endereço. Deslocado, ele desce a linha
+     inteira (24px, a altura da linha dele) e o nome fica onde estava. */
+  position:relative;top:24px;
   font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:.01em;
   color:var(--indigo);
 }
@@ -3060,7 +3065,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.4 · fontes em casa';
+const VERSAO    = 'v1.5 · o e-mail, uma linha abaixo';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
