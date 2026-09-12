@@ -365,7 +365,7 @@ body{
   50%  {rotate:y -90deg}
   100% {rotate:y 0deg}
 }
-.pc.virando .pc-in{animation:viraCarta .6s ease-in-out}
+.pc.virando .pc-cubo{animation:viraCarta .6s ease-in-out}
 /* voltando de slide, a carta gira para o outro lado: a volta e o
    contrario da ida, e uma carta que girasse sempre no mesmo sentido
    diria que a aula continua a andar para a frente */
@@ -375,7 +375,7 @@ body{
   50%  {rotate:y 90deg}
   100% {rotate:y 0deg}
 }
-.pc.virando.volta .pc-in{animation:viraCartaVolta .6s ease-in-out}
+.pc.virando.volta .pc-cubo{animation:viraCartaVolta .6s ease-in-out}
 
 /* ---------- o número do tópico, à esquerda do título ---------- */
 .num{
@@ -456,7 +456,7 @@ body{
    reta. Ela é posta no destino de uma vez e o VOO é uma animação do
    deslocamento — um arco, calculado em voa(). */
 .pc{position:absolute;width:var(--cw,63px);height:var(--ch,52px);
-  transform:translate(-50%,-50%);perspective:420px}
+  transform:translate(-50%,-50%);perspective:var(--persp,620px)}
 /* O TIJOLO — o desenho vem do app de tabela anterior:
    canto vivo, fio branco em volta, um brilho no alto como o de vidro,
    e a sombra caída embaixo. Dentro, três linhas: o número em cima à
@@ -466,15 +466,59 @@ body{
    número atômico. A cor da família é o que ele ganha ao achar o lugar
    dele; antes disso, um monte colorido já contaria a história que a
    aula ainda vai contar. */
+/* O TIJOLO TEM VOLUME. Ele era uma folha; passa a ser um cubo raso —
+   frente, verso e quatro fatias de espessura.
+
+   A divisão do trabalho é a regra da casa: o CUBO move-se (os giros da
+   cena, o salto, o levantar, a inclinação) e as FACES pintam (a cor da
+   família, o fio branco, a sombra, o vidro por cima). Misturar as duas
+   coisas achata o cubo: 'overflow', 'filter' e 'opacity' obrigam o
+   navegador a esborrachar o que está dentro, e por isso vivem nas
+   faces, que são folhas e não têm nada dentro para esborrachar.
+
+   A cor mora no cubo e as faces herdam-na. Assim a única linha de JS
+   que repintava a carta — miolo.style.background — continua a valer,
+   e repinta as seis de uma vez. */
+.pc-cubo{
+  position:absolute;inset:0;
+  transform-style:preserve-3d;
+  /* a ordem importa: primeiro a espessura e os giros do cubo, e só
+     depois o giro no plano da mesa (--rot) e o tamanho (--sc), que
+     são os que a aula já mexia quando a carta era plana */
+  transform:translateZ(var(--dz,0px))
+            rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))
+            rotate(var(--rot,0deg)) scale(var(--sc,1));
+  transition:transform .34s ease-out;
+}
 .pc-in{
-  position:relative;width:100%;height:100%;overflow:hidden;
+  position:absolute;inset:0;overflow:hidden;
   display:flex;flex-direction:column;justify-content:space-between;
   padding:3px 6px 4px;border-radius:0;
   border:1px solid rgba(255,255,255,.24);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22);
-  transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
-  transition:transform .34s ease-out, background .55s ease, box-shadow .5s ease;
+  background:inherit;
+  backface-visibility:hidden;
+  transition:background .55s ease, box-shadow .5s ease;
 }
+/* as duas faces que se leem */
+.f-frente{transform:translateZ(calc(var(--prof,22px)/2))}
+.f-tras  {transform:rotateY(180deg) translateZ(calc(var(--prof,22px)/2))}
+/* e as quatro fatias da espessura: sem conteudo, so a cor um tom
+   abaixo. E delas que vem o volume quando o cubo roda. */
+.pc-lado{
+  position:absolute;background:inherit;
+  backface-visibility:hidden;
+  border:1px solid rgba(255,255,255,.16);
+  filter:brightness(.84);
+}
+.pc-lado-d,.pc-lado-e{top:0;height:100%;width:var(--prof,22px);
+  left:calc(50% - var(--prof,22px)/2)}
+.pc-lado-d{transform:rotateY( 90deg) translateZ(calc(var(--cw,58px)/2))}
+.pc-lado-e{transform:rotateY(-90deg) translateZ(calc(var(--cw,58px)/2))}
+.pc-lado-c,.pc-lado-b{left:0;width:100%;height:var(--prof,22px);
+  top:calc(50% - var(--prof,22px)/2)}
+.pc-lado-c{transform:rotateX( 90deg) translateZ(calc(var(--ch,48px)/2))}
+.pc-lado-b{transform:rotateX(-90deg) translateZ(calc(var(--ch,48px)/2))}
 /* o vidro por cima: claro no alto, some antes da metade */
 .pc-in::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.13),transparent 40%)}
@@ -508,12 +552,16 @@ body{
 .pc b.faixa{font-family:var(--mono);font-size:12px;letter-spacing:-.04em;white-space:nowrap}
 
 /* a entrada: cada carta nasce do nada, passa do tamanho e assenta */
+/* Escrito em 'scale:' e nao em 'transform:': o atalho apagava o giro
+   do cubo inteiro, e era preciso repetir --rot em cada passo para o
+   salvar. A propriedade individual COMPOE-SE com o transform do cubo,
+   e o --rot deixa de precisar de ser dito aqui. */
 @keyframes surge{
-  0%  {opacity:0;transform:rotate(var(--rot,0deg)) scale(.12)}
-  62% {opacity:1;transform:rotate(var(--rot,0deg)) scale(1.24)}
-  100%{opacity:1;transform:rotate(var(--rot,0deg)) scale(1)}
+  0%  {opacity:0;scale:.12}
+  62% {opacity:1;scale:1.24}
+  100%{opacity:1;scale:1}
 }
-.pc.surge .pc-in{animation:surge .66s cubic-bezier(.2,.9,.3,1) both}
+.pc.surge .pc-cubo{animation:surge .66s cubic-bezier(.2,.9,.3,1) both}
 
 /* o chamado: vermelho e forte, para achar a carta no meio do monte
    mesmo do fundo da sala. Continua lento — é um convite, não um alarme */
@@ -639,7 +687,8 @@ body{
 /* e o fundo é forçado a nascer do --cor: a carta da frente de uma
    pilha — os 57–71 e os 89–103 — leva um fundo escrito à mão pelo
    slide dos grupos, e sem isto ficava vermelha no meio dos metais */
-.mesa.tipos .pc .pc-in{
+.mesa.tipos .pc .pc-in,
+.mesa.tipos .pc .pc-lado{
   background:linear-gradient(145deg,color-mix(in srgb,var(--cor) 84%,#fff),
                                    color-mix(in srgb,var(--cor) 86%,#000))!important;
 }
@@ -665,12 +714,12 @@ body{
   32% {scale:1.16}
   100%{scale:1}
 }
-.pc.arranca .pc-in{animation:arranca .42s cubic-bezier(.3,1.5,.5,1)}
+.pc.arranca .pc-cubo{animation:arranca .42s cubic-bezier(.3,1.5,.5,1)}
 
 /* o esforço enquanto o dedo segura: o bloco força contra o encaixe */
 @keyframes segura{from{scale:1} to{scale:1.07}}
 .pc.segurando{z-index:21}
-.pc.segurando .pc-in{animation:segura 1s ease-in both}
+.pc.segurando .pc-cubo{animation:segura 1s ease-in both}
 /* O BOTÃO DE REFAZER
    Nasceu no slide dos tipos e serve agora também ao dos grupos: por
    isso é classe, e não identidade — dois slides podem ter o seu ao
@@ -1193,8 +1242,10 @@ body{
 }
 .mesa.familias .pc{cursor:pointer;
   transition:translate .42s cubic-bezier(.26,1.1,.4,1)}
-.mesa.familias .pc.principal .pc-in{
+.mesa.familias .pc.principal .pc-cubo{
   animation:respira 2.8s var(--fase,0ms) ease-in-out infinite;
+}
+.mesa.familias .pc.principal .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22),
              0 0 0 1.5px rgba(226,162,43,.42), 0 0 13px rgba(226,162,43,.36);
 }
@@ -1205,7 +1256,8 @@ body{
    cor antiga, no meio de uma família que se levanta, o faria passar
    por alcalino. */
 .mesa.familias .pc.de-fora{translate:-42px 0;opacity:.72}
-.mesa.familias .pc.no-alto .pc-in{animation:none;
+.mesa.familias .pc.no-alto .pc-cubo{animation:none}
+.mesa.familias .pc.no-alto .pc-in{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 13px 26px rgba(80,40,0,.36)}
 
 /* O NOME DA FAMÍLIA
@@ -1330,7 +1382,8 @@ body{
 /* na mão, nem a carta nem o miolo dela esperam transição: o bloco tem
    de chegar junto com o dedo, no arrasto e na pinça */
 .mesa.grupos.partida.puxando .pc{transition:none}
-.mesa.grupos.partida.puxando .pc-in{transition:none}
+.mesa.grupos.partida.puxando .pc-in,
+.mesa.grupos.partida.puxando .pc-cubo{transition:none}
 .mesa.grupos.partida .pc-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.24),
   0 6px 16px rgba(80,40,0,.28)}
 
@@ -1491,7 +1544,7 @@ body{
   50% {rotate:180deg; scale:.82}
   100%{rotate:360deg; scale:1}
 }
-.mesa.girando .pc .pc-in{
+.mesa.girando .pc .pc-cubo{
   animation:giraCarta .72s var(--onda,0ms) cubic-bezier(.42,0,.36,1);
 }
 @keyframes treme-carta{
@@ -1698,7 +1751,7 @@ body{
   38% {scale:1.3}
   100%{scale:1}
 }
-.pc.acende-nat .pc-in{animation:acendeNat .44s ease-out}
+.pc.acende-nat .pc-cubo{animation:acendeNat .44s ease-out}
 
 /* O verde do urânio não chega de repente: entra por cima da carta,
    apagando-se para dentro. É uma folha de cor sobre o miolo, e não a
@@ -1749,6 +1802,12 @@ body{
    acontecer, a carta que falta tocar dá dois saltos com um clarão em
    volta. É a cena dizendo onde está o que falta, em vez de não fazer
    nada — que é o que ela fazia, e não se distingue de estar quebrada. */
+/* Parte-se em dois porque mistura crescer (movimento, do cubo) com
+   halo (pintura, das faces). Mesma duracao e mesma curva nos dois:
+   andam juntos. */
+@keyframes puxaOlhoCorpo{
+  0%{scale:1} 40%{scale:1.34} 100%{scale:1}
+}
 @keyframes puxaOlho{
   0%  {scale:1;    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22)}
   40% {scale:1.34; box-shadow:0 0 0 4px var(--puxa,var(--indigo)),
@@ -1756,6 +1815,7 @@ body{
   100%{scale:1;    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22)}
 }
 .pc.puxa-olho{z-index:28}
+.pc.puxa-olho .pc-cubo{animation:puxaOlhoCorpo .44s ease-out 2}
 .pc.puxa-olho .pc-in{animation:puxaOlho .44s ease-out 2}
 
 /* os dois nomes, no vazio acima dos metais de transição */
@@ -3065,7 +3125,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.5 · o e-mail, uma linha abaixo';
+const VERSAO    = 'v1.6 · os tijolos ganham volume';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
@@ -3452,8 +3512,8 @@ function montaCartasEm(mesa){
     miolo.style.background = fundoFamilia;
     const faixa = PILHAS[z];
     if (faixa){
-      miolo.classList.add('pilha');
-      miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+      marcaMiolo(miolo, 'pilha', true);
+      poeNoMiolo(miolo, '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>');
       c.style.zIndex = '12';
     } else if (naPilha(z)){
       c.style.visibility = 'hidden';     /* as catorze de baixo da pilha */
@@ -4373,10 +4433,33 @@ function criaCarta(z){
   c.dataset.tipo  = tipoDe(z);   /* o slide 4 pinta por aqui */
   /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
   c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
-  c.innerHTML = '<div class="pc-in" style="background:'+fundoCinza(z)+'">' +
-                  '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>' +
-                '</div>';
+  /* A CARTA NASCE CUBO. A cor vai no cubo e as seis faces herdam-na —
+     é o que deixa 'miolo.style.background' continuar a repintar a carta
+     inteira com uma linha só, como quando ela era plana.
+     Conteúdo só na frente e no verso: as quatro fatias da espessura
+     são cor e mais nada, e é dali que vem o volume ao girar. */
+  const cara = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+  c.innerHTML =
+    '<div class="pc-cubo" style="background:'+fundoCinza(z)+'">' +
+      '<div class="pc-in f-frente">'+cara+'</div>' +
+      '<div class="pc-in f-tras">'+cara+'</div>' +
+      '<div class="pc-lado pc-lado-d"></div><div class="pc-lado pc-lado-e"></div>' +
+      '<div class="pc-lado pc-lado-c"></div><div class="pc-lado pc-lado-b"></div>' +
+    '</div>';
   return c;
+}
+
+/* ---- o miolo agora são duas faces ----
+   'miolo' continua a ser o primeiro filho da carta — só que passou a
+   ser o cubo. O que é estilo (a cor, o --rot, o --sc) escreve-se nele
+   e desce sozinho às faces. O que é CONTEÚDO tem de ser posto nas duas
+   que se leem, e é para isso que servem estas duas. */
+function facesDe(cubo){ return cubo.querySelectorAll('.pc-in'); }
+function poeNoMiolo(cubo, html){
+  facesDe(cubo).forEach(f => { f.innerHTML = html; });
+}
+function marcaMiolo(cubo, classe, liga){
+  facesDe(cubo).forEach(f => f.classList.toggle(classe, liga));
 }
 function poe(c, x, y, rot){
   c.style.left = x.toFixed(1)+'px';
@@ -4760,8 +4843,8 @@ function reiniciaCena2(){
     c.classList.remove('na-tabela', 'encaixada', 'realce', 'escolhida');
     const faixa = PILHAS[z];
     if (faixa){
-      miolo.classList.remove('pilha');
-      miolo.innerHTML = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+      marcaMiolo(miolo, 'pilha', false);
+      poeNoMiolo(miolo, '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>');
       for (let k = faixa.de; k <= faixa.ate; k++){
         const outra = cartas.get(k);
         if (outra) outra.style.removeProperty('visibility');
@@ -4784,8 +4867,8 @@ function reiniciaCena2(){
     const faixa = PILHAS[z];
     if (naPilha(z)) c.style.zIndex = faixa ? '12' : '1';
     if (!faixa) return;
-    miolo.classList.add('pilha');
-    miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+    marcaMiolo(miolo, 'pilha', true);
+    poeNoMiolo(miolo, '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>');
     /* Pousada a carta da frente, as catorze de baixo saem de cena. Elas
        já estavam escondidas atrás desta, mas bastava a linha apagar um
        pouco para todas transparecerem de uma vez, embaralhadas. O
@@ -5776,16 +5859,16 @@ function corDaSerie(z){
 function tiraDaPilha(c, z){
   const miolo = c.firstElementChild;
   if (PILHAS[z]){
-    miolo.classList.remove('pilha');
-    miolo.innerHTML = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+    marcaMiolo(miolo, 'pilha', false);
+    poeNoMiolo(miolo, '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>');
   }
   c.style.removeProperty('visibility');
 }
 function poeNaPilha(c, z){
   const miolo = c.firstElementChild, faixa = PILHAS[z];
   if (faixa){
-    miolo.classList.add('pilha');
-    miolo.innerHTML = '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>';
+    marcaMiolo(miolo, 'pilha', true);
+    poeNoMiolo(miolo, '<b class="faixa">'+faixa.de+'–'+faixa.ate+'</b>');
     c.style.zIndex = '12';
   } else {
     c.style.visibility = 'hidden';
