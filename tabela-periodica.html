@@ -466,30 +466,60 @@ body{
    número atômico. A cor da família é o que ele ganha ao achar o lugar
    dele; antes disso, um monte colorido já contaria a história que a
    aula ainda vai contar. */
-/* O TIJOLO TEM VOLUME. Ele era uma folha; passa a ser um cubo raso —
-   frente, verso e quatro fatias de espessura.
+/* O TIJOLO É UM CUBO — O DO APP DO ALUNO.
+   Seis faces iguais: o número, o símbolo e a massa em todas elas. Gire
+   para onde girar, a carta nunca perde a cara — e cai sempre de pé:
+   acabado o giro, uma correção no plano da tela (--rzc) põe o texto
+   direito outra vez (ver correcaoDeLeitura).
 
-   A divisão do trabalho é a regra da casa: o CUBO move-se (os giros da
-   cena, o salto, o levantar, a inclinação) e as FACES pintam (a cor da
-   família, o fio branco, a sombra, o vidro por cima). Misturar as duas
-   coisas achata o cubo: 'overflow', 'filter' e 'opacity' obrigam o
-   navegador a esborrachar o que está dentro, e por isso vivem nas
-   faces, que são folhas e não têm nada dentro para esborrachar.
+   A carta daqui é mais larga do que alta (58 × 48), e um cubo de
+   verdade mudaria a tabela inteira de lugar. Por isso é um bloco: a
+   profundidade (--prof) é a largura da carta, e no giro de lado — o
+   mais comum — a face que chega é igual à que sai. No giro para cima
+   ele passa pela face de cima, que é quadrada; por isso a vida solta só
+   o gira para cima em meias voltas e voltas inteiras.
 
-   A cor mora no cubo e as faces herdam-na. Assim a única linha de JS
-   que repintava a carta — miolo.style.background — continua a valer,
-   e repinta as seis de uma vez. */
+   A divisão do trabalho é a regra da casa: o CUBO move-se e as FACES
+   pintam, porque 'overflow', 'filter' e 'opacity' achatam o 3D e por
+   isso vivem nas faces, que são folhas.
+
+   PARADO, É PLANO — a "mesa plana" do app do aluno, só que sempre. Um
+   giro 3D, mesmo de zero graus, põe cada peça numa camada à parte da
+   placa de vídeo, e cento e dezoito blocos de seis faces eram
+   setecentas camadas. A carta nasce com a face da frente só; as outras
+   cinco nascem quando ela começa a girar (daVolume) e vão-se quando ela
+   pousa (pousaCubo). Como as seis são iguais, trocar o cubo virado
+   pela carta de frente não se vê.
+
+   A PASSAGEM DE SLIDE VIRA A CARTA PLANA, como sempre virou — e como o
+   app do aluno faz quando a tabela inteira vira de uma vez: são as 118
+   ao mesmo tempo, e com seis faces cada uma a onda engasgava.
+
+   A cor mora no cubo e as faces herdam-na: a linha de JS que repinta
+   a carta — miolo.style.background — repinta todas de uma vez. */
 .pc-cubo{
   position:absolute;inset:0;
-  transform-style:preserve-3d;
-  /* a ordem importa: primeiro a espessura e os giros do cubo, e só
-     depois o giro no plano da mesa (--rot) e o tamanho (--sc), que
-     são os que a aula já mexia quando a carta era plana */
-  transform:translateZ(var(--dz,0px))
-            rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))
-            rotate(var(--rot,0deg)) scale(var(--sc,1));
+  transform:rotate(var(--rot,0deg)) scale(var(--sc,1));
   transition:transform .34s ease-out;
 }
+/* A GIRAR, GANHA FUNDO. O eixo dos giros fica no meio do bloco, e não
+   na face: a caixa cresce para trás da frente, e a frente continua no
+   plano da mesa — parada, a carta tem o tamanho exato de sempre.
+   A ordem é a do aluno: o levantar (--dz) primeiro, na direção do olho;
+   depois a correção da leitura (--rzc), um giro no plano da tela;
+   depois os três giros do cubo; e só no fim o giro no plano da mesa
+   (--rot) e o tamanho (--sc), os que a aula já mexia. */
+.pc.em-volume .pc-cubo{
+  transform-style:preserve-3d;
+  transform-origin:50% 50% calc(var(--prof,var(--cw,58px)) / -2);
+  transform:translateZ(var(--dz,0px)) rotateZ(var(--rzc,0deg))
+            rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) rotateZ(var(--rz,0deg))
+            rotate(var(--rot,0deg)) scale(var(--sc,1));
+  transition:transform var(--dur,.7s) var(--curva,cubic-bezier(.3,.85,.3,1));
+}
+/* entrar em volume e pousar são trocas de forma, e não viagens: sem
+   transição nenhuma, senão uma volta inteira nascia já no fim */
+.pc-cubo.sem-giro{transition:none!important}
 .pc-in{
   position:absolute;inset:0;overflow:hidden;
   display:flex;flex-direction:column;justify-content:space-between;
@@ -497,28 +527,41 @@ body{
   border:1px solid rgba(255,255,255,.24);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 2px 6px rgba(80,40,0,.22);
   background:inherit;
-  backface-visibility:hidden;
   transition:background .55s ease, box-shadow .5s ease;
 }
-/* as duas faces que se leem */
-.f-frente{transform:translateZ(calc(var(--prof,22px)/2))}
-.f-tras  {transform:rotateY(180deg) translateZ(calc(var(--prof,22px)/2))}
-/* e as quatro fatias da espessura: sem conteudo, so a cor um tom
-   abaixo. E delas que vem o volume quando o cubo roda. */
-.pc-lado{
-  position:absolute;background:inherit;
-  backface-visibility:hidden;
-  border:1px solid rgba(255,255,255,.16);
-  filter:brightness(.84);
-}
-.pc-lado-d,.pc-lado-e{top:0;height:100%;width:var(--prof,22px);
-  left:calc(50% - var(--prof,22px)/2)}
-.pc-lado-d{transform:rotateY( 90deg) translateZ(calc(var(--cw,58px)/2))}
-.pc-lado-e{transform:rotateY(-90deg) translateZ(calc(var(--cw,58px)/2))}
-.pc-lado-c,.pc-lado-b{left:0;width:100%;height:var(--prof,22px);
-  top:calc(50% - var(--prof,22px)/2)}
-.pc-lado-c{transform:rotateX( 90deg) translateZ(calc(var(--ch,48px)/2))}
-.pc-lado-b{transform:rotateX(-90deg) translateZ(calc(var(--ch,48px)/2))}
+.pc.em-volume .pc-in{backface-visibility:hidden}
+/* as outras cinco faces — a de trás, as duas do lado, a de cima e a
+   de baixo —, cada uma virada para fora do bloco */
+.f-tras{transform:translateZ(calc(var(--prof,var(--cw,58px)) * -1)) rotateY(180deg)}
+.f-dir,.f-esq{left:calc(50% - var(--prof,var(--cw,58px)) / 2);right:auto;width:var(--prof,var(--cw,58px))}
+.f-dir{transform:translateZ(calc(var(--prof,var(--cw,58px)) / -2))
+                 rotateY( 90deg) translateZ(calc(var(--cw,58px) / 2))}
+.f-esq{transform:translateZ(calc(var(--prof,var(--cw,58px)) / -2))
+                 rotateY(-90deg) translateZ(calc(var(--cw,58px) / 2))}
+.f-cima,.f-baixo{top:calc(50% - var(--prof,var(--cw,58px)) / 2);bottom:auto;height:var(--prof,var(--cw,58px))}
+.f-cima {transform:translateZ(calc(var(--prof,var(--cw,58px)) / -2))
+                   rotateX( 90deg) translateZ(calc(var(--ch,48px) / 2))}
+.f-baixo{transform:translateZ(calc(var(--prof,var(--cw,58px)) / -2))
+                   rotateX(-90deg) translateZ(calc(var(--ch,48px) / 2))}
+/* AS FACES DE LADO ESCURECEM UM FIO, e é o que dá volume ao cubo
+   enquanto ele roda. Como no aluno, não é um filter: é um véu por cima
+   da cor e abaixo da letra. E só enquanto ele roda — pousado, o véu
+   some devagar, as seis voltam a ser a mesma carta, e a troca pela
+   carta de frente não se vê. */
+.f-tras::after,.f-dir::after,.f-esq::after,.f-cima::after,.f-baixo::after{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  opacity:0;transition:opacity .25s ease}
+.f-dir::after,.f-esq::after{background:rgba(0,0,0,.07)}
+.f-tras::after{background:rgba(0,0,0,.12)}
+.f-cima::after,.f-baixo::after{background:rgba(255,255,255,.05)}
+.pc.rodando .f-tras::after,.pc.rodando .f-dir::after,.pc.rodando .f-esq::after,
+.pc.rodando .f-cima::after,.pc.rodando .f-baixo::after{opacity:1}
+/* RODANDO — um cubo a meio de uma volta é mais largo do que a casa
+   dele: a quina sai para os lados. Enquanto roda, passa por cima dos
+   vizinhos, senão a volta aparece recortada pelas cartas ao lado.
+   E quem salta passa por cima de quem ficou na mesa. */
+.pc.rodando{z-index:24}
+.pc.no-ar{z-index:23}
 /* o vidro por cima: claro no alto, some antes da metade */
 .pc-in::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.13),transparent 40%)}
@@ -687,8 +730,7 @@ body{
 /* e o fundo é forçado a nascer do --cor: a carta da frente de uma
    pilha — os 57–71 e os 89–103 — leva um fundo escrito à mão pelo
    slide dos grupos, e sem isto ficava vermelha no meio dos metais */
-.mesa.tipos .pc .pc-in,
-.mesa.tipos .pc .pc-lado{
+.mesa.tipos .pc .pc-in{
   background:linear-gradient(145deg,color-mix(in srgb,var(--cor) 84%,#fff),
                                    color-mix(in srgb,var(--cor) 86%,#000))!important;
 }
@@ -3125,7 +3167,7 @@ const SLIDES = [
     subtitle:'' }
 ];
 
-const VERSAO    = 'v1.6 · os tijolos ganham volume';
+const VERSAO    = 'v1.7 · os cubos do aluno e a tabela viva';
 const NOTES_KEY = 'tabela-periodica-notas-v1';
 
 /* ------------------------------------------------------------
@@ -4433,27 +4475,384 @@ function criaCarta(z){
   c.dataset.tipo  = tipoDe(z);   /* o slide 4 pinta por aqui */
   /* a cor fica guardada aqui, mas só aparece quando a carta se encaixa */
   c.style.setProperty('--cor', 'var(--cat-' + familiaDoZ(z) + ')');
-  /* A CARTA NASCE CUBO. A cor vai no cubo e as seis faces herdam-na —
-     é o que deixa 'miolo.style.background' continuar a repintar a carta
-     inteira com uma linha só, como quando ela era plana.
-     Conteúdo só na frente e no verso: as quatro fatias da espessura
-     são cor e mais nada, e é dali que vem o volume ao girar. */
-  const cara = '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>';
+  /* A CARTA NASCE CUBO — DE UMA FACE SÓ. A cor vai no cubo e as faces
+     herdam-na, o que deixa 'miolo.style.background' repintar a carta
+     inteira com uma linha, como quando ela era plana. O verso e as
+     fatias só nascem quando ela gira pela primeira vez: ver daVolume. */
   c.innerHTML =
     '<div class="pc-cubo" style="background:'+fundoCinza(z)+'">' +
-      '<div class="pc-in f-frente">'+cara+'</div>' +
-      '<div class="pc-in f-tras">'+cara+'</div>' +
-      '<div class="pc-lado pc-lado-d"></div><div class="pc-lado pc-lado-e"></div>' +
-      '<div class="pc-lado pc-lado-c"></div><div class="pc-lado pc-lado-b"></div>' +
+      '<div class="pc-in f-frente">' +
+        '<i>'+z+'</i><b>'+SIMBOLOS[z-1]+'</b><u>'+MASSAS[z-1]+'</u>' +
+      '</div>' +
     '</div>';
   return c;
 }
 
-/* ---- o miolo agora são duas faces ----
+/* ---- as outras cinco faces, só quando é preciso ----
+   A carta nasce com a face da frente só. As outras cinco custam camadas
+   na placa de vídeo e peças a recalcular, e passam a aula quase toda
+   sem se verem. Nascem aqui, quando a carta começa a girar — cópias da
+   frente tal como ela está naquele momento: o número, a pilha, a cor —,
+   e vão-se quando ela pousa. Daí em diante as seis andam juntas pelas
+   ajudantes de baixo (poeNoMiolo, marcaMiolo). */
+const FACES_DO_BLOCO = ['f-tras', 'f-dir', 'f-esq', 'f-cima', 'f-baixo'];
+function daVolume(c){
+  const cubo = c.firstElementChild;
+  if (cubo.querySelector('.f-tras')) return;
+  const frente = cubo.querySelector('.f-frente');
+  FACES_DO_BLOCO.forEach(nome => {
+    const f = frente.cloneNode(true);
+    f.classList.replace('f-frente', nome);
+    cubo.appendChild(f);
+  });
+}
+
+/* ---- cair de pé ----
+   A correção de leitura do app do aluno: dado o giro do cubo, qual das
+   seis faces está virada para o olho, e quanto é preciso girá-la no
+   plano da tela para o alto dela ser o alto da tela. Meia volta para
+   cima, num cubo de verdade, mostraria a carta de cabeça para baixo;
+   aqui não mostra. */
+const emRad = g => g * Math.PI / 180;
+function mRx(g){const s=Math.sin(emRad(g)),c=Math.cos(emRad(g));return [[1,0,0],[0,c,-s],[0,s,c]];}
+function mRy(g){const s=Math.sin(emRad(g)),c=Math.cos(emRad(g));return [[c,0,s],[0,1,0],[-s,0,c]];}
+function mRz(g){const s=Math.sin(emRad(g)),c=Math.cos(emRad(g));return [[c,-s,0],[s,c,0],[0,0,1]];}
+function mXm(a,b){
+  const r = [[0,0,0],[0,0,0],[0,0,0]];
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++)
+    r[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j];
+  return r;
+}
+const mXv = (m,v) => [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],
+                      m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],
+                      m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
+/* as seis faces: para onde olham (n), onde é o alto delas (u), e se
+   são do tamanho da frente — a de cima e a de baixo são quadradas */
+const NORMAIS_DO_BLOCO = [
+  {n:[0,0,1],  u:[0,-1,0], igual:true},  {n:[1,0,0],  u:[0,-1,0], igual:true},
+  {n:[0,0,-1], u:[0,-1,0], igual:true},  {n:[-1,0,0], u:[0,-1,0], igual:true},
+  {n:[0,-1,0], u:[0,0,-1], igual:false}, {n:[0,1,0],  u:[0,0,1],  igual:false}
+];
+function faceVisivel(rx, ry, rz){
+  const M = mXm(mRx(rx), mXm(mRy(ry), mRz(rz)));
+  let face = NORMAIS_DO_BLOCO[0], maisPerto = -2;
+  NORMAIS_DO_BLOCO.forEach(f => { const z = mXv(M, f.n)[2]; if (z > maisPerto){ maisPerto = z; face = f; } });
+  return { face, M };
+}
+function correcaoDeLeitura(rx, ry, rz){
+  const { face, M } = faceVisivel(rx, ry, rz);
+  const alto = mXv(M, face.u);
+  /* o ângulo entre o alto da face e o alto da tela; a correção é o
+     simétrico dele, arredondado ao quarto de volta mais próximo */
+  const ang = Math.atan2(alto[0], -alto[1]) * 180/Math.PI;
+  return -Math.round(ang/90)*90 || 0;
+}
+
+/* ---- pousar: o cubo volta a ser carta ----
+   Acabado o giro, o cubo é trocado pela carta de frente de uma vez:
+   as seis faces são iguais e o véu das de lado já se foi, e a troca não
+   se vê. As cinco faces a mais vão-se, e com elas as camadas. */
+function pousaCubo(c){
+  const cubo = c.firstElementChild;
+  clearTimeout(c._roda); clearTimeout(c._pousa);
+  c.classList.remove('rodando');
+  cubo.classList.add('sem-giro');
+  ['--rx','--ry','--rz','--rzc','--dz','--dur'].forEach(p => cubo.style.removeProperty(p));
+  delete c.dataset.rx; delete c.dataset.ry; delete c.dataset.rz;
+  c.classList.remove('em-volume');
+  cubo.querySelectorAll('.f-tras, .f-dir, .f-esq, .f-cima, .f-baixo').forEach(f => f.remove());
+  getComputedStyle(cubo).transform;
+  cubo.classList.remove('sem-giro');
+}
+
+/* ============================================================
+   OS CUBOS NA MÃO — o TP do app do aluno
+   O que uma coreografia pode pedir aos tijolos da mesa em cena:
+     TP.gira(quem, {eixo, graus, dur, atraso, legivel})
+     TP.salta(quem, {alto, sobe, cai, atraso})
+     TP.pulaGirando(quem, {alto, eixo, graus, subir, cair})
+   'quem' é o número atômico, a própria carta, ou uma lista deles; sem
+   nada, são todos os que estão à vista na mesa.
+   ============================================================ */
+const TP = {
+  mesa(){ return document.querySelector('.slide.is-active .mesa'); },
+  /* os que estão na tabela e à vista — os de trás de uma pilha, não */
+  todos(){
+    const m = this.mesa();
+    if (!m) return [];
+    /* sem perguntar ao navegador como a carta está desenhada: essa
+       pergunta obriga-o a refazer as contas da página inteira, e a vida
+       faz esta chamada a cada gesto. As de trás de uma pilha são
+       escondidas à mão (style.visibility), e é isso que se lê. */
+    return [...m.querySelectorAll('.pc.na-tabela')].filter(c => c.style.visibility !== 'hidden');
+  },
+  quem(o){
+    if (o == null) return this.todos();
+    if (o instanceof Element) return [o];
+    if (Array.isArray(o)) return o.flatMap(x => this.quem(x));
+    const m = this.mesa();
+    const c = m && m.querySelector('.pc[data-z="' + o + '"]');
+    return c ? [c] : [];
+  },
+
+  /* O GIRO. eixo 'x', 'y' ou 'z'; graus quantos quiser (360 é uma volta
+     inteira); o giro soma-se ao que o cubo já tinha, e por isso chamar
+     duas vezes gira duas vezes. Acabado, o cubo cai de pé e — se a face
+     que ficou à vista é do tamanho da frente — volta a ser carta. */
+  gira(alvo, o){
+    o = o || {};
+    const eixo  = (o.eixo || 'y').toLowerCase();
+    const graus = o.graus === undefined ? 360 : o.graus;
+    const dur   = o.dur   === undefined ? 700 : o.dur;
+    const passo = o.atraso || 0;
+    const legivel = o.legivel !== false;
+    this.quem(alvo).forEach((c, i) => {
+      const roda = () => {
+        const cubo = c.firstElementChild;
+        const chave = 'r' + eixo;
+        const ate = +(c.dataset[chave] || 0) + graus;
+        c.dataset[chave] = ate;
+        const rx = +(c.dataset.rx||0), ry = +(c.dataset.ry||0), rz = +(c.dataset.rz||0);
+        const rzc = legivel ? correcaoDeLeitura(rx, ry, rz) : 0;
+        if (!c.classList.contains('em-volume')){
+          /* a carta vira bloco sem viagem, e só então o giro começa */
+          daVolume(c);
+          cubo.classList.add('sem-giro');
+          c.classList.add('em-volume');
+          /* ler o transform assenta o estilo sem refazer a página toda —
+             a troca só precisa disso, e não de medidas */
+          getComputedStyle(cubo).transform;
+          cubo.classList.remove('sem-giro');
+          getComputedStyle(cubo).transform;
+        }
+        c.classList.add('rodando');
+        cubo.style.setProperty('--dur', dur + 'ms');
+        cubo.style.setProperty('--rzc', rzc + 'deg');
+        cubo.style.setProperty('--' + chave, ate + 'deg');
+        clearTimeout(c._roda); clearTimeout(c._pousa);
+        c._roda = setTimeout(() => {
+          c.classList.remove('rodando');           /* o véu das de lado some */
+          if (faceVisivel(rx, ry, rz).face.igual) c._pousa = setTimeout(() => pousaCubo(c), 300);
+        }, dur + 60);
+      };
+      passo ? setTimeout(roda, i*passo) : roda();
+    });
+  },
+
+  /* O SALTO vai na carta, e não no cubo: o cubo usa o transform dele
+     para os giros, e a mesma propriedade animada nos dois lugares
+     apagaria um deles. E vai numa animação à parte, e não numa
+     transição: cada modo da mesa escreve a sua 'transition' na carta, e
+     apagaria a do salto. O voo anda na propriedade 'translate', e os
+     dois somam-se. 'alto' é em pixels para cima. */
+  poe(c, alto, ms){
+    /* de onde ela parte: a altura em que está agora, tirada da própria
+       animação — de onde ia, para onde ia e quanto já andou —, e não
+       perguntada ao navegador, que para responder refaria as contas da
+       página inteira no meio da dança */
+    let agora = 0;
+    const a0 = c._sobe;
+    if (a0){
+      const p = a0.effect.getComputedTiming().progress;
+      agora = p == null ? a0._ate : a0._de + (a0._ate - a0._de) * p;
+      a0.cancel();
+    }
+    const a = c._sobe = c.animate(
+      [{ transform: 'translate(-50%,-50%) translateY(' + agora.toFixed(1) + 'px)' },
+       { transform: 'translate(-50%,-50%) translateY(' + (-alto) + 'px)' }],
+      { duration: ms, easing: 'cubic-bezier(.3,.7,.35,1)', fill: 'forwards' });
+    a._de = agora; a._ate = -alto;
+    c.classList.toggle('no-ar', alto !== 0);
+    if (alto === 0) a.finished.then(() => { if (c._sobe === a){ a.cancel(); c._sobe = null; } }, () => {});
+  },
+  /* o pulinho: sobe e cai, sem ficar no ar */
+  salta(alvo, o){
+    o = o || {};
+    const alto = o.alto === undefined ? 12 : o.alto;
+    const sobe = o.sobe === undefined ? 190 : o.sobe;
+    const cai  = o.cai  === undefined ? 260 : o.cai;
+    this.quem(alvo).forEach((c, i) => {
+      const vai = () => {
+        this.poe(c, alto, sobe);
+        clearTimeout(c._cai);
+        c._cai = setTimeout(() => this.poe(c, 0, cai), sobe + 10);
+      };
+      o.atraso ? setTimeout(vai, i*o.atraso) : vai();
+    });
+  },
+  /* o pulo e a volta ao mesmo tempo, e a carta cai no lugar de onde
+     saiu: um vai na carta e o outro no cubo dentro dela */
+  pulaGirando(alvo, o){
+    o = o || {};
+    const alto  = o.alto  === undefined ? 22 : o.alto;
+    const subir = o.subir === undefined ? 330 : o.subir;
+    const cair  = o.cair  === undefined ? 400 : o.cair;
+    const eixo  = o.eixo || (Math.random() < .5 ? 'y' : 'x');
+    this.quem(alvo).forEach(c => {
+      this.salta(c, { alto, sobe: subir, cai: cair });
+      this.gira(c, { eixo, graus: o.graus === undefined ? 360 : o.graus, dur: subir + cair });
+    });
+  }
+};
+
+/* ============================================================
+   A TABELA VIVA — a vida solta do app do aluno
+   Parada, a tabela é um cartaz. Aqui, quando a mesa está pronta e
+   ninguém mexe há alguns segundos, ela respira sozinha — e a sala
+   percebe pelo canto do olho que cada casa é um cubo, e que os cubos
+   viram. Dois compassos, ao mesmo tempo e sem se combinarem:
+
+   · UM CUBO DE CADA VEZ, ao acaso: uma volta para um lado, para o
+     outro, para cima — ou só um pulinho no lugar, ou pula e gira.
+     Nunca dois juntos: o olho tem de poder seguir aquele.
+   · UMA FAMÍLIA DE CADA VEZ: a coluna sobe, de cima para baixo, fica
+     um instante no ar e desce; a seguinte começa a subir quando a
+     anterior começa a descer — é essa sobreposição que faz a tabela
+     ondular em vez de piscar.
+
+   Aqui quem conduz a aula é o professor, e não uma narração: a vida
+   cala-se com qualquer tecla, clique ou toque — quem está no ar pousa
+   e quem está a girar volta a ser carta — e só volta depois de
+   VIDA.OCIO milissegundos sem ninguém mexer. Não entra na capa, no
+   quiz, nos jogos, no mundo quântico nem na montagem, nem enquanto a
+   mesa se monta ou passa de slide.
+   (A cruz das coordenadas, o terceiro compasso do aluno, ficou de fora:
+   aqui ela é matéria de um slide, e não enfeite.)
+   ============================================================ */
+const VIDA = {
+  OCIO: 7000,
+  ligada: false, tCubo: 0, tFam: 0, tOcio: 0,
+  fila: [], ocupadas: new Set(), familias: new Set(),
+
+  pode(){
+    return !!document.querySelector('.slide.is-active .mesa.pronta') &&
+      !andando && !document.hidden && !naMontagem() && !quizAtivo &&
+      !(typeof jogoAtivo   !== 'undefined' && jogoAtivo) &&
+      !(typeof memAberto   !== 'undefined' && memAberto) &&
+      !(typeof mundoAberto !== 'undefined' && mundoAberto) &&
+      TP.todos().length >= 18;
+  },
+  /* alguém mexeu: a vida cala-se, e a espera recomeça */
+  acorda(){
+    if (this.ligada) this.desliga();
+    clearTimeout(this.tOcio);
+    this.tOcio = setTimeout(() => this.tenta(), this.OCIO);
+  },
+  tenta(){
+    if (this.pode()) this.liga();
+    else this.tOcio = setTimeout(() => this.tenta(), 1500);
+  },
+  liga(){
+    if (this.ligada) return;
+    this.ligada = true;
+    this.marcaCubo(300);
+    this.marcaFamilia(900);
+  },
+  /* calar é pousar: quem está no ar desce depressa, e quem está a girar
+     volta a ser carta de uma vez — a aula vai mexer nelas já a seguir */
+  desliga(){
+    this.ligada = false;
+    clearTimeout(this.tCubo); clearTimeout(this.tFam);
+    this.familias.forEach(l => l.forEach(clearTimeout));
+    this.familias.clear();
+    this.ocupadas.clear();
+    const m = TP.mesa();
+    if (!m) return;
+    m.querySelectorAll('.pc.no-ar').forEach(c => { clearTimeout(c._cai); TP.poe(c, 0, 160); });
+    m.querySelectorAll('.pc.em-volume').forEach(c => pousaCubo(c));
+  },
+  /* se a mesa deixou de estar livre sem ninguém mexer — o slide mudou
+     pela régua, um quiz abriu —, a vida cala-se e volta a esperar */
+  aindaPode(){
+    if (this.pode()) return true;
+    this.acorda();
+    return false;
+  },
+
+  /* ---- o compasso dos cubos ---- */
+  marcaCubo(ms){
+    clearTimeout(this.tCubo);
+    this.tCubo = setTimeout(() => {
+      if (!this.ligada || !this.aindaPode()) return;
+      this.umCubo();
+      this.marcaCubo(520 + Math.random()*680);
+    }, ms);
+  },
+  umCubo(){
+    const cubos = TP.todos();
+    if (!cubos.length) return;
+    const c = cubos[(Math.random()*cubos.length)|0];
+    /* quem está no ar com a família dele, ou já a girar, fica de fora:
+       duas ordens para a mesma carta cancelariam uma à outra */
+    if (this.ocupadas.has(+c.dataset.col) || c.classList.contains('em-volume') ||
+        c.classList.contains('no-ar')) return;
+    const sorte = Math.random();
+    const eixo = Math.random() < .55 ? 'y' : 'x';
+    /* para os lados, qualquer quarto de volta; para cima, só meias voltas
+       e voltas inteiras — o quarto acabaria na face de cima, que é
+       quadrada, e a carta mudaria de altura ao pousar */
+    const quanto = eixo === 'y' ? [90,-90,180,-180,360,-360] : [180,-180,360,-360];
+    if (sorte < .22){
+      TP.salta(c, { alto: 9 + Math.random()*7 });             /* só o pulinho */
+    } else if (sorte < .58){
+      TP.gira(c, { eixo, graus: quanto[(Math.random()*quanto.length)|0],
+                   dur: 560 + Math.random()*280 });            /* só a volta */
+    } else {
+      TP.pulaGirando(c, { eixo, alto: 16 + Math.random()*10,  /* os dois */
+                          graus: Math.random() < .5 ? 360 : -360,
+                          subir: 290 + Math.random()*90,
+                          cair:  360 + Math.random()*110 });
+    }
+  },
+
+  /* ---- o compasso das famílias ---- */
+  marcaFamilia(ms){
+    clearTimeout(this.tFam);
+    this.tFam = setTimeout(() => {
+      if (!this.ligada || !this.aindaPode()) return;
+      /* a próxima entra quando esta começa a descer */
+      this.marcaFamilia(this.umaFamilia());
+    }, ms);
+  },
+  umaFamilia(){
+    if (!this.fila.length){
+      /* as dezoito, cada uma por sua vez, na ordem baralhada de uma rodada */
+      const f = Array.from({length:18}, (_,i) => i+1);
+      for (let i = f.length-1; i > 0; i--){ const j = (Math.random()*(i+1))|0; [f[i], f[j]] = [f[j], f[i]]; }
+      this.fila = f;
+    }
+    return this.sobeFamilia(this.fila.shift());
+  },
+  sobeFamilia(col){
+    const cartas = TP.todos()
+      .filter(c => +c.dataset.col === col && !c.classList.contains('em-volume'))
+      .sort((a,b) => +a.dataset.linha - +b.dataset.linha);
+    if (!cartas.length) return 900;
+    this.ocupadas.add(col);
+    const meus = [];
+    const marca = (f, ms) => meus.push(setTimeout(f, ms));
+    this.familias.add(meus);
+    const degrau = 55, noAr = 700;
+    cartas.forEach((c,i) => marca(() => TP.poe(c, 22, 420), i*degrau));
+    const desce = cartas.length*degrau + noAr;
+    cartas.forEach((c,i) => marca(() => TP.poe(c, 0, 480), desce + i*degrau));
+    marca(() => { this.ocupadas.delete(col); this.familias.delete(meus); },
+          desce + cartas.length*degrau + 520);
+    return desce;
+  }
+};
+/* qualquer gesto cala a vida — antes de a aula o ver, na fase de
+   captura, e sem o engolir */
+['keydown', 'pointerdown', 'wheel'].forEach(tipo =>
+  document.addEventListener(tipo, () => VIDA.acorda(), { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => VIDA.acorda());
+VIDA.acorda();
+
+/* ---- o miolo agora é o cubo ----
    'miolo' continua a ser o primeiro filho da carta — só que passou a
    ser o cubo. O que é estilo (a cor, o --rot, o --sc) escreve-se nele
-   e desce sozinho às faces. O que é CONTEÚDO tem de ser posto nas duas
-   que se leem, e é para isso que servem estas duas. */
+   e desce sozinho às faces. O que é CONTEÚDO tem de ir às faces que se
+   leem — a frente e, enquanto ela gira, as outras cinco. */
 function facesDe(cubo){ return cubo.querySelectorAll('.pc-in'); }
 function poeNoMiolo(cubo, html){
   facesDe(cubo).forEach(f => { f.innerHTML = html; });
