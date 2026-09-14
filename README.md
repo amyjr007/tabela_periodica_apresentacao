@@ -58,24 +58,3 @@ tabela têm paleta própria, declarada como `--cat-*` no topo do CSS.
 mudam o tamanho (a roda do mouse faz o mesmo), **R** devolve o slide ao lugar.
 **Ctrl+C** copia as posições e os tamanhos de tudo o que está na tela;
 **Ctrl+Shift+C**, os da apresentação inteira.
-
-## Os cubos e a tabela viva
-
-Cada carta é um **cubo de seis faces iguais** — o número, o símbolo e a
-massa em todas —, o mesmo do app do aluno: gire para onde girar, a carta
-não perde a cara, e cai sempre de pé (`correcaoDeLeitura`). Como a carta
-daqui é 58 × 48, o cubo é um bloco com a profundidade da largura: no giro
-de lado a face que chega é igual à que sai.
-
-Parada, a carta é plana e leve: as outras cinco faces só existem enquanto
-ela gira, e a troca de volta pela carta de frente não se vê. A passagem
-de slide continua a virar a carta plana — são as 118 de uma vez.
-
-**A tabela viva.** Com a mesa pronta e ninguém mexendo há 7 segundos
-(`VIDA.OCIO`), a tabela respira sozinha: um cubo de cada vez gira, salta
-ou pula girando, e as famílias sobem e descem numa onda. Qualquer tecla,
-clique ou toque a cala na hora. Não entra na capa, no quiz, nos jogos, no
-mundo quântico nem na montagem.
-
-Para coreografias: `TP.gira(26, {eixo:'y', graus:90})`, `TP.salta(...)` e
-`TP.pulaGirando(...)`, os mesmos do app do aluno.
