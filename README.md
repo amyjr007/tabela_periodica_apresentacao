@@ -63,7 +63,7 @@ mudam o tamanho (a roda do mouse faz o mesmo), **R** devolve o slide ao lugar.
 
 Cada carta é um **cubo de seis faces iguais** — o número, o símbolo e a
 massa em todas —, o mesmo do app do aluno: gire para onde girar, a carta
-não perde a cara, e cai sempre de pé (). Como a carta
+não perde a cara, e cai sempre de pé (`correcaoDeLeitura`). Como a carta
 daqui é 58 × 48, o cubo é um bloco com a profundidade da largura: no giro
 de lado a face que chega é igual à que sai.
 
@@ -72,10 +72,10 @@ ela gira, e a troca de volta pela carta de frente não se vê. A passagem
 de slide continua a virar a carta plana — são as 118 de uma vez.
 
 **A tabela viva.** Com a mesa pronta e ninguém mexendo há 7 segundos
-(), a tabela respira sozinha: um cubo de cada vez gira, salta
+(`VIDA.OCIO`), a tabela respira sozinha: um cubo de cada vez gira, salta
 ou pula girando, e as famílias sobem e descem numa onda. Qualquer tecla,
 clique ou toque a cala na hora. Não entra na capa, no quiz, nos jogos, no
 mundo quântico nem na montagem.
 
-Para coreografias: ,  e
-, os mesmos do app do aluno.
+Para coreografias: `TP.gira(26, {eixo:'y', graus:90})`, `TP.salta(...)` e
+`TP.pulaGirando(...)`, os mesmos do app do aluno.
